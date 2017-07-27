@@ -13,6 +13,14 @@
 #include <netinet/in.h>
 #include "basic.h"
 
+char check_if_dir_exist(char*dir_path){
+    struct dirent *dir;
+    if((dir=opendir(dir_path))==NULL){
+        handle_error_with_exit("error in open directory\n");
+    }
+    close(dir);
+    return 1;
+}
 void handle_error_with_exit(char*errorString){
     perror(errorString);
     exit(EXIT_FAILURE);
@@ -43,10 +51,11 @@ char* files_in_dir(char* path,int lenght) {
         handle_error_with_exit("error in malloc\n");
     }
     if(path==NULL){
-        handle_error_with_exit("path NULL\n");
+        handle_error_with_exit("error path NULL\n");
     }
     memset(list,'\0',lenght);
     d = opendir(path);
+    strcat(list,"list:");
     if (d!=NULL) {
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type != DT_DIR) {

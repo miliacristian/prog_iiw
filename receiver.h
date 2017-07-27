@@ -10,4 +10,4 @@ struct window_rcv_buf{
     char payload[MAXPKTSIZE-4];
 };
 
-int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr, int W, double timer, double loss_prob);
+int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr);

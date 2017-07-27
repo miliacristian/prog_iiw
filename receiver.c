@@ -14,9 +14,10 @@ void signal_handler(int signum, siginfo_t *si,void *uc){
 	(void)uc;
     return;
 }
-int selective_repeat_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_addr,int W,double timer,double loss_prob){//ritorna il numero di byte
+int selective_repeat_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_addr){//ritorna il numero di byte
     //buff[i]==buffer che contiene il pacchetto iesimo
-    int byte_written=0,window_base=0;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written=0,window_base=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     struct temp_buffer temp_buff;
     struct window_rcv_buf win_buf[2*W];
     memset(win_buf,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero

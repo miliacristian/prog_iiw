@@ -56,7 +56,7 @@ int parse_integer_and_move(char**string) {
     int value;
     errno = 0;
     value= (int) strtol(*string, &errptr, 0);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     *string=errptr;//sposta il puntatore
@@ -71,7 +71,7 @@ long parse_long_and_move(char**string) {
     long value;
     errno = 0;
     value=strtol(*string, &errptr, 0);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     return value;
@@ -85,7 +85,7 @@ double parse_double_and_move(char**string){
     double value;
     errno = 0;
     value=strtod(*string, &errptr);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     *string=errptr;//sposta il puntatore
@@ -99,7 +99,7 @@ long parse_long(char*string) {
     long value;
     errno = 0;
     value= (int) strtol(string, &errptr, 0);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     return value;
@@ -112,7 +112,7 @@ int parse_integer(char*string) {
     int value;//
     errno = 0;
     value= (int) strtol(string, &errptr, 0);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     return value;
@@ -125,7 +125,7 @@ double parse_double(char*string){
     double value;
     errno = 0;
     value=strtod(string, &errptr);
-    if (errno != 0 || *errptr != '\0' || *errptr!=' ') {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
         handle_error_with_exit("invalid number\n");
     }
     return value;
