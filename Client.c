@@ -104,6 +104,7 @@ int main(int argc,char*argv[]) {
         //make_request_to_server(sockfd, servaddr, command, filename);//fai la richiesta al server
         //ogni nuova richiesta viene mandata al main process server
     }
+    //comment
     return EXIT_SUCCESS;
     //il client dopo aver verificato la stringa la manda:
     //list senza spazi
