@@ -42,10 +42,10 @@ int selective_repeat_receiver(int sockfd,int fd,int byte_expected,struct sockadd
             else if(!seq_is_in_window(window_base,window_base+W-1,W,temp_buff.seq)){
                 //se il numero  non è dentro la finestra
                 // un ack è stato smarrito->rinvialo
-                if(sendto(sockfd,&(temp_buff.seq), sizeof(int),0,(struct sockaddr*)&dest_addr,sizeof(dest_addr))==-1){//rinvio ack
-			handle_error_with_exit("error in sendto\n");
-		}
-            }
+                if(sendto(sockfd,&(temp_buff.seq), sizeof(int),0,(struct sockaddr*)&dest_addr,sizeof(dest_addr))==-1) {//rinvio ack
+                    handle_error_with_exit("error in sendto\n");
+                }
+		    }
             else{//sequenza in window
                 win_buf[temp_buff.seq].received=1;//segno pacchetto n-esimo come ricevuto
                 strcpy(win_buf[temp_buff.seq].payload,temp_buff.payload);//memorizzo il pacchetto n-esimo
@@ -64,7 +64,7 @@ int selective_repeat_receiver(int sockfd,int fd,int byte_expected,struct sockadd
         }
         else{
             printf("il sender non manda più nulla o errore interno\n");
-            return -1;
+            return byte_written;
         }
     }
     return byte_written;

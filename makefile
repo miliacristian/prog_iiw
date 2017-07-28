@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS =-Wall -Wextra -o2
+CFLAGS =-Wall -Wextra -Wpedantic -o2
 CFILES=$(shell ls *.c)
 PROGS=$(CFILES:%.c=%)
 

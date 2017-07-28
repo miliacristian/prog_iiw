@@ -33,6 +33,7 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     int acked;
     char payload[MAXPKTSIZE-4];
     timer_t time_id;
+    int time_start;
 };
 struct temp_buf{//struttura per mandare i pacchetti
     int seq_numb;
