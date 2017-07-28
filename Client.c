@@ -69,9 +69,24 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         handle_error_with_exit("error in timer_settime\n");
     }
 
-    while(1) {//non è scattato il timer grande,riscriverlo meglio
+    while(1) {
         alarm(3);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, &serv_addr, &len)!=-1) {//risposta del server
+            if(temp_buff.ack==-1){//
+                printf("%s\n",temp_buff.payload);
+                return byte_written;
+            }
+            if(timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL)==-1){//resetta timer
+                handle_error_with_exit("error in timer_settime\n");
+            }
+            strcpy(temp_buff.payload,"start");
+            temp_buff.seq=seq_to_send;
+            if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
+                handle_error_with_exit("error in sendto\n");//notifica il server che può iniziare a mandare il file
+            }
+            if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL)==-1){
+                handle_error_with_exit("error in timer_settime\n");
+            }
             break;
         }
         else if(great_alarm==1){//dopo tot ritrasmissioni ancora il client non riceve nulla
