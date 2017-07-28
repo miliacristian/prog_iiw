@@ -1,24 +1,16 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <dirent.h>
-#include <zconf.h>
-#include <sys/stat.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include <semaphore.h>
-#include <sys/msg.h>
-#include <sys/shm.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include "basic.h"
+#include "io.h"
+#include "lock_fcntl.h"
+#include "parser.h"
+#include "receiver.h"
+#include "sender2.h"
 
 char check_if_dir_exist(char*dir_path){
-    struct dirent *dir;
+    DIR *dir;
     if((dir=opendir(dir_path))==NULL){
         handle_error_with_exit("error in open directory\n");
     }
-    close(dir);
+    closedir(dir);
     return 1;
 }
 void handle_error_with_exit(char*errorString){

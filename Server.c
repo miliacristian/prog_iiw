@@ -1,25 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <zconf.h>
-#include <pthread.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/msg.h>
-#include <semaphore.h>
-#include <wait.h>
-#include <errno.h>
-#include <fcntl.h>
-#include "parser.h"
 #include "basic.h"
-#include "receiver.h"
 #include "io.h"
-#include <fcntl.h>
+#include "lock_fcntl.h"
+#include "parser.h"
+#include "receiver.h"
+#include "sender2.h"
 
 //variabili globali
 int msgid,mtx_list_id,child_mtx_id,mtx_prefork_id;//dopo le fork tutti i figli sanno quali sono gli id
+struct select_param param_serv;
+char*dir_server;
 
 void initialize_mtx(sem_t*mtx){
     if(sem_init(mtx,1,1)==-1){
@@ -149,7 +138,7 @@ void create_pool(int num_child){//crea il pool di processi,ogni processo ha il c
             handle_error_with_exit("error in fork\n");
         }
         if (pid == 0) {
-            child_job();//i figli non terminano mai
+            child_job();//i figli non ritorna mai
         }
     }
     return;//il padre ritorna dopo aver creato i processi
@@ -259,7 +248,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(argc!=2){
        handle_error_with_exit("usage <directory>\n");
     }
-	dir_server=argv[1];
+    dir_server=argv[1];
     check_if_dir_exist(dir_server);
     fd=open("/home/cristian/Scrivania/parameter.txt",O_RDONLY);
     if(fd==-1){
@@ -276,6 +265,10 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     param_serv.loss_prob=parse_double_and_move(&line);
     skip_space(&line);
     param_serv.timer_ms=parse_long_and_move(&line);
+    if(close(fd)==-1){
+	handle_error_with_exit("error in close file\n");
+    }
+    free(line);
 
     msg_key=create_key(".",'d');
     shm_key=create_key(".",'a');

@@ -1,4 +1,30 @@
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <dirent.h>
+#include <netinet/in.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <semaphore.h>
+#include <unistd.h>
+#include <zconf.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wait.h>
+#include <zconf.h>
+
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
@@ -6,7 +32,8 @@
 #define MAXLINE 1024
 #define SERVER_PORT 5193
 
-
+#ifndef LINE_H
+#define LINE_H
 struct mtx_list{//definizione di struct condivise ad accesso esclusivo
     sem_t sem;
     int lenght;
@@ -27,9 +54,7 @@ struct select_param{
     double loss_prob;
     long timer_ms;
 }param_serv,param_client;
-
-char*dir_server;
-char*dir_client;
+#endif
 
 void handle_error_with_exit(char*errorString);
 void get_file_list(char*path);

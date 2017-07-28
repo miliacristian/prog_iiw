@@ -1,10 +1,9 @@
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <string.h>
-#include "parser.h"
 #include "basic.h"
+#include "io.h"
+#include "lock_fcntl.h"
+#include "parser.h"
+#include "receiver.h"
+#include "sender2.h"
 
 void move_pointer(char**string,int n){
     if(string==NULL){
@@ -56,7 +55,7 @@ int parse_integer_and_move(char**string) {
     int value;
     errno = 0;
     value= (int) strtol(*string, &errptr, 0);
-    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ' && *errptr!='\n')) {
         handle_error_with_exit("invalid number\n");
     }
     *string=errptr;//sposta il puntatore
@@ -71,9 +70,10 @@ long parse_long_and_move(char**string) {
     long value;
     errno = 0;
     value=strtol(*string, &errptr, 0);
-    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ' && *errptr!='\n')) {
         handle_error_with_exit("invalid number\n");
     }
+	*string=errptr;//sposta il puntatore
     return value;
 }
 
@@ -85,7 +85,7 @@ double parse_double_and_move(char**string){
     double value;
     errno = 0;
     value=strtod(*string, &errptr);
-    if (errno != 0 || (*errptr != '\0' && *errptr!=' ')) {
+    if (errno != 0 || (*errptr != '\0' && *errptr!=' ' && *errptr!='\n')) {
         handle_error_with_exit("invalid number\n");
     }
     *string=errptr;//sposta il puntatore

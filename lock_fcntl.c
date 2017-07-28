@@ -1,9 +1,10 @@
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <zconf.h>
-#include <errno.h>
+
+#include "basic.h"
+#include "io.h"
+#include "lock_fcntl.h"
+#include "parser.h"
+#include "receiver.h"
+#include "sender2.h"
 
 //usage my_lock_wait();
 //sezione critica
