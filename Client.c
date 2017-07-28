@@ -5,6 +5,7 @@
 #include "receiver.h"
 #include "sender2.h"
 void*thread_job(void*arg){
+    //waitpid dei processi del client
     pid_t pid;
     while(1) {
         while ((pid = waitpid(-1, NULL, 0)) > 0) {
