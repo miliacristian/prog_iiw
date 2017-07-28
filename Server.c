@@ -49,6 +49,7 @@ void satisfy_request(int sockfd,struct msgbuf request,struct mtx_list*mtx_list){
         //leggi la dimensione del file passata dal client nel buffer filename e memorizzala in byte
         //metti in filename la sottostringa che contiene solo il nome del file
         //path=alloca(sizeof(char)*(strlen(parameter_server.directory)+strlen(filename)));// lo "/" è già presente
+
         strcat(filename,path);//?? farla che path ha la concatenazione di stringhe
         if(!check_if_file_exist(path)){//il file non esiste posso memorizzarlo,farlo con try_lock
             fd=open(filename,O_CREAT | O_WRONLY,0644);

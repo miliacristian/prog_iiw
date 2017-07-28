@@ -4,17 +4,83 @@
 #include "parser.h"
 #include "receiver.h"
 #include "sender2.h"
-
+void*thread_job(void*arg){
+    pid_t pid;
+    while(1) {
+        while ((pid = waitpid(-1, NULL, 0)) > 0) {
+            printf("process %d\n", pid);
+        }
+    }
+    return NULL;
+}
+void create_thread_waitpid(){
+    pthread_t tid;
+    pthread_create(&tid,0,thread_job,NULL);
+    return;
+}
 void client_list_job(){
+    struct sockaddr_in main_servaddr,cliaddr;
+    int sockfd;
 	printf("client list job\n");
+    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
+    main_servaddr.sin_family = AF_INET;
+    main_servaddr.sin_port = htons(SERVER_PORT);
+    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
+        handle_error_with_exit("error in inet_pton");
+    }
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        handle_error_with_exit("error in socket\n");
+    }
+    memset((void *)&cliaddr, 0, sizeof(cliaddr));
+    cliaddr.sin_family=AF_INET;
+    cliaddr.sin_port=htons(0);
+    if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
+       handle_error_with_exit("error in bind\n");
+    }
 	exit(EXIT_SUCCESS);
 }
 void client_get_job(){
 	printf("client get job\n");
+    struct sockaddr_in main_servaddr,cliaddr;
+    int sockfd;
+    printf("client list job\n");
+    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
+    main_servaddr.sin_family = AF_INET;
+    main_servaddr.sin_port = htons(SERVER_PORT);
+    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
+        handle_error_with_exit("error in inet_pton");
+    }
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        handle_error_with_exit("error in socket\n");
+    }
+    memset((void *)&cliaddr, 0, sizeof(cliaddr));
+    cliaddr.sin_family=AF_INET;
+    cliaddr.sin_port=htons(0);
+    if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
+        handle_error_with_exit("error in bind\n");
+    }
 	exit(EXIT_SUCCESS);
 }
 void client_put_job(){
 	printf("client put_job");
+    struct sockaddr_in main_servaddr,cliaddr;
+    int sockfd;
+    printf("client list job\n");
+    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
+    main_servaddr.sin_family = AF_INET;
+    main_servaddr.sin_port = htons(SERVER_PORT);
+    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
+        handle_error_with_exit("error in inet_pton");
+    }
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        handle_error_with_exit("error in socket\n");
+    }
+    memset((void *)&cliaddr, 0, sizeof(cliaddr));
+    cliaddr.sin_family=AF_INET;
+    cliaddr.sin_port=htons(0);
+    if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
+        handle_error_with_exit("error in bind\n");
+    }
 	exit(EXIT_SUCCESS);
 }
 
@@ -23,7 +89,7 @@ char*dir_client;
 
 int main(int argc,char*argv[]) {
     char *filename,*command,conf_upload[4],buff[MAXPKTSIZE+1],*line;
-    int   sockfd,path_len,fd;
+    int   path_len,fd;
     socklen_t len;
     pid_t pid;
     struct    sockaddr_in servaddr,cliaddr,main_servaddr;
@@ -55,24 +121,7 @@ int main(int argc,char*argv[]) {
     line=command;//rimando indietro line spostato
     command=NULL;
     free(line);
-    
-    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
-    main_servaddr.sin_family = AF_INET;       
-    main_servaddr.sin_port = htons(SERVER_PORT);
-    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
-        handle_error_with_exit("error in inet_pton");
-    }
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        handle_error_with_exit("error in socket\n");
-    }
-    memset((void *)&cliaddr, 0, sizeof(cliaddr));
-    cliaddr.sin_family=AF_INET;
-    cliaddr.sin_port=htons(0);
-    if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
-       handle_error_with_exit("error in bind\n");
-    }
-    //impostare con setsockopt timer (ricezione o trasmissione?)
-    // per dire che il server non è in ascolto
+    create_thread_waitpid();
     if((command=malloc(sizeof(char)*5))==NULL){
         handle_error_with_exit("error in malloc buffercommand\n");
     }
@@ -140,18 +189,6 @@ int main(int argc,char*argv[]) {
         	if (pid == 0) {
             		client_list_job();//i figli non ritorna mai
         	}
-            	/*char*l="list";
-            	if(sendto(sockfd,l,strlen(l),0,(struct sockaddr*)&main_servaddr,sizeof(main_servaddr))<0){
-                	handle_error_with_exit("error in request list\n");
-            	}
-            	printf("invio comando list in corso\n");
-            	len=sizeof(servaddr);
-            	if((recvfrom(sockfd,buff,MAXPKTSIZE,0,(struct sockaddr*)&servaddr,&len))<0){
-                	handle_error_with_exit("error in recv\n");
-            	}
-            	printf("messaggio ricevuto client\n");
-            	buff[MAXPKTSIZE]=0;
-            	printf("%s\n",buff);*/
         }
         //make_request_to_server(sockfd, servaddr, command, filename);//fai la richiesta al server
         //ogni nuova richiesta viene mandata al main process server

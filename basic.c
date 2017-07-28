@@ -19,6 +19,9 @@ void handle_error_with_exit(char*errorString){
 }
 char seq_is_in_window(int win_base,int end_win,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
+    if(seq<0){
+        return 0;
+    }
     if(win_base<=window){
         if(seq>=win_base || seq<=end_win){
             return 1;
