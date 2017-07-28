@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "receiver.h"
 #include "sender2.h"
+
 char connect_status=1;
 void signal_handler(int signum, siginfo_t *si,void *uc){
 	(void)signum;

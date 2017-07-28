@@ -39,24 +39,9 @@ void reset_timer(struct itimerspec *its) {
 }
 
 
-struct addr *addr = NULL;
-//struct window_snd_buf *win_buffer=NULL;
-struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 
-void timer_handler(int sig, siginfo_t *si, void *uc) {
-    (void) sig;
-    (void) si;
-    (void) uc;
-    struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
-    //int seq_numb=si->si_value.sival_int;
-    if (sendto(addr->sockfd, ((*win_buffer).payload), MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
-               sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
-        handle_error_with_exit("error in sendto\n");
-    }
-    if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
-        handle_error_with_exit("error in timer_settime\n");
-    }
-}
+
+
 
 void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
     connection_failed = 1;

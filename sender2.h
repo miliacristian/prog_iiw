@@ -31,13 +31,13 @@
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 // se diventa pesante come memoria è meglio allocata nell'heap?
     int acked;
-    char payload[MAXPKTSIZE-4];
+    char payload[MAXPKTSIZE-8];
     timer_t time_id;
     int time_start;
 };
 struct temp_buf{//struttura per mandare i pacchetti
     int seq_numb;
-    char payload[MAXPKTSIZE-4];
+    char payload[MAXPKTSIZE-8];
 };
 
 struct addr{

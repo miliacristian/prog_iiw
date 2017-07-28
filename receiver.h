@@ -25,13 +25,15 @@
 #include <wait.h>
 #include <zconf.h>
 #include "basic.h"
+
 struct temp_buffer{
     int seq;
-    char payload[MAXPKTSIZE-4];// dati pacchetto
+    int ack;
+    char payload[MAXPKTSIZE-8];// dati pacchetto
 };
 struct window_rcv_buf{
     int received;
-    char payload[MAXPKTSIZE-4];
+    char payload[MAXPKTSIZE-8];
 };
 
 int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr);
