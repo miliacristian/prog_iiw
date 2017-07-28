@@ -92,7 +92,3 @@ int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_ad
     }
     return byte_written;
 }
-
-receive__put(){//riceve il comando dal client ,risponde e si mette in stato receiver
-
-}
