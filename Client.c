@@ -8,17 +8,27 @@
 void handler(){
     return;
 }
+int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi la get con connessione già instaurata
+
+}
+int list_command(int sockfd,struct sockaddr_in serv_addr){//svolgi la list con connessione già instaurata
+
+}
+int put_command(int sockfd,struct sockaddr_in serv_addr,char*filename){
+
+}
 struct sockaddr_in syn_ack(int sockfd,struct sockaddr_in main_servaddr){
     struct sigaction sa;
     socklen_t len=sizeof(main_servaddr);
     sa.sa_sigaction = handler;
+    char rtx=0;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
     if (sigaction(SIGALRM, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    while(1){
+    while(rtx<6){//scaduto 5 volte il timer il server non risponde
         sendto(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,sizeof(main_servaddr));//mando syn al processo server principale
         alarm(3);//alarm per ritrasmissione del syn
         if(recvfrom(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,&len)!=-1){
@@ -26,14 +36,11 @@ struct sockaddr_in syn_ack(int sockfd,struct sockaddr_in main_servaddr){
             printf("connessione instaurata\n");
             return main_servaddr;//ritorna l'indirizzo del processo figlio del server
         }
+        rtx++;
     }
+    printf("il server non è in ascolto\n");
     return NULL;
 }
-
-
-
-
-
 
 void*thread_job(void*arg){
     //waitpid dei processi del client
@@ -70,17 +77,18 @@ void client_list_job(){
        handle_error_with_exit("error in bind\n");
     }
     serv_addr=syn_ack(sockfd,serv_addr);
+    list_command(sockfd,serv_addr);
 	exit(EXIT_SUCCESS);
 }
 void client_get_job(char*filename){
 	printf("client get job\n");
-    struct sockaddr_in main_servaddr,cliaddr;
+    struct sockaddr_in serv_addr,cliaddr;
     int sockfd;
     printf("client list job\n");
-    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
-    main_servaddr.sin_family = AF_INET;
-    main_servaddr.sin_port = htons(SERVER_PORT);
-    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
+    memset((void *)&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVER_PORT);
+    if (inet_pton(AF_INET,"127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -92,18 +100,19 @@ void client_get_job(char*filename){
     if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    syn_ack(sockfd,main_servaddr);
+    serv_addr=syn_ack(sockfd,serv_addr);
+    get_command(sockfd,serv_addr,filename);
 	exit(EXIT_SUCCESS);
 }
 void client_put_job(char*filename){//upload e filename già verificato
 	printf("client put_job");
-    struct sockaddr_in main_servaddr,cliaddr;
+    struct sockaddr_in serv_addr,cliaddr;
     int sockfd;
     printf("client list job\n");
-    memset((void *)&main_servaddr, 0, sizeof(main_servaddr));
-    main_servaddr.sin_family = AF_INET;
-    main_servaddr.sin_port = htons(SERVER_PORT);
-    if (inet_pton(AF_INET,"127.0.0.1", &main_servaddr.sin_addr) <= 0) {
+    memset((void *)&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVER_PORT);
+    if (inet_pton(AF_INET,"127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -115,7 +124,8 @@ void client_put_job(char*filename){//upload e filename già verificato
     if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    syn_ack(sockfd,main_servaddr);
+    serv_addr=syn_ack(sockfd,serv_addr);
+    put_command(sockfd,serv_addr,filename);
 	exit(EXIT_SUCCESS);
 }
 
