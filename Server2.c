@@ -66,6 +66,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         temp_buff.seq=seq_to_send;
         win_buf_snd[seq_to_send]
         sendto();
+        //commit 
     }
 	return 0;
 }
