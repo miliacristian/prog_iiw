@@ -5,10 +5,40 @@
 #include "receiver.h"
 #include "sender2.h"
 
+//commit
+
 //variabili globali
-int msgid,mtx_list_id,child_mtx_id,mtx_prefork_id;//dopo le fork tutti i figli sanno quali sono gli id
+struct addr *addr = NULL;
+struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
+int msgid,mtx_list_id,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 char*dir_server;
+
+void handler(){
+    great_alarm=1;
+    return;
+}
+
+int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_list");
+	return 0;
+}
+
+int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_put");
+	return 0;
+}
+
+int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_get");
+	return 0;
+}
 
 void initialize_mtx(sem_t*mtx){
     if(sem_init(mtx,1,1)==-1){
@@ -22,59 +52,79 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
     mtx_prefork->free_process=0;
     return;
 }
-void initialize_mtx_list(struct mtx_list*mtx,char*path){
-    if(sem_init(&(mtx->sem),1,1)==-1){
-        handle_error_with_exit("error in sem_init\n");
+
+void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi dalla coda il messaggio di syn
+    //e rispondi al client con syn_ack
+    char rtx=0;
+    socklen_t len=sizeof(request.addr);
+    int seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
+    int pkt_fly=0;
+    char value;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+    struct temp_buffer temp_buff;//pacchetto da inviare
+    struct window_rcv_buf win_buf_rcv[2*W];
+    struct window_snd_buf win_buf_snd[2 * W];
+    struct addr temp_addr;
+    struct sigaction sa,sa_timeout;
+    memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
+    memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
+
+    make_timers(win_buf_snd, W);//crea 2w timer
+    set_timer(&sett_timer, 1, 10);//inizializza struct necessaria per scegliere il timer
+    reset_timer(&rst_timer);//inizializza struct necessaria per resettare il timer
+
+    temp_addr.sockfd = sockfd;
+    temp_addr.dest_addr = request.addr;
+    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
+
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa.sa_mask) == -1) {
+        handle_error_with_exit("error in sig_empty_set\n");
     }
-    mtx->lenght=count_char_dir(path)+5;//conta i char  in dir comprese newlines e terminatore stringa+strlen("list:")
-    printf("%d caratteri\n",mtx->lenght);
-    mtx->modified=1;
-    return;
-}
-
-void send_list_to_client(char*list,int sockfd,struct sockaddr_in cliaddr,int lenght){
-    if(sendto(sockfd,list,lenght,0,(struct sockaddr*)&cliaddr,sizeof(cliaddr))<0){
-        handle_error_with_exit("error in send_list\n");
+    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+        handle_error_with_exit("error in sigaction\n");
     }
-    return;
-}
+    sa_timeout.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa.sa_mask) == -1) {
+        handle_error_with_exit("error in sig_empty_set\n");
+    }
+    if (sigaction(SIGALRM, &sa, NULL) == -1) {
+        handle_error_with_exit("error in sigaction\n");
+    }
 
-void satisfy_request(int sockfd,struct msgbuf request,struct mtx_list*mtx_list){
-    int filename_len=0,fd,byte;//lunghezza filename upload
-    char*filename,*path;
-    filename_len=strlen((request.command)-4);
-    filename=alloca(sizeof(char)*filename_len);
-    //strcpy(filename,request.command[3]);//sottostringa
-    if(strncmp(request.command,"put",3)==0){//esegui comando put
-        //leggi la dimensione del file passata dal client nel buffer filename e memorizzala in byte
-        //metti in filename la sottostringa che contiene solo il nome del file
-        //path=alloca(sizeof(char)*(strlen(parameter_server.directory)+strlen(filename)));// lo "/" è già presente
-
-        strcat(filename,path);//?? farla che path ha la concatenazione di stringhe
-        if(!check_if_file_exist(path)){//il file non esiste posso memorizzarlo,farlo con try_lock
-            fd=open(filename,O_CREAT | O_WRONLY,0644);
-            if(fd==-1){
-                handle_error_with_exit("error in open file\n");
+    while(rtx<3){
+        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn non in finestra
+        alarm(1);//
+        if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
+            alarm(0);
+            printf("connessione instaurata\n");
+            great_alarm=0;
+            window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
+            if(strncmp(temp_buff.payload,"list",4)==0){
+                execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                return;
             }
-            selective_repeat_receiver(sockfd,fd,byte,request.addr);
+            else if(strncmp(temp_buff.payload,"put",3)==0){
+                execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                return;
+            }
+            else if(strncmp(temp_buff.payload,"get",3)==0){
+                execute_get(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                return;
+            }
+            else{
+                printf("invalid_command\n");
+                return;
+            }
         }
-        else{//il file esiste già,manda conferma per rinominarlo,prova a riaprirlo e a riverificare che esiste
-        }
-
-        lock_sem(&(mtx_list->sem));
-        mtx_list->lenght+=filename_len;
-        mtx_list->modified=1;
-        unlock_sem(&(mtx_list->sem));
+        rtx++;
     }
-    else{//comando get
-        filename=alloca(sizeof(char)*filename_len);
-        //creare path=direcotry+filename
-        if(!check_if_file_exist(path)){
-            //comunica al client che il file non esiste
-        }
-    }
-    return;
+    great_alarm=0;//dopo 3 ritrasmissioni del syn_ack chiudo
+    printf("il client non è in ascolto\n");
+    return ;
 }
+
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
     printf("pid %d\n",getpid());
     struct sockaddr_in serv_addr;//struttura per processo locale
@@ -120,7 +170,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
         printf("ho trovato una richiesta in coda\n");
         mtx_prefork->free_process-=1;
         unlock_sem(&(mtx_prefork->sem));
-        satisfy_request(sockfd,request,mtx_list);
+        reply_to_syn_and_execute_command(sockfd,request);
         done_jobs++;
         if(done_jobs>10){
             printf("pid %d\n ha fatto molto lavoro!\n",getpid());
@@ -168,53 +218,7 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
     }
     return NULL;
 }
-void*thread_list_job(void*arg){//thread che legge i messaggi di tipo 1 dalla coda di messaggi
-    //e fa la list il thread non muore mai
-    struct mtx_list *mtx=arg;//puntatore alla regione di memoria condivisa
-    struct msgbuf msg;
-    struct sockaddr_in servaddr;
-    int sockfd,len_list;
-    int dim_msg=sizeof(struct msgbuf)-sizeof(long);
-    char*list=NULL;
 
-    memset((void *)&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family=AF_INET;
-    servaddr.sin_port=htons(0);
-    servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
-        handle_error_with_exit("error in socket create\n");
-    }
-    if (bind(sockfd,(struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-        handle_error_with_exit("error in bind\n");
-    }
-
-    for(;;) {
-        printf("provo a leggere dalla coda\n");
-        if (msgrcv(msgid, &msg, dim_msg, 1, 0) == -1) {//type=1
-            handle_error_with_exit("error in msgrcv\n");
-        }
-        printf("messaggio preso dalla coda\n");
-        lock_sem(&(mtx->sem));
-        if(mtx->modified==0){
-            printf("lista non modificata\n");
-            len_list=mtx->lenght;
-            unlock_sem(&(mtx->sem));
-            send_list_to_client(list,sockfd,msg.addr,len_list);
-        }
-        else{
-            printf("lista modificata\n");
-            mtx->modified=0;//ponila come non modificata
-            len_list=mtx->lenght;
-            unlock_sem(&(mtx->sem));
-            if(list!=NULL) {
-                free(list);//serve solo la prima volta
-            }
-            list=files_in_dir(dir_server,len_list);
-            send_list_to_client(list,sockfd,msg.addr,len_list);//con selective repeat
-        }
-    }
-    return NULL;
-}
 
 void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che crea il gestore(thread) della riserva
     // di processi
@@ -269,7 +273,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
 
     mtx_prefork_id=get_id_shared_mem(mtx_fork_key,sizeof(struct mtx_prefork));
     child_mtx_id=get_id_shared_mem(mtx_key,sizeof(sem_t));
-    msgid=get_id_msg_queue(msg_key);//crea coda di messaggi id global
+    msgid=get_id_msg_queue(msg_key);//crea coda di messaggi id globale
 
     mtx=(sem_t*)attach_shm(child_mtx_id);
     mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
@@ -290,7 +294,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
 
     create_pool(0);//solo per ora num_child=0
     create_thread_pool_handler(mtx_prefork);
-    //create_thread_list(mtx_list);
 
     while(1) {
         len=sizeof(cliaddr);
