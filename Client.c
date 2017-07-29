@@ -35,7 +35,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     struct window_rcv_buf win_buf_rcv[2*W];
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
-    struct sigaction sa;
+    struct sigaction sa,sa_timeout;
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
     socklen_t len=sizeof(serv_addr);
@@ -56,23 +56,31 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
+    sa_timeout.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa.sa_mask) == -1) {
+        handle_error_with_exit("error in sig_empty_set\n");
+    }
+    if (sigaction(SIGALRM, &sa, NULL) == -1) {
+        handle_error_with_exit("error in sigaction\n");
+    }
 
     strcpy(temp_buff.payload,filename);
     temp_buff.seq=0;
-    temp_buff.ack=-5;
+    temp_buff.ack=-5;//ack=-5 solo seq e payload
     if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
-        handle_error_with_exit("error in sendto\n");
+        handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
     pkt_fly++;
-    seq_to_send=(seq_to_send+1)%(2*W);
     if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL)==-1){
         handle_error_with_exit("error in timer_settime\n");
     }
+    seq_to_send=(seq_to_send+1)%(2*W);
 
     while(1) {
         alarm(3);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, &serv_addr, &len)!=-1) {//risposta del server
             if(temp_buff.ack==-1){//
+                alarm(0);
                 printf("%s\n",temp_buff.payload);
                 return byte_written;
             }
