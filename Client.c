@@ -13,14 +13,18 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     (void) si;
     (void) uc;
     struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
-    //int seq_numb=si->si_value.sival_int;
-    if (sendto(addr->sockfd, ((*win_buffer).payload), MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
+    struct temp_buffer temp_buf;
+    strcpy(temp_buf.payload,win_buffer->payload);
+    temp_buf.ack=-5;
+    temp_buf.seq=win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
+    if (sendto(addr->sockfd,&temp_buf, MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
                sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
         handle_error_with_exit("error in sendto\n");
     }
     if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
     }
+    return;
 }
 void handler(){
     printf("alarm expired\n");
@@ -39,6 +43,11 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     struct sigaction sa,sa_timeout;
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
+    //inizializzo numeri di sequenza nell'array di struct
+    for (int i = 0; i < 2*W; i++){
+        win_buf_snd[i].seq_numb=i;
+    }
+
     socklen_t len=sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
@@ -68,6 +77,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     strcpy(temp_buff.payload,filename);
     temp_buff.seq=0;
     temp_buff.ack=-5;//ack=-5 solo seq e payload
+    strcpy(win_buf_snd[0].payload,temp_buff.payload);
     if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
@@ -78,93 +88,117 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     seq_to_send=(seq_to_send+1)%(2*W);
 
     while(1) {
-        alarm(3);
+        alarm(5);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr*)&serv_addr, &len)!=-1) {//risposta del server
-            if(temp_buff.ack==-1){//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina 
-                alarm(0);
-                printf("%s\n",temp_buff.payload);
-                return byte_written;
+            if(&temp_buff!=NULL) {
+                if (temp_buff.ack == -1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
+                    alarm(0);
+                    temp_buff.seq=-5;
+                    temp_buff.ack=0;
+                    sendto(sockfd,&temp_buff ,MAXPKTSIZE, 0, (struct sockaddr*)&serv_addr,sizeof(serv_addr));
+                    //messaggio di errore in risposta al comando (eg file non trovato)
+                    printf("%s\n", temp_buff.payload);
+                    if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
+                        handle_error_with_exit("error in timer_settime\n");
+                    }
+                    //manca fin
+                    return byte_written;
+                }
+                byte_expected=parse_integer(temp_buff.payload);//segno la dimensione
+                if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
+                    handle_error_with_exit("error in timer_settime\n");
+                }
+                window_base_snd=(window_base_snd+1)%(2*W);
             }
-            if(timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL)==-1){//resetta timer
-                handle_error_with_exit("error in timer_settime\n");
-            }
-            strcpy(temp_buff.payload,"start");
+            //creo messaggio start
+            strcpy(temp_buff.payload,"START");
             temp_buff.seq=seq_to_send;
+            temp_buff.ack=0;
+            strcpy(win_buf_snd[seq_to_send].payload,temp_buff.payload);
             if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
                 handle_error_with_exit("error in sendto\n");//notifica il server che può iniziare a mandare il file
             }
             if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL)==-1){
                 handle_error_with_exit("error in timer_settime\n");
             }
+            seq_to_send=(seq_to_send+1)%(2*W);
+            pkt_fly++;
             break;
         }
-        else if(great_alarm==1){//dopo tot ritrasmissioni ancora il client non riceve nulla
+        else if(great_alarm==1){//sono passati n secondi e senza risposta dal server
             great_alarm=0;
-		printf("troppe ritrasmissioni\n");
+		    printf("troppe ritrasmissioni\n");
             return byte_written;
         }
-    }
+    }//ho una dimensione del file
     alarm(0);
-    if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &rst_timer, NULL)==-1){
-        handle_error_with_exit("error in timer_settime\n");
-    }
-    pkt_fly--;
-    window_base_snd=(window_base_snd+1)%(2*W);
-    //verifico che esito risposta positivo vedendo temp_buff dove avevo scritto la risposta del server
-    //inizio put file
+    //inizio get file
     fd=open(filename,O_WRONLY || O_CREAT,0666);
     if(fd==-1){
         handle_error_with_exit("error in open\n");
     }
-    byte_expected=get_file_size(filename);
     while(byte_written<byte_expected){
         alarm(5);//timeout cautelativo per capire se effettivamente il sender ha ricevuto command_ack
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,&len)!=-1){//bloccante
-            alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-            if(temp_buff.seq>(2*W-1)){//num sequenza imprevisto
-                //ignora
-            }
-            else if(!seq_is_in_window(window_base_snd,window_base_snd+W-1,W,temp_buff.seq)){
-                //se il numero  non è dentro la finestra
-                // un ack è stato smarrito->rinvialo
-                if(sendto(sockfd,&(temp_buff.seq), sizeof(int),0,(struct sockaddr*)&serv_addr,sizeof(serv_addr))==-1) {//rinvio ack
-                    handle_error_with_exit("error in sendto\n");
-                }
-            }
-            else{//ricevuto numero sequenza in window
-                win_buf_rcv[temp_buff.seq].received=1;//segno pacchetto n-esimo come ricevuto
-                strcpy(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload);//memorizzo il pacchetto n-esimo
-                if(temp_buff.seq==window_base_rcv) {//se pacchetto riempie un buco
-                    // scorro la finestra fino al primo ancora non ricevuto
-                    while (win_buf_rcv[window_base_rcv].received ==1) {
-                        //dentro il buffer non deve esserci il terminatore
-                        writen(fd,win_buf_rcv[window_base_rcv].payload,strlen(win_buf_rcv[window_base_rcv].payload));//necessario cosi non copia il terminatore
-                        //controllo su writen
-                        byte_written+=strlen(win_buf_rcv[window_base_rcv].payload);
-                        win_buf_rcv[window_base_rcv].received=0;//segna pacchetto come non ricevuto
-                        window_base_rcv=(window_base_rcv+1)%(2*W);//avanza la finestra con modulo di 2W
+            if(&temp_buff!=NULL) {
+                alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
+                if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
+                    //ignora
+                } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W, temp_buff.seq)) {
+                    //se il numero  non è dentro la finestra
+                    // un ack è stato smarrito->rinvialo
+                    if (sendto(sockfd, &(temp_buff.seq), sizeof(int), 0, (struct sockaddr *) &serv_addr,
+                               sizeof(serv_addr)) == -1) {//rinvio ack
+                        handle_error_with_exit("error in sendto\n");
                     }
-                    if(byte_written==byte_expected){
-                        while(1){//chiusura di connessione
-                            alarm(5);
-                            if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,&len)!=-1){
-                                alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-                                if(temp_buff.seq>(2*W-1)){//num sequenza imprevisto
-                                    //ignora
-                                }
-                                else if(temp_buff.seq==-2){//fine trasferimento
-                                    return byte_written;
-                                }
-                                else if(!seq_is_in_window(window_base_rcv,window_base_rcv+W-1,W,temp_buff.seq)){
-                                    //se il numero  non è dentro la finestra
-                                    // un ack è stato smarrito->rinvialo
-                                    if(sendto(sockfd,&(temp_buff.seq), sizeof(int),0,(struct sockaddr*)&serv_addr,sizeof(serv_addr))==-1) {//rinvio ack
-                                        handle_error_with_exit("error in sendto\n");
+                } else {//ricevuto numero sequenza in window
+                    if (temp_buff.ack >= 0) {//ack trasmesso insieme al pacchetto
+                        win_buf_snd[temp_buff.ack].acked = 1;
+                        if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &sett_timer, NULL) == -1) {
+                            handle_error_with_exit("error in timer_settime\n");
+                        }
+                    }
+                    win_buf_rcv[temp_buff.seq].received = 1;//segno pacchetto n-esimo come ricevuto
+                    strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//memorizzo il pacchetto n-esimo
+                    if (temp_buff.seq == window_base_rcv) {//se pacchetto riempie un buco
+                        // scorro la finestra fino al primo ancora non ricevuto
+                        while (win_buf_rcv[window_base_rcv].received == 1) {
+                            //dentro il buffer non deve esserci il terminatore
+                            writen(fd, win_buf_rcv[window_base_rcv].payload,
+                                   strlen(win_buf_rcv[window_base_rcv].payload));//necessario cosi non copia il terminatore
+                            //controllo su writen
+                            byte_written += strlen(win_buf_rcv[window_base_rcv].payload);
+                            win_buf_rcv[window_base_rcv].received = 0;//segna pacchetto come non ricevuto
+                            window_base_rcv = (window_base_rcv + 1) % (2 * W);//avanza la finestra con modulo di 2W
+                        }
+                        if (byte_written == byte_expected) {//fin_ack
+                            while (1) {//chiusura di connessione
+                                alarm(5);
+                                if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//aspetta il fin
+                                    alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
+                                    if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
+                                        //ignora
+                                    }
+                                    else if (temp_buff.seq == -2) {//fine trasferimento
+                                        temp_buff.ack=-2;
+                                        strcpy(temp_buff.payload,"FIN_ACK");
+                                        temp_buff.seq=-5;
+                                        if(sendto(sockfd,&(temp_buff),MAXPKTSIZE,0,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){//rinvio ack
+                                            handle_error_with_exit("error in sendto\n");
+                                        }//mando fin_ack 1 sola volta;
+                                        return byte_written;
+                                    }
+                                    else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W,temp_buff.seq)) {
+                                        //se il numero  non è dentro la finestra
+                                        // un ack è stato smarrito->rinvialo
+                                        if(sendto(sockfd,&(temp_buff.seq),sizeof(int),0,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){//rinvio ack
+                                            handle_error_with_exit("error in sendto\n");
+                                        }
                                     }
                                 }
-                            }
-                            else if(great_alarm==1) {
-                                break;
+                                else if (great_alarm == 1) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -176,6 +210,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
             great_alarm=0;
             return byte_written;
         }
+
     }
     great_alarm=0;
     return byte_written;
@@ -204,8 +239,9 @@ struct sockaddr_in send_syn_recv_ack(int sockfd,struct sockaddr_in main_servaddr
             handle_error_with_exit("error in sendto\n");
         }
         alarm(3);//alarm per ritrasmissione del syn
-        if(recvfrom(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,&len)!=-1){//ricevo il syn_ack del server
+        if(recvfrom(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,&len)!=-1){//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             // so l'indirizzo di chi contattare
+            //le recvfrom successive non sovrascrivo struct e ignoro messaggi vuoti
             alarm(0);
             printf("connessione instaurata\n");
             great_alarm=0;

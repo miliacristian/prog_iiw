@@ -294,7 +294,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     int sockfd,fd,readed;
 
     socklen_t len;
-    char commandBuffer[MAXCOMMANDLINE+1],*line;
+    char commandBuffer[MAXCOMMANDLINE+1],*line,*command;
     struct sockaddr_in addr,cliaddr;
     struct msgbuf msgbuf;
 
@@ -313,6 +313,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in read parameters into file\n");
     }
     line=malloc(sizeof(char)*MAXLINE);
+    command=line;
     memset(line,'\0',MAXLINE);
     readed=readline(fd,line,MAXLINE);
     if(readed<=0){
@@ -326,7 +327,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(close(fd)==-1){
 	handle_error_with_exit("error in close file\n");
     }
+    line=command;
     free(line);
+    command=NULL;
 
     msg_key=create_key(".",'d');
     shm_key=create_key(".",'a');

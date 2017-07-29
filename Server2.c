@@ -10,13 +10,28 @@
 //variabili globali
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
-int msgid,mtx_list_id,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
+int msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 char*dir_server;
 
 void handler(){
     great_alarm=1;
     return;
+}
+
+void timer_handler(int sig, siginfo_t *si, void *uc) {
+    (void) sig;
+    (void) si;
+    (void) uc;
+    struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
+    //int seq_numb=si->si_value.sival_int;
+    if (sendto(addr->sockfd, ((*win_buffer).payload), MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
+               sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
+        handle_error_with_exit("error in sendto\n");
+    }
+    if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
 }
 
 int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
@@ -93,9 +108,8 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
         handle_error_with_exit("error in sigaction\n");
     }
 
-    while(rtx<3){
-        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn non in finestra
-        alarm(1);//
+        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn con il syn_ack non in finestra
+        alarm(3);//
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
             alarm(0);
             printf("connessione instaurata\n");
@@ -118,11 +132,11 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
                 return;
             }
         }
-        rtx++;
-    }
-    great_alarm=0;//dopo 3 ritrasmissioni del syn_ack chiudo
-    printf("il client non è in ascolto\n");
-    return ;
+        else if(great_alarm=1){
+            great_alarm=0;//dopo 3 ritrasmissioni del syn_ack chiudo
+            printf("il client non è in ascolto\n");
+            return ;
+        }
 }
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
@@ -132,10 +146,8 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     int sockfd,value;
     char done_jobs=0;
 
-    struct mtx_list*mtx_list=(struct mtx_list*)attach_shm(mtx_list_id);
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
-
 
     memset((void *)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family=AF_INET;
@@ -149,7 +161,8 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     }
 
     for(;;){
-        lock_sem(&(mtx_prefork->sem));
+        lock_sem(&(mtx_prefork->sem));//semaforo numero processi
+        printf("mtx prefork\n");
         if(mtx_prefork->free_process>=5){
             printf("suicidio del pid %d\n",getpid());
             unlock_sem(&(mtx_prefork->sem));
@@ -158,7 +171,8 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
         mtx_prefork->free_process+=1;
         unlock_sem(&(mtx_prefork->sem));
         lock_sem(mtx);
-        value=msgrcv(msgid,&request,sizeof(struct msgbuf)-sizeof(long),2,0);
+        printf("msg queue\n");
+        value=msgrcv(msgid,&request,sizeof(struct msgbuf)-sizeof(long),0,0);
         unlock_sem(mtx);//non è un problema prendere il mutex e bloccarsi in coda
         if(value==-1){//errore msgrcv
             lock_sem(&(mtx_prefork->sem));
@@ -233,7 +247,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     int sockfd,fd,readed;
 
     socklen_t len;
-    char commandBuffer[MAXCOMMANDLINE+1],*line;
+    char commandBuffer[MAXCOMMANDLINE+1],*line,*command;
     struct sockaddr_in addr,cliaddr;
     struct msgbuf msgbuf;
 
@@ -251,6 +265,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in read parameters into file\n");
     }
     line=malloc(sizeof(char)*MAXLINE);
+    command=line;
     memset(line,'\0',MAXLINE);
     readed=readline(fd,line,MAXLINE);
     if(readed<=0){
@@ -264,7 +279,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(close(fd)==-1){
 	handle_error_with_exit("error in close file\n");
     }
+    line=command;
     free(line);
+    command=NULL;
 
     msg_key=create_key(".",'d');
     shm_key=create_key(".",'a');
@@ -292,7 +309,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in bind\n");
     }
 
-    create_pool(0);//solo per ora num_child=0
+    create_pool(4);//solo per ora num_child=0
     create_thread_pool_handler(mtx_prefork);
 
     while(1) {
@@ -303,7 +320,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         }
         printf("messaggio ricevuto server\n");
         msgbuf.addr=cliaddr;//inizializza la struct con addr e commandBuffer
-        strcpy(msgbuf.command,commandBuffer);
         msgbuf.mtype=0;
         if(msgsnd(msgid,&msgbuf,sizeof(struct msgbuf)-sizeof(long),0)==-1){
             handle_error_with_exit("error in msgsnd\n");

@@ -34,11 +34,8 @@
 
 #ifndef LINE_H
 #define LINE_H
-struct mtx_list{//definizione di struct condivise ad accesso esclusivo
-    sem_t sem;
-    int lenght;
-    char modified;
-};
+
+
 struct mtx_prefork{
     sem_t sem;
     int free_process;
@@ -46,7 +43,6 @@ struct mtx_prefork{
 struct msgbuf{
     long mtype;
     struct sockaddr_in addr;
-    char command[MAXCOMMANDLINE];//ancora da definire
 };
 
 struct select_param{
