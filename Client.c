@@ -33,10 +33,10 @@ void handler(int signum){
     return;
 }
 int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi la get con connessione già instaurata
-    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_client.window;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
     int pkt_fly=0;
     char value;
-    double timer=param_client.timer_ms,loss_prob=param_client.loss_prob;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2*W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -45,7 +45,6 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
-    printf("%d\n",W);
     for (int i = 0; i < 2*W; i++){
         win_buf_snd[i].seq_numb=i;
     }
@@ -89,13 +88,14 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         printf("%d\n",errno);
         handle_error_with_exit("error in timer_settime\n");
     }
+    printf("timer success\n");
     seq_to_send=(seq_to_send+1)%(2*W);
 
     while(1) {
         alarm(5);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr*)&serv_addr, &len)!=-1) {//risposta del server
             if(&temp_buff!=NULL) {
-                if (temp_buff.ack ==-1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
+                if (temp_buff.ack == -1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
                     alarm(0);
                     temp_buff.seq=-5;
                     temp_buff.ack=0;
@@ -131,7 +131,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         }
         else if(great_alarm==1){//sono passati n secondi e senza risposta dal server
             great_alarm=0;
-		    printf("il server non risponde più\n");
+		    printf("troppe ritrasmissioni\n");
             return byte_written;
         }
     }//ho una dimensione del file
@@ -374,7 +374,6 @@ int main(int argc,char*argv[]) {
 	handle_error_with_exit("error in read line\n");
     }
     param_client.window=parse_integer_and_move(&line);
-    printf("%d\n",param_client.window);
     skip_space(&line);
     param_client.loss_prob=parse_double_and_move(&line);
     skip_space(&line);

@@ -58,14 +58,14 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
     strcpy(command,temp_buff.payload);
     command+=4;//
     if(check_if_file_exist(command)){
-        temp_buff.
+        temp_buff.payload
     }
     else{//il file non esiste
         strcpy(temp_buff.payload,"il file non esiste");
         temp_buff.ack=-1;//errore
         temp_buff.seq=seq_to_send;
-        win_buf_snd[seq_to_send]
-        sendto();
+        strcpy(win_buf_snd[seq_to_send].payload,temp_buff.payload);
+        sendto(,&temp_buff,);
         //commit 
     }
 	return 0;
