@@ -301,11 +301,16 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     memset((void *)&addr, 0, sizeof(addr));
     addr.sin_family=AF_INET;
     addr.sin_port=htons(SERVER_PORT);
-    addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
+    addr.sin_addr.s_addr=htonl(127.0.0.1);
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) { // crea il socket
         handle_error_with_exit("error in socket create\n");
     }
-    if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+int reuse=1;
+	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,(const char*)&reuse,sizeof(reuse))==-1){
+	printf("wsdadf\n");
+}
+	
+    if (bind(sockfd,(struct sockaddr*)&addr,sizeof(addr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
 
@@ -320,7 +325,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         }
         printf("messaggio ricevuto server\n");
         msgbuf.addr=cliaddr;//inizializza la struct con addr e commandBuffer
-        msgbuf.mtype=0;
+        msgbuf.mtype=1;
         if(msgsnd(msgid,&msgbuf,sizeof(struct msgbuf)-sizeof(long),0)==-1){
             handle_error_with_exit("error in msgsnd\n");
         }
