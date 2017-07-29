@@ -20,17 +20,24 @@ void handler(){
 int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_list");
+	return 0;
 }
 
 int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_put");
+	return 0;
 }
 
 int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+	printf("server execute_get");
+	return 0;
 }
+
 void initialize_mtx(sem_t*mtx){
     if(sem_init(mtx,1,1)==-1){
         handle_error_with_exit("error in sem_init\n");
@@ -53,14 +60,8 @@ void initialize_mtx_list(struct mtx_list*mtx,char*path){
     return;
 }
 
-void send_list_to_client(char*list,int sockfd,struct sockaddr_in cliaddr,int lenght){
-    if(sendto(sockfd,list,lenght,0,(struct sockaddr*)&cliaddr,sizeof(cliaddr))<0){
-        handle_error_with_exit("error in send_list\n");
-    }
-    return;
-}
-
-void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){
+void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi dalla coda il messaggio di syn
+    //e rispondi al client con syn_ack
     char rtx=0;
     socklen_t len=sizeof(request.addr);
     int seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
@@ -100,7 +101,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){
     }
 
     while(rtx<3){
-        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn
+        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn non in finestra
         alarm(1);//
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
             alarm(0);
@@ -255,7 +256,7 @@ void*thread_list_job(void*arg){//thread che legge i messaggi di tipo 1 dalla cod
             printf("lista non modificata\n");
             len_list=mtx->lenght;
             unlock_sem(&(mtx->sem));
-            send_list_to_client(list,sockfd,msg.addr,len_list);
+            //send_list_to_client(list,sockfd,msg.addr,len_list);
         }
         else{
             printf("lista modificata\n");
@@ -266,7 +267,7 @@ void*thread_list_job(void*arg){//thread che legge i messaggi di tipo 1 dalla cod
                 free(list);//serve solo la prima volta
             }
             list=files_in_dir(dir_server,len_list);
-            send_list_to_client(list,sockfd,msg.addr,len_list);//con selective repeat
+            //send_list_to_client(list,sockfd,msg.addr,len_list);//con selective repeat
         }
     }
     return NULL;

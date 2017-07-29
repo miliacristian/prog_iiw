@@ -23,6 +23,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
 }
 void handler(){
+    printf("alarm expired\n");
     great_alarm=1;
     return;
 }
@@ -56,18 +57,18 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
-    if (sigemptyset(&sa.sa_mask) == -1) {
+    sa_timeout.sa_sigaction =handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
-    if (sigaction(SIGALRM, &sa, NULL) == -1) {
+    if (sigaction(SIGALRM, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
 
     strcpy(temp_buff.payload,filename);
     temp_buff.seq=0;
     temp_buff.ack=-5;//ack=-5 solo seq e payload
-    if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
+    if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
     pkt_fly++;
@@ -78,7 +79,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
 
     while(1) {
         alarm(3);
-        if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, &serv_addr, &len)!=-1) {//risposta del server
+        if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr*)&serv_addr, &len)!=-1) {//risposta del server
             if(temp_buff.ack==-1){//
                 alarm(0);
                 printf("%s\n",temp_buff.payload);
@@ -89,7 +90,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
             }
             strcpy(temp_buff.payload,"start");
             temp_buff.seq=seq_to_send;
-            if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
+            if(sendto(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
                 handle_error_with_exit("error in sendto\n");//notifica il server che può iniziare a mandare il file
             }
             if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL)==-1){
@@ -180,12 +181,13 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
 }
 
 int list_command(int sockfd,struct sockaddr_in serv_addr){//svolgi la list con connessione già instaurata
-
+	return 0;
 }
 int put_command(int sockfd,struct sockaddr_in serv_addr,char*filename){
-
+	return 0;
 }
-struct sockaddr_in syn_ack(int sockfd,struct sockaddr_in main_servaddr){
+struct sockaddr_in send_syn_recv_ack(int sockfd,struct sockaddr_in main_servaddr){//client manda messaggio syn
+// e server risponde con ack cosi il client sa chi contattare per mandare i messaggi di comando
     struct sigaction sa;
     socklen_t len=sizeof(main_servaddr);
     sa.sa_sigaction = handler;
@@ -196,10 +198,13 @@ struct sockaddr_in syn_ack(int sockfd,struct sockaddr_in main_servaddr){
     if (sigaction(SIGALRM, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    while(rtx<6){//scaduto 5 volte il timer il server non risponde
-        sendto(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,sizeof(main_servaddr));//mando syn al processo server principale
+    while(rtx<2){//scaduto 5 volte il timer il server non risponde
+        if(sendto(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,sizeof(main_servaddr)==-1)) {//mando syn al processo server principale
+            handle_error_with_exit("error in sendto\n");
+        }
         alarm(3);//alarm per ritrasmissione del syn
-        if(recvfrom(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,&len)!=-1){
+        if(recvfrom(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,&len)!=-1){//ricevo il syn_ack del server
+            // so l'indirizzo di chi contattare
             alarm(0);
             printf("connessione instaurata\n");
             great_alarm=0;
@@ -208,11 +213,12 @@ struct sockaddr_in syn_ack(int sockfd,struct sockaddr_in main_servaddr){
         rtx++;
     }
     great_alarm=0;
-    printf("il server non è in ascolto\n");
-    return NULL;
+    handle_error_with_exit("il server non è in ascolto\n");
+    return main_servaddr;
 }
 
 void*thread_job(void*arg){
+	(void)arg;
     //waitpid dei processi del client
     pid_t pid;
     while(1) {
@@ -246,7 +252,7 @@ void client_list_job(){
     if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
        handle_error_with_exit("error in bind\n");
     }
-    serv_addr=syn_ack(sockfd,serv_addr);
+    serv_addr=send_syn_recv_ack(sockfd,serv_addr);
     list_command(sockfd,serv_addr);
 	exit(EXIT_SUCCESS);
 }
@@ -270,7 +276,7 @@ void client_get_job(char*filename){
     if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    serv_addr=syn_ack(sockfd,serv_addr);
+    serv_addr=send_syn_recv_ack(sockfd,serv_addr);
     get_command(sockfd,serv_addr,filename);
 	exit(EXIT_SUCCESS);
 }
@@ -294,7 +300,7 @@ void client_put_job(char*filename){//upload e filename già verificato
     if (bind(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    serv_addr=syn_ack(sockfd,serv_addr);
+    serv_addr=send_syn_recv_ack(sockfd,serv_addr);
     put_command(sockfd,serv_addr,filename);
 	exit(EXIT_SUCCESS);
 }

@@ -43,7 +43,7 @@ void reset_timer(struct itimerspec *its) {
 
 
 
-void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
+/*void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
     connection_failed = 1;
     return;
 }
@@ -280,4 +280,4 @@ struct temp_buf initialize_put_file(int sockfd, struct sockaddr_in dest_addr, ch
     temp_buf.seq_numb = -1;
     strcpy(temp_buf.payload,"Server unreachable");
     return temp_buf;
-}
+}*/
