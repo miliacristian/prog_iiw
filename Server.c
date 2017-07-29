@@ -18,15 +18,18 @@ void handler(){
 }
 
 int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
-
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 }
 
 int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
-
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 }
 
 int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
-
+    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 }
 void initialize_mtx(sem_t*mtx){
     if(sem_init(mtx,1,1)==-1){
@@ -60,7 +63,7 @@ void send_list_to_client(char*list,int sockfd,struct sockaddr_in cliaddr,int len
 void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){
     char rtx=0;
     socklen_t len=sizeof(request.addr);
-    int byte_written=0,byte_readed,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
+    int seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
     int pkt_fly=0;
     char value;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
