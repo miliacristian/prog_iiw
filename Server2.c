@@ -253,7 +253,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     int sockfd,fd,readed;
 
     socklen_t len;
-    char commandBuffer[MAXCOMMANDLINE+1],*line,*command;
+    char commandBuffer[MAXCOMMANDLINE+1],*line,*command,localname[80];
     struct sockaddr_in addr,cliaddr;
     struct msgbuf msgbuf;
 
@@ -266,7 +266,10 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
     dir_server=argv[1];
     check_if_dir_exist(dir_server);
-    fd=open("/home/daniele/parameter.txt",O_RDONLY);
+    strcpy(localname,"");
+    strcpy(localname,getenv("HOME"));
+    strcat(localname,"/parameter.txt");
+    fd=open(localname,O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("error in read parameters into file\n");
     }

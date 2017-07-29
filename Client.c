@@ -346,7 +346,7 @@ struct select_param param_client ;
 char*dir_client;
 
 int main(int argc,char*argv[]) {
-    char *filename,*command,conf_upload[4],buff[MAXPKTSIZE+1],*line;
+    char *filename,*command,conf_upload[4],buff[MAXPKTSIZE+1],*line,localname[80];
     int   path_len,fd;
     socklen_t len;
     pid_t pid;
@@ -357,7 +357,10 @@ int main(int argc,char*argv[]) {
     }
     dir_client=argv[1];
     check_if_dir_exist(dir_client);
-    fd=open("/home/daniele/parameter.txt",O_RDONLY);
+    strcpy(localname,"");
+    strcpy(localname,getenv("HOME"));
+    strcat(localname,"/parameter.txt");
+    fd=open(localname,O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("error in read parameters into file\n");
     }
