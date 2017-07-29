@@ -22,6 +22,7 @@
 #include <zconf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <wait.h>
 #include <zconf.h>
 
@@ -30,7 +31,7 @@
 #define MAXFILENAME 255
 #define MAXPKTSIZE 1468//no packet fragmentation
 #define MAXLINE 1024
-#define SERVER_PORT 5193
+#define SERVER_PORT 5194
 
 #ifndef LINE_H
 #define LINE_H

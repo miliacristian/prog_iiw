@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "receiver.h"
 #include "sender2.h"
+#include <time.h>
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int great_alarm=0;//se diventa 1 è scattato il timer grande
@@ -26,16 +27,16 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
     return;
 }
-void handler(){
+void handler(int signum){
     printf("alarm expired\n");
     great_alarm=1;
     return;
 }
 int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi la get con connessione già instaurata
-    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_client.window;//primo pacchetto della finestra->primo non riscontrato
     int pkt_fly=0;
     char value;
-    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+    double timer=param_client.timer_ms,loss_prob=param_client.loss_prob;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2*W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -44,6 +45,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
+    printf("%d\n",W);
     for (int i = 0; i < 2*W; i++){
         win_buf_snd[i].seq_numb=i;
     }
@@ -51,9 +53,9 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     socklen_t len=sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, 1, 10);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer, 1, 4);//inizializza struct necessaria per scegliere il timer
     reset_timer(&rst_timer);//inizializza struct necessaria per resettare il timer
-
+	printf("prova\n");
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
@@ -73,8 +75,8 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     if (sigaction(SIGALRM, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-
-    strcpy(temp_buff.payload,filename);
+    strcpy(temp_buff.payload,"get ");
+    strcat(temp_buff.payload,filename);
     temp_buff.seq=0;
     temp_buff.ack=-5;//ack=-5 solo seq e payload
     strcpy(win_buf_snd[0].payload,temp_buff.payload);
@@ -82,7 +84,9 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
     pkt_fly++;
-    if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL)==-1){
+    errno=0;
+    if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer,NULL)==-1){
+        printf("%d\n",errno);
         handle_error_with_exit("error in timer_settime\n");
     }
     seq_to_send=(seq_to_send+1)%(2*W);
@@ -91,7 +95,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         alarm(5);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr*)&serv_addr, &len)!=-1) {//risposta del server
             if(&temp_buff!=NULL) {
-                if (temp_buff.ack == -1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
+                if (temp_buff.ack ==-1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
                     alarm(0);
                     temp_buff.seq=-5;
                     temp_buff.ack=0;
@@ -127,7 +131,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         }
         else if(great_alarm==1){//sono passati n secondi e senza risposta dal server
             great_alarm=0;
-		    printf("troppe ritrasmissioni\n");
+		    printf("il server non risponde più\n");
             return byte_written;
         }
     }//ho una dimensione del file
@@ -297,7 +301,6 @@ void client_get_job(char*filename){
 	printf("client get job\n");
     struct sockaddr_in serv_addr,cliaddr;
     int sockfd;
-    printf("client list job\n");
     memset((void *)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -371,6 +374,7 @@ int main(int argc,char*argv[]) {
 	handle_error_with_exit("error in read line\n");
     }
     param_client.window=parse_integer_and_move(&line);
+    printf("%d\n",param_client.window);
     skip_space(&line);
     param_client.loss_prob=parse_double_and_move(&line);
     skip_space(&line);

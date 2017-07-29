@@ -16,7 +16,7 @@ char*dir_server;
 
 void handler(){
     great_alarm=1;
-    printf("timeout");
+    printf("timeout\n");
     return;
 }
 
@@ -35,24 +35,38 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
 }
 
-int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
-	printf("server execute_list");
+	printf("server execute_list\n");
 	return 0;
 }
 
-int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
-	printf("server execute_put");
+	printf("server execute_put\n");
 	return 0;
 }
 
-int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb){
+int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
+	//verifica prima che il file esiste poi inizia a mandare il file
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
-	printf("server execute_get");
+	printf("server execute_get\n");
+    char command[MAXPKTSIZE];
+    strcpy(command,temp_buff.payload);
+    command+=4;
+    if(check_if_file_exist(command)){
+        temp_buff.
+    }
+    else{//il file non esiste
+        strcpy(temp_buff.payload,"il file non esiste");
+        temp_buff.ack=-1;//errore
+        temp_buff.seq=seq_to_send;
+        win_buf_snd[seq_to_send]
+        sendto();
+    }
 	return 0;
 }
 
@@ -120,16 +134,17 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
             printf("connessione instaurata\n");
             great_alarm=0;
             window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
+		printf("%s\n",temp_buff.payload);
             if(strncmp(temp_buff.payload,"list",4)==0){
-                execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
                 return;
             }
             else if(strncmp(temp_buff.payload,"put",3)==0){
-                execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
                 return;
             }
             else if(strncmp(temp_buff.payload,"get",3)==0){
-                execute_get(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb);
+                execute_get(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
                 return;
             }
             else{

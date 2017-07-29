@@ -9,15 +9,17 @@ char connection_failed = 0;
 
 void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;
+    memset(&te,0,sizeof(struct sigevent));
     int sigNo = SIGRTMIN;
     te.sigev_notify = SIGEV_SIGNAL;//quando scade il timer manda il segnale specificato
     te.sigev_signo = sigNo;//manda il segnale sigrtmin
     for (int i = 0; i < 2 * W; i++) {
         te.sigev_value.sival_ptr = &(win_buf[i]);//associo ad ogni timer l'indirizzo della struct i-esima
-        if (timer_create(CLOCK_PROCESS_CPUTIME_ID, &te, &(win_buf[i].time_id)) ==
-            -1) {//inizializza nella struct il timer i-esimo
+        timer_t* ptr = &(win_buf[i].time_id);
+        if (timer_create(CLOCK_PROCESS_CPUTIME_ID, &te,ptr) == -1) {//inizializza nella struct il timer i-esimo
             handle_error_with_exit("error in timer_create\n");
         }
+        //printf("timer id is 0x%lx\n",(long)*ptr);
     }
     return;
 }
@@ -37,10 +39,6 @@ void reset_timer(struct itimerspec *its) {
     its->it_value.tv_nsec = 0;
     return;
 }
-
-
-
-
 
 
 /*void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
