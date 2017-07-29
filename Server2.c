@@ -56,7 +56,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
 	printf("server execute_get\n");
     char command[MAXPKTSIZE];
     strcpy(command,temp_buff.payload);
-    command+=4;
+    command+=4;//
     if(check_if_file_exist(command)){
         temp_buff.
     }
