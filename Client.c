@@ -68,7 +68,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     strcpy(temp_buff.payload,filename);
     temp_buff.seq=0;
     temp_buff.ack=-5;//ack=-5 solo seq e payload
-    if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//richiesta del client
+    if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
     pkt_fly++;
@@ -80,7 +80,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     while(1) {
         alarm(3);
         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr*)&serv_addr, &len)!=-1) {//risposta del server
-            if(temp_buff.ack==-1){//
+            if(temp_buff.ack==-1){//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina 
                 alarm(0);
                 printf("%s\n",temp_buff.payload);
                 return byte_written;
@@ -100,6 +100,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         }
         else if(great_alarm==1){//dopo tot ritrasmissioni ancora il client non riceve nulla
             great_alarm=0;
+		printf("troppe ritrasmissioni\n");
             return byte_written;
         }
     }
@@ -171,7 +172,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
             }
         }
         else if (great_alarm==1){
-            printf("il sender non manda più nulla o errore interno\n");
+            printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm=0;
             return byte_written;
         }
@@ -198,8 +199,8 @@ struct sockaddr_in send_syn_recv_ack(int sockfd,struct sockaddr_in main_servaddr
     if (sigaction(SIGALRM, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    while(rtx<2){//scaduto 5 volte il timer il server non risponde
-        if(sendto(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,sizeof(main_servaddr)==-1)) {//mando syn al processo server principale
+    while(rtx<5){//scaduto 5 volte il timer il server non risponde
+        if(sendto(sockfd,NULL,0,0,(struct sockaddr *)&main_servaddr,sizeof(main_servaddr))<0) {//mando syn al processo server principale
             handle_error_with_exit("error in sendto\n");
         }
         alarm(3);//alarm per ritrasmissione del syn
