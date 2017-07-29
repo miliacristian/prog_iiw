@@ -16,6 +16,7 @@ char*dir_server;
 
 void handler(){
     great_alarm=1;
+    printf("timeout");
     return;
 }
 
@@ -27,7 +28,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     //int seq_numb=si->si_value.sival_int;
     if (sendto(addr->sockfd, ((*win_buffer).payload), MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
                sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
-        handle_error_with_exit("error in sendto\n");
+        handle_error_with_exit("error in sendto retrasmission\n");
     }
     if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
@@ -100,16 +101,20 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
-    if (sigemptyset(&sa.sa_mask) == -1) {
+    sa_timeout.sa_sigaction = handler;//chiama handler quando scade un alarm
+    if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
-    if (sigaction(SIGALRM, &sa, NULL) == -1) {
+    if (sigaction(SIGALRM, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
 
-        sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in));//rispondo al syn con il syn_ack non in finestra
-        alarm(3);//
+        if (sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in))==-1) {
+          handle_error_with_exit("error in sendto SIN_ACK");
+        }//rispondo al syn con il syn_ack non in finestra
+        printf("Syn ack sent\n");
+        alarm(3);
+        printf("alarm avviato\n" );
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
             alarm(0);
             printf("connessione instaurata\n");
@@ -132,11 +137,12 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
                 return;
             }
         }
-        else if(great_alarm=1){
+        else if(great_alarm==1){
             great_alarm=0;//dopo 3 ritrasmissioni del syn_ack chiudo
             printf("il client non è in ascolto\n");
             return ;
         }
+        printf("a caso\n" );
 }
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
@@ -260,7 +266,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
     dir_server=argv[1];
     check_if_dir_exist(dir_server);
-    fd=open("/home/cristian/Scrivania/parameter.txt",O_RDONLY);
+    fd=open("/home/daniele/parameter.txt",O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("error in read parameters into file\n");
     }
@@ -291,6 +297,10 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     mtx_prefork_id=get_id_shared_mem(mtx_fork_key,sizeof(struct mtx_prefork));
     child_mtx_id=get_id_shared_mem(mtx_key,sizeof(sem_t));
     msgid=get_id_msg_queue(msg_key);//crea coda di messaggi id globale
+    msgctl(msgid, IPC_RMID, NULL);
+    printf("coda cancellata\n" );
+    msgid=get_id_msg_queue(msg_key);
+    printf("coda creata da capo\n");
 
     mtx=(sem_t*)attach_shm(child_mtx_id);
     mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
@@ -301,21 +311,17 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     memset((void *)&addr, 0, sizeof(addr));
     addr.sin_family=AF_INET;
     addr.sin_port=htons(SERVER_PORT);
-    addr.sin_addr.s_addr=htonl(127.0.0.1);
+    addr.sin_addr.s_addr=htonl(INADDR_ANY);
     if ((sockfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) { // crea il socket
         handle_error_with_exit("error in socket create\n");
     }
-int reuse=1;
-	if(setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,(const char*)&reuse,sizeof(reuse))==-1){
-	printf("wsdadf\n");
-}
-	
+
     if (bind(sockfd,(struct sockaddr*)&addr,sizeof(addr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
 
-    create_pool(4);//solo per ora num_child=0
-    create_thread_pool_handler(mtx_prefork);
+    create_pool(1);//solo per ora num_child=0
+    //create_thread_pool_handler(mtx_prefork);
 
     while(1) {
         len=sizeof(cliaddr);

@@ -357,7 +357,7 @@ int main(int argc,char*argv[]) {
     }
     dir_client=argv[1];
     check_if_dir_exist(dir_client);
-    fd=open("/home/cristian/Scrivania/parameter.txt",O_RDONLY);
+    fd=open("/home/daniele/parameter.txt",O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("error in read parameters into file\n");
     }
@@ -413,7 +413,7 @@ int main(int argc,char*argv[]) {
                             continue;
                     }
                     else if(strncmp(conf_upload,"y",1)==0){
-                   
+
                         printf("confirm\n");
 			if ((pid = fork()) == -1) {
             			handle_error_with_exit("error in fork\n");

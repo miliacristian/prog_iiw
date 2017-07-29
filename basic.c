@@ -104,7 +104,6 @@ int get_id_msg_queue(key_t key){//funzione che crea la coda di messaggi
     if((msgid=msgget(key,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in msgget\n");
     };
-    printf("msgid %d\n",msgid);
     return msgid;
 }
 int get_id_shared_mem(key_t shm_key,int size){
@@ -112,7 +111,6 @@ int get_id_shared_mem(key_t shm_key,int size){
     if((shmid=shmget(shm_key,size,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in get_id_shm\n");
     }
-    printf("shmid %d\n",shmid);
     return shmid;
 }
 void*attach_shm(int shmid){
@@ -128,7 +126,6 @@ key_t create_key(char*k,char k1){//funzione che crea la chiave per la msgqueue
     if(key==-1){
         handle_error_with_exit("error in ftok\n");
     }
-    printf("key %d\n",key);
     return key;
 }
 
