@@ -132,7 +132,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                                 }
                                 printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
                             }
-                            else if(temp_buff.ack==-2){
+                            else if(temp_buff.seq==-2){
                                 printf("segmento di FIN ricevuto");
                                 return byte_written;
                             }
