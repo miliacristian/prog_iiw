@@ -105,8 +105,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
-                printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                if (temp_buff.ack == -1) {//viene interrotta ad ogni ritrasmissione del selective ma dopo alarm secondi viene interrotta dal segnale 			sigalrm e termina
+
+                if (temp_buff.ack == -1) {
+                    printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     reset_timeout_timer(timer_id, &rst_timer);
                     temp_buff.seq = -5;
                     temp_buff.ack = 0;

@@ -60,9 +60,15 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
 	printf("server execute_get\n");
     char *command1,*command2,dim[11];
     socklen_t len=sizeof(cli_addr);
-    command1=alloca(sizeof(MAXPKTSIZE));
+    command1=malloc(sizeof(char)*MAXPKTSIZE);
+    command2=malloc(sizeof(char)*MAXPKTSIZE);
+    if(command1==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    if(command2==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
     memset(command1,'\0',MAXPKTSIZE);
-    command2=alloca(sizeof(MAXPKTSIZE));
     memset(command2,'\0',MAXPKTSIZE);
     printf("dir server %s\n",dir_server);
     strcpy(command2,dir_server);
