@@ -124,6 +124,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         temp_buff.seq=0;
         strcpy(temp_buff.payload,"il file non esiste\n");
         strcpy(win_buf_snd[0].payload,temp_buff.payload);
+        //return;
         if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&cli_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }

@@ -6,7 +6,7 @@
 #include "sender2.h"
 
 //variabili globali
-struct addr *addr = NULL;
+/*struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int msgid,mtx_list_id,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
@@ -385,4 +385,4 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         }
     }
     return EXIT_SUCCESS;
-}
+}*/

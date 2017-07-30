@@ -5,13 +5,12 @@
 #include "receiver.h"
 #include "sender2.h"
 
-char connection_failed = 0;
 void make_timeout_timer(timer_t* timer_id){
     struct sigevent te;
-    memset(&te,0,sizeof(struct sigevent));
     int sigNo = SIGRTMIN+1;
     te.sigev_notify = SIGEV_SIGNAL;//quando scade il timer manda il segnale specificato
     te.sigev_signo = sigNo;
+    te.sigev_value.sival_int=12;
     if (timer_create(CLOCK_REALTIME, &te,timer_id) == -1) {//inizializza nella struct il timer i-esimo
         handle_error_with_exit("error in timer_create\n");
     }

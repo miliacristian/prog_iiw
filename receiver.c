@@ -5,17 +5,9 @@
 #include "receiver.h"
 #include "sender2.h"
 
-char connect_status=1;
-void signal_handler(int signum, siginfo_t *si,void *uc){
-	(void)signum;
-	(void)si;
-	(void)uc;
-    connect_status=0;
-    return;
-}
 
 
-int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_addr){//ritorna il numero di byte
+/*int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_addr){//ritorna il numero di byte
     //buff[i]==buffer che contiene il pacchetto iesimo
     int byte_written=0,window_base=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
@@ -25,7 +17,7 @@ int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_ad
     socklen_t len=sizeof(dest_addr);
     
     struct sigaction sa;
-    sa.sa_sigaction =signal_handler;
+    //sa.sa_sigaction =signal_handler;
     if(sigemptyset(&sa.sa_mask)==-1){
 	handle_error_with_exit("error in sigempty set\n");
     }
@@ -63,7 +55,7 @@ int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_ad
                         window_base=(window_base+1)%(2*W);//avanza la finestra con modulo di 2W
                     }
                     if(byte_written==byte_expected){
-                        while(connect_status==1){//chiusura di connessione
+                        //while(connect_status==1){//chiusura di connessione
                             alarm(5);
                             if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&dest_addr,&len)!=-1){
                                 alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
@@ -92,4 +84,4 @@ int file_receiver(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_ad
         }
     }
     return byte_written;
-}
+}*/

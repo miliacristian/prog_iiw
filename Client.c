@@ -44,7 +44,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0, fd, byte_expected, seq_to_send = 0, window_base_snd = 0, ack_numb = 0, window_base_rcv = 0, W = param_client.window;//primo pacchetto della finestra->primo non riscontrato
     int pkt_fly = 0;
-    char value;
+    char value,*pathname;//fare la free di pathname
     double timer = param_client.timer_ms, loss_prob = param_client.loss_prob;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2 * W];
@@ -76,7 +76,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_flags=SA_SIGINFO;
+    /*sa_timeout.sa_flags=SA_SIGINFO;
     sa_timeout.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN+
 
     if (sigemptyset(&sa_timeout.sa_mask) == -1) {
@@ -84,7 +84,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }
     if (sigaction(SIGRTMIN+1, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
-    }
+    }*/
 
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
@@ -103,9 +103,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         //alarm timeout
         printf("prova\n");
         set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);
+        //sleep(7);
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
-
                 if (temp_buff.ack == -1) {
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     reset_timeout_timer(timer_id, &rst_timer);
@@ -184,7 +184,15 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     //alarm(0);
     reset_timeout_timer(timer_id, &rst_timer);//per precauzione resetto i timer
     printf("inizio ricezione file\n");
-    fd = open(filename, O_WRONLY || O_CREAT, 0666);
+    pathname=malloc(sizeof(char)*MAXFILENAME);
+    if(pathname==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    strcpy(pathname,dir_client);
+    printf("%s\n",dir_client);
+    strcat(pathname,filename);
+    printf("%s\n",pathname);
+    fd = open(pathname, O_WRONLY | O_CREAT, 0666);
     if (fd == -1) {
         handle_error_with_exit("error in open\n");
     }
