@@ -58,14 +58,20 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
     int byte_readed=0,fd,byte_send,W=param_serv.window,byte_left;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_get\n");
-    char *command,*command2,dim[11];
+    char *command1,*command2,dim[11];
     socklen_t len=sizeof(cli_addr);
-    command=alloca(sizeof(MAXPKTSIZE));
+    command1=alloca(sizeof(MAXPKTSIZE));
+    memset(command1,'\0',MAXPKTSIZE);
     command2=alloca(sizeof(MAXPKTSIZE));
+    memset(command2,'\0',MAXPKTSIZE);
+    printf("dir server %s\n",dir_server);
     strcpy(command2,dir_server);
-    strcat(command,temp_buff.payload);
-    command+=5;//perchè 5 e non 4??
-    strcat(command2,command);
+    printf("command2: %s\n",command2);
+    strncpy(command1,temp_buff.payload+4,strlen(temp_buff.payload)-4);
+    printf("command %s\n",command1);
+    printf("command2 %s\n",command2);
+    strcat(command2,command1);
+    printf("print dopo concat di command 2 %s\n",command2);
     printf("il file %s esiste?\n",command2);
     if(check_if_file_exist(command2)){
         byte_left=get_file_size(command2);
