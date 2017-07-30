@@ -39,41 +39,43 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
 }
 
-int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
+int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_list\n");
 	return 0;
 }
 
-int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
+int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_put\n");
 	return 0;
 }
 
-int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
+int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
 	//verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     int byte_readed=0,fd,byte_send,W=param_serv.window,byte_left;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_get\n");
-    char command[MAXPKTSIZE],dim[11];
+    char *command,*command2,dim[11];
     socklen_t len=sizeof(cli_addr);
-
-    strcpy(command,temp_buff.payload);
-    strcat(command,dir_server);//concatenazione nome del file e path
-    command+=4;
-    printf("il file %s esiste?\n",command);
-    if(check_if_file_exist(command)){
-        byte_left=get_file_size(command);
+    command=alloca(sizeof(MAXPKTSIZE));
+    command2=alloca(sizeof(MAXPKTSIZE));
+    strcpy(command2,dir_server);
+    strcat(command,temp_buff.payload);
+    command+=5;//perchè 5 e non 4??
+    strcat(command2,command);
+    printf("il file %s esiste?\n",command2);
+    if(check_if_file_exist(command2)){
+        byte_left=get_file_size(command2);
         printf("dimensione del file %d\n",byte_left);
         sprintf(dim, "%d",byte_left);
         strcpy(temp_buff.payload,dim);//scrivo dentro tem_buff la dimensione del file
         temp_buff.seq=0;
         temp_buff.ack=0;
         strcpy(win_buf_snd[seq_to_send].payload,temp_buff.payload);
-        win_buf_snd[seq_to_send].seq=temp_buff.seq;
+        win_buf_snd[seq_to_send].seq_numb=temp_buff.seq;
         //copio dentro la finestra temp buffer
         if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&cli_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
@@ -86,7 +88,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         //wait for start send file
         while(1){
             alarm(5);
-            if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&serv_addr, &len)!=-1){
+            if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&cli_addr, &len)!=-1){
                 if(&temp_buff!=NULL) {//start ricevuto
                     alarm(0);
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);

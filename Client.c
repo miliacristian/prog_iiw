@@ -5,6 +5,8 @@
 #include "receiver.h"
 #include "sender2.h"
 #include <time.h>
+
+
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int great_alarm=0;//se diventa 1 è scattato il timer grande
@@ -34,10 +36,10 @@ void handler(int signum){
     return;
 }
 int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi la get con connessione già instaurata
-    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written=0,fd,byte_expected,seq_to_send =0,window_base_snd=0,ack_numb=0,window_base_rcv=0,W=param_client.window;//primo pacchetto della finestra->primo non riscontrato
     int pkt_fly=0;
     char value;
-    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
+    double timer=param_client.timer_ms,loss_prob=param_client.loss_prob;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2*W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -53,7 +55,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     socklen_t len=sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, 1, 4);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer,4,0);//inizializza struct necessaria per scegliere il timer
     reset_timer(&rst_timer);//inizializza struct necessaria per resettare il timer
 
     temp_addr.sockfd = sockfd;
@@ -68,7 +70,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_sigaction =handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    sa_timeout.sa_handler =handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
     if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
@@ -83,10 +85,10 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
     if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&serv_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
+    printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
     if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer,NULL)==-1){
         handle_error_with_exit("error in timer_settime\n");
     }
-    printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
     seq_to_send=(seq_to_send+1)%(2*W);
 
     while(1) {
@@ -120,7 +122,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
                     }
                     window_base_snd = (window_base_snd + 1) % (2 * W);//avanzo finestra ora siamo a window base=1
                     //creo messaggio start
-                    strcpy(temp_buff.payload, "START");//dati
+                    strcpy(temp_buff.payload,"START");//dati
                     temp_buff.seq = seq_to_send;//1
                     temp_buff.ack = 0;//0
                     strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);
@@ -240,7 +242,8 @@ struct sockaddr_in send_syn_recv_ack(int sockfd,struct sockaddr_in main_servaddr
 // e server risponde con ack cosi il client sa chi contattare per mandare i messaggi di comando
     struct sigaction sa;
     socklen_t len=sizeof(main_servaddr);
-    sa.sa_sigaction = handler;
+    sa.sa_flags=0;
+    sa.sa_handler = handler;
     char rtx=0;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
@@ -472,12 +475,6 @@ int main(int argc,char*argv[]) {
             		client_list_job();//i figli non ritorna mai
         	}
         }
-        //make_request_to_server(sockfd, servaddr, command, filename);//fai la richiesta al server
-        //ogni nuova richiesta viene mandata al main process server
     }
     return EXIT_SUCCESS;
-    //il client dopo aver verificato la stringa la manda:
-    //list senza spazi
-    //get 1 spazio nome file oppure put 1 spazio nome file
-    //e l'eventuale dimensione del file dove la mettiamo??
 }
