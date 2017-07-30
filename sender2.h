@@ -46,6 +46,9 @@ struct addr{
 #endif
 
 void make_timers(struct window_snd_buf*win_buf,int W);
+void make_timeout_timer(timer_t* timer_id);
+void set_timeout_timer(timer_t timer_id, struct itimerspec *its, int sec, long msec);
+void reset_timeout_timer(timer_t timer_id, struct itimerspec *its);
 void set_timer(struct itimerspec*its,int sec,long msec);
 void reset_timer(struct itimerspec*its);
 void timer_handler(int sig, siginfo_t *si,void *uc);

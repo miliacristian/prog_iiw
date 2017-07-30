@@ -6,6 +6,30 @@
 #include "sender2.h"
 
 char connection_failed = 0;
+void make_timeout_timer(timer_t* timer_id){
+    struct sigevent te;
+    memset(&te,0,sizeof(struct sigevent));
+    int sigNo = SIGRTMIN+1;
+    te.sigev_notify = SIGEV_SIGNAL;//quando scade il timer manda il segnale specificato
+    te.sigev_signo = sigNo;
+    if (timer_create(CLOCK_REALTIME, &te,timer_id) == -1) {//inizializza nella struct il timer i-esimo
+        handle_error_with_exit("error in timer_create\n");
+    }
+    //printf("timer id is 0x%lx\n",(long)*ptr);
+
+}
+void set_timeout_timer(timer_t timer_id, struct itimerspec *its, int sec, long msec){
+    set_timer(&its, sec, msec);
+    if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
+
+void reset_timeout_timer(timer_t timer_id, struct itimerspec *its){
+    if (timer_settime(timer_id, 0, its, NULL) == -1) {//resetto timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
 
 void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;
