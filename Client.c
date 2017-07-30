@@ -108,7 +108,7 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
                     great_alarm=0;
                     return byte_written;
                 }
-                else {//pacchetto con dimensione
+                else {//pacchetto con dati:dimensione
                     alarm(0);
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,
                            temp_buff.payload);
