@@ -120,9 +120,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     }
                     window_base_snd = (window_base_snd + 1) % (2 * W);
                     while(1){
-                        alarm(5);//chiusura temporizzata
+                        set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);//chiusura temporizzata
                         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len)!=-1){
-                            alarm(0);
+                            reset_timeout_timer(timer_id, &rst_timer);
                             if(temp_buff.ack==-1){
                                 temp_buff.ack=0;
                                 temp_buff.seq=-5;
@@ -130,6 +130,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                                     //riscontro il messaggio di errore
                                     handle_error_with_exit("error in sendto\n");
                                 }
+                                //ritrasmissioni del pkt precedente
                                 printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
                             }
                             else if(temp_buff.seq==-2){
