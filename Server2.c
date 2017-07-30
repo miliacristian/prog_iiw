@@ -342,10 +342,19 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in read line\n");
     }
     param_serv.window=parse_integer_and_move(&line);
+    if(param_serv.window<1){
+        handle_error_with_exit("window must be greater than 0\n");
+    }
     skip_space(&line);
     param_serv.loss_prob=parse_double_and_move(&line);
+    if(param_serv.loss_prob<0 || param_client.loss_prob>100){
+        handle_error_with_exit("invalid loss prob\n");
+    }
     skip_space(&line);
     param_serv.timer_ms=parse_long_and_move(&line);
+    if(param_serv.timer_ms<0){
+        handle_error_with_exit("timer must be positive or 0\n");
+    }
     if(close(fd)==-1){
 	handle_error_with_exit("error in close file\n");
     }

@@ -384,10 +384,19 @@ int main(int argc,char*argv[]) {
 	handle_error_with_exit("error in read line\n");
     }
     param_client.window=parse_integer_and_move(&line);
+    if(param_client.window<1){
+        handle_error_with_exit("window must be greater than 0\n");
+    }
     skip_space(&line);
     param_client.loss_prob=parse_double_and_move(&line);
+    if(param_client.loss_prob<0 || param_client.loss_prob>100){
+        handle_error_with_exit("invalid loss prob\n");
+    }
     skip_space(&line);
     param_client.timer_ms=parse_long_and_move(&line);
+    if(param_client.timer_ms<0){
+        handle_error_with_exit("timer must be positive or zero");
+    }
     path_len=strlen(dir_client);
     if(close(fd)==-1){
 	handle_error_with_exit("error in close file\n");
