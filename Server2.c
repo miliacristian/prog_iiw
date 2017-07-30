@@ -106,7 +106,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
             }
         }
     }
-    else{//il file non esiste
+    else{//il file non esiste,mando un messaggio di errore
         printf("il file non esiste\n");
         temp_buff.ack=-1;
         temp_buff.seq=0;
@@ -120,7 +120,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         }
         printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
         seq_to_send=(seq_to_send+1)%(2*W);
-        while(1){
+        while(1){//mi metto in ricezione del fin
             alarm(5);
             if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&cli_addr, &len)!=-1){
                 alarm(0);
@@ -130,6 +130,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
                     if (timer_settime(win_buf_snd[0].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
                         handle_error_with_exit("error in timer_settime\n");
                     }
+                    window_base_snd = (window_base_snd + 1) % (2 * W);
                     temp_buff.seq=-2;//sequenza di fin
                     temp_buff.ack=-5;
                     strcpy(temp_buff.payload,"FIN");
