@@ -84,7 +84,6 @@ int get_command(int sockfd,struct sockaddr_in serv_addr,char*filename){//svolgi 
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
     if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer,NULL)==-1){
-        printf("%d\n",errno);
         handle_error_with_exit("error in timer_settime\n");
     }
     printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);

@@ -25,42 +25,61 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     (void) si;
     (void) uc;
     struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
-    //int seq_numb=si->si_value.sival_int;
-    if (sendto(addr->sockfd, ((*win_buffer).payload), MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
+    struct temp_buffer temp_buf;
+    temp_buf.seq=win_buffer->seq_numb;
+    strcpy(temp_buf.payload,win_buffer->payload);
+    temp_buf.ack=-5;
+    if (sendto(addr->sockfd,&temp_buf, MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
                sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
         handle_error_with_exit("error in sendto retrasmission\n");
     }
+    printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n",temp_buf.ack,temp_buf.seq,temp_buf.payload);
     if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
     }
 }
 
-int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
+int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_list\n");
 	return 0;
 }
 
-int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
+int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_put\n");
 	return 0;
 }
 
-int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd){
-	//verifica prima che il file esiste poi inizia a mandare il file
-    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
+int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,int ack_numb,struct window_rcv_buf win_buf_rcv,struct window_snd_buf win_buf_snd,struct sockaddr_in cli_addr){
+	//verifica prima che il file esiste manda la dimensione aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
+    int byte_readed=0,fd,byte_send,W=param_serv.window,byte_left;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
 	printf("server execute_get\n");
-    char command[MAXPKTSIZE];
+    char command[MAXPKTSIZE],dim[11];
+
     strcpy(command,temp_buff.payload);
     command+=4;//
     if(check_if_file_exist(command)){
-        temp_buff.payload
+        byte_left=get_file_size(command);
+        sprintf(dim, "%d",byte_left);
+        strcpy(temp_buff.payload,dim);//scrivo dentro tem_buff la dimensione del file
+        temp_buff.seq=0;
+        temp_buff.ack=0;
+        if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&cli_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+        if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer,NULL)==-1){
+            handle_error_with_exit("error in timer_settime\n");
+        }
+        printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
+        seq_to_send=(seq_to_send+1)%(2*W);
+
     }
     else{//il file non esiste
+        printf("il file non esiste\n");
         strcpy(temp_buff.payload,"il file non esiste");
         temp_buff.ack=-1;//errore
         temp_buff.seq=seq_to_send;
@@ -132,20 +151,20 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
         printf("alarm avviato\n" );
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
             alarm(0);
+            printf("pacchetto ricevuto con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
             printf("connessione instaurata\n");
             great_alarm=0;
             window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
-		printf("%s\n",temp_buff.payload);
             if(strncmp(temp_buff.payload,"list",4)==0){
-                execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
+                execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd,request.addr);
                 return;
             }
             else if(strncmp(temp_buff.payload,"put",3)==0){
-                execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
+                execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd,request.addr);
                 return;
             }
             else if(strncmp(temp_buff.payload,"get",3)==0){
-                execute_get(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd);
+                execute_get(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,ack_numb,win_buf_rcv,win_buf_snd,request.addr);
                 return;
             }
             else{
@@ -158,7 +177,6 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
             printf("il client non è in ascolto\n");
             return ;
         }
-        printf("a caso\n" );
 }
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
