@@ -36,18 +36,18 @@ char seq_is_in_window(int win_base,int end_win,int window,int seq){
     }
 }
 char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
-    int random_num=rand()%100;
+    int random_num=rand()%101;
     if(loss_prob>(random_num)){
         return 0;
     }
     return 1;
 }
-void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,double loss_prob) {
+void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
-            -1) {//manda richiesta del client al server
+        if (sendto(sockfd, temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
+        printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff->ack, temp_buff->seq, temp_buff->payload);
     }
     else{
         printf("pacchetto con ack %d, seq %d perso\n",temp_buff->ack,temp_buff->seq);
@@ -55,12 +55,39 @@ void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *se
     return;
 }
 
-void send_syn(int sockfd,struct sockaddr_in *serv_addr,double loss_prob) {
+void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
-            -1) {//manda richiesta del client al server
+        if (sendto(sockfd, temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
+        printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff->ack, temp_buff->seq, temp_buff->payload);
+    }
+    else{
+        printf("pacchetto ritrasmesso con ack %d, seq %d perso\n",temp_buff->ack,temp_buff->seq);
+    }
+    return;
+}
+
+void start_timer(timer_t timer_id, struct itimerspec *its){
+    if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
+
+void stop_timer(timer_t timer_id){
+    struct itimerspec its;
+    set_timer(&its, 0 ,0);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
+
+void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob) {
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("pacchetto syn mandato\n");
     }
     else{
         printf("pacchetto syn perso\n");
@@ -68,12 +95,13 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr,double loss_prob) {
     return;
 }
 
-void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,double loss_prob) {
+void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
+        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
+        printf("pacchetto syn ack mandato\n");
     }
     else{
         printf("pacchetto syn ack perso\n");

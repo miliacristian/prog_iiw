@@ -24,8 +24,9 @@
 #include <stdlib.h>
 #include <wait.h>
 #include <zconf.h>
-#include "basic.h"
-
+#define MAXPKTSIZE 1468
+#ifndef BUFF_H
+#define BUFF_H
 struct temp_buffer{
     int seq;
     int ack;
@@ -35,5 +36,6 @@ struct window_rcv_buf{
     int received;
     char payload[MAXPKTSIZE-8];
 };
+#endif
 
 int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr);

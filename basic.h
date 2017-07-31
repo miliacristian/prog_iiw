@@ -1,4 +1,3 @@
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <dirent.h>
@@ -25,7 +24,9 @@
 #include <time.h>
 #include <wait.h>
 #include <zconf.h>
-
+#include <wchar.h>
+#include <signal.h>
+#include "receiver.h"
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
@@ -74,7 +75,9 @@ char* files_in_dir(char* path,int lenght);
 char seq_is_in_window(int start_win,int end_win,int window,int seq);
 char check_if_dir_exist(char*dir_path);
 char flip_coin(double loss_prob);
-void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,double loss_prob);
-void send_syn(int sockfd,struct sockaddr_in *serv_addr,double loss_prob);
-void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,double loss_prob);
-
+void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
+void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob);
+void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
+void start_timer(timer_t timer_id, struct itimerspec *its);
+void stop_timer(timer_t timer_id);
+void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);

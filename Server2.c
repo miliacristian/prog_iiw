@@ -228,7 +228,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
         alarm(3);
         printf("alarm avviato\n" );
         if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
-            alarm(0);
+            alarm(5);
             printf("pacchetto ricevuto con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
             printf("connessione instaurata\n");
             great_alarm=0;

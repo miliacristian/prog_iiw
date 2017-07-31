@@ -10,7 +10,7 @@
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer, sett_timeout_cli;//timer e reset timer globali
 int great_alarm = 0;//se diventa 1 è scattato il timer grande
-timer_t timer_id; //id  del timer di timeout;
+timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
 
@@ -25,11 +25,12 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         strcpy(temp_buf.payload, win_buffer->payload);//dati del pacchetto da ritrasmettere
         temp_buf.ack = NOT_AN_ACK;
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
-        send_message(addr->sockfd, &temp_buf, (struct sockaddr *) &(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buf.ack, temp_buf.seq, temp_buf.payload);
-        if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
+        resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
+        //printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buf.ack, temp_buf.seq, temp_buf.payload);
+        /*if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
             handle_error_with_exit("error in timer_settime\n");
-        }
+        }*/
+        start_timer((*win_buffer).time_id, &sett_timer);
     }
     else if(sig == SIGRTMIN+1){
         printf("great timeout expired\n");
@@ -59,7 +60,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     socklen_t len = sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, 2, 0);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer, 0, 400);//inizializza struct necessaria per scegliere il timer
     reset_timer(&rst_timer);//inizializza struct necessaria per resettare il timer
 
     temp_addr.sockfd = sockfd;
@@ -80,43 +81,49 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     temp_buff.ack =NOT_AN_ACK;//ack=-5 solo seq e payload
     strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);//memorizzo pacchetto in finestra
 
-    send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob ); //invio pacchetto con probabilità loss_prob
+    send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob ); //invio pacchetto con probabilità loss_prob
 
-    printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-    if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
+    //printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
+    /*if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
         handle_error_with_exit("error in timer_settime\n");
-    }
+    }*/
+    start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
-    set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);
+    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
                 if (temp_buff.ack == ACK_ERROR) {
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                    reset_timeout_timer(timer_id, &rst_timer);
-                    set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);//chiusura temporizzata
+                    //reset_timeout_timer(timeout_timer_id, &rst_timer);
+                    stop_timer(timeout_timer_id);
+                    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);//chiusura temporizzata
+                    stop_timer(win_buf_snd[0].time_id);
+
                     temp_buff.ack=temp_buff.seq;
                     temp_buff.seq = NOT_A_PKT;
                     //temp_buff.ack = 0;
                     //riscontro il messaggio di errore
-                    send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob );
 
-                    printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-                    if (timer_settime(win_buf_snd[0].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer del comando list
+                    send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob );
+
+                    //printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
+                    /*if (timer_settime(win_buf_snd[0].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer del comando list
                         handle_error_with_exit("error in timer_settime\n");
-                    }
+                    }*/
                     window_base_snd = (window_base_snd + 1) % (2 * W);
                     while(1){
                         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len)!=-1){
                             if(temp_buff.ack==ACK_ERROR){
                                 temp_buff.ack=temp_buff.seq;
                                 temp_buff.seq=NOT_A_PKT;
-                                send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob ); //riscontro il messaggio di errore
+                                send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob ); //riscontro il messaggio di errore
                                 //ritrasmissioni del pkt precedente
-                                printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
+                                //printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
                             }
                             else if(temp_buff.seq==FIN_SEQ){
-                                reset_timeout_timer(timer_id, &rst_timer);
+                                //reset_timeout_timer(timeout_timer_id, &rst_timer);
+                                stop_timer(timeout_timer_id);
                                 printf("segmento di FIN ricevuto\n");
                                 return byte_written;
                             }
@@ -130,15 +137,17 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                 }
                 else {//pacchetto con dati:dimensione
                     //alarm(0);
-                    reset_timeout_timer(timer_id, &rst_timer);
-                    set_timeout_timer(timer_id, &sett_timeout_cli,7, 0);
+                    //reset_timeout_timer(timeout_timer_id, &rst_timer);
+                    stop_timer(timeout_timer_id);
+                    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,7, 0);
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     //pacchetto ack=0 seq=0 dati=dim ricevuto
                     byte_expected = parse_integer(temp_buff.payload);//segno la dimensione
                     printf("dimensione file ricevuta dal server %d\n", byte_expected);
-                    if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
+                    /*if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
                         handle_error_with_exit("error in timer_settime\n");
-                    }
+                    }*/
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     window_base_snd = (window_base_snd + 1) % (2 * W);//avanzo finestra ora siamo a window base=1
                     //creo messaggio start
                     strcpy(temp_buff.payload, "START");//dati
@@ -146,11 +155,12 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     temp_buff.seq = seq_to_send;//1
 
                     strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);
-                    send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob ); //notifica il server che può iniziare a mandare il file
-                    printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                    if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
+                    send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob ); //notifica il server che può iniziare a mandare il file
+                    //pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
+                    /*if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
                         handle_error_with_exit("error in timer_settime\n");
-                    }
+                    }*/
+                    start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
                     seq_to_send = (seq_to_send + 1) % (2 * W);
                     break;
                 }
@@ -181,20 +191,22 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccante
             if (&temp_buff != NULL) {
                 //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-                reset_timeout_timer(timer_id, &rst_timer);
-                set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);
+                //reset_timeout_timer(timeout_timer_id, &rst_timer);
+                stop_timer(timeout_timer_id);
+                set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
                 if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
                     //ignora
                 } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W, temp_buff.seq)) {
                     //se il numero  non è dentro la finestra
                     // un ack è stato smarrito->rinvialo
-                    send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob ); //rinvio ack
+                    send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob ); //rinvio ack
                 } else {//ricevuto numero sequenza in window
                     if (temp_buff.ack >= 0) {//ack trasmesso insieme al pacchetto
                         win_buf_snd[temp_buff.ack].acked = 1;
-                        if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &sett_timer, NULL) == -1) {
+                        /*if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {
                             handle_error_with_exit("error in timer_settime\n");
-                        }
+                        }*/
+                        stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     }
                     win_buf_rcv[temp_buff.seq].received = 1;//segno pacchetto n-esimo come ricevuto
                     strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//memorizzo il pacchetto n-esimo
@@ -212,26 +224,28 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                         if (byte_written == byte_expected) {//fin_ack
                             while (1) {//chiusura di connessione
                                 //alarm(5);
-                                set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);
+                                set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
                                 if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) !=
                                     -1) {//aspetta il fin
                                     //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-                                    reset_timeout_timer(timer_id, &rst_timer);
+                                    //reset_timeout_timer(timeout_timer_id, &rst_timer);
+                                    stop_timer(timeout_timer_id);
                                     if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
                                         //ignora
                                     } else if (temp_buff.seq == -2) {//fine trasferimento
                                         temp_buff.ack = -2;
                                         strcpy(temp_buff.payload, "FIN_ACK");
                                         temp_buff.seq = -5;
-                                        send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob );//mando fin_ack 1 sola volta;
+                                        send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob );//mando fin_ack 1 sola volta;
                                         return byte_written;
                                     } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W,
                                                                  temp_buff.seq)) {
                                         //se il numero  non è dentro la finestra
                                         // un ack è stato smarrito->rinvialo
-                                        send_message(sockfd, &temp_buff, &serv_addr,param_client.loss_prob );//rinvio ack
+                                        send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob );//rinvio ack
                                     }
                                 } else if (great_alarm == 1) {
+                                    great_alarm=0;
                                     break;
                                 }
                             }
@@ -272,18 +286,25 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         handle_error_with_exit("error in sigaction\n");
     }
     while (rtx < 5) {//scaduto 5 volte il timer il server non risponde
-        send_syn(sockfd, (struct sockaddr *) &main_servaddr, sizeof(main_servaddr));  //mando syn al processo server principale
+        /*if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, sizeof(main_servaddr)) == -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("syn mandato\n");*/
+        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        set_timeout_timer(timer_id, &sett_timeout_cli,3, 0);
+        set_timeout_timer(timeout_timer_id, &sett_timeout_cli,1, 0);
+
         if (recvfrom(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             // so l'indirizzo di chi contattare
             //le recvfrom successive non sovrascrivo struct e ignoro messaggi vuoti
             //alarm(0);
-            reset_timeout_timer(timer_id, &rst_timer);
+            //reset_timeout_timer(timeout_timer_id, &rst_timer);7
+            stop_timer(timeout_timer_id);
             printf("connessione instaurata\n");
             great_alarm = 0;
             return main_servaddr;//ritorna l'indirizzo del processo figlio del server
         }
+
         rtx++;
     }
     great_alarm = 0;
@@ -296,7 +317,7 @@ void client_list_job() {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     printf("client list job\n");
-    make_timeout_timer(&timer_id);
+    make_timeout_timer(&timeout_timer_id);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -321,7 +342,7 @@ void client_get_job(char *filename) {
     printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    make_timeout_timer(&timer_id);
+    make_timeout_timer(&timeout_timer_id);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -343,11 +364,10 @@ void client_get_job(char *filename) {
 }
 
 void client_put_job(char *filename) {//upload e filename già verificato
-    printf("client put_job");
+    printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    make_timeout_timer(&timer_id);
-    printf("client list job\n");
+    make_timeout_timer(&timeout_timer_id);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
