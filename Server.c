@@ -381,7 +381,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     strcat(localname,"/parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
-        handle_error_with_exit("error in read parameters into file\n");
+        handle_error_with_exit("error in open file  parameter\n");
     }
     line=malloc(sizeof(char)*MAXLINE);
     command=line;
@@ -411,21 +411,16 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     free(line);
     command=NULL;
 
-    msg_key=create_key(".",'d');
-    shm_key=create_key(".",'a');
+   /* msg_key=create_key(".",'d');
     mtx_key=create_key(".",'b');
-    mtx_fork_key=create_key(".",'c');
+    mtx_fork_key=create_key(".",'c');*/
 
-    mtx_prefork_id=get_id_shared_mem(mtx_fork_key,sizeof(struct mtx_prefork));
-    child_mtx_id=get_id_shared_mem(mtx_key,sizeof(sem_t));
-    msgid=get_id_msg_queue(msg_key);//crea coda di messaggi id globale
-    /*msgctl(msgid, IPC_RMID, NULL);
-    printf("coda cancellata\n" );
-    msgid=get_id_msg_queue(msg_key);
-    printf("coda creata da capo\n");
-*/
-    mtx=(sem_t*)attach_shm(child_mtx_id);
-    mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
+    mtx_prefork_id=get_id_shared_mem(sizeof(struct mtx_prefork));
+    child_mtx_id=get_id_shared_mem(sizeof(sem_t));
+    msgid=get_id_msg_queue();//crea coda di messaggi id globale
+
+    mtx=(sem_t*)attach_shm(child_mtx_id);//mutex per accedere alla coda
+    mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);//mutex tra processi e pool handler
     initialize_mtx(mtx);
     initialize_mtx_prefork(mtx_prefork);
 

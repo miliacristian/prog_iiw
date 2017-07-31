@@ -173,16 +173,16 @@ void unlock_sem(sem_t*sem){
     }
     return;
 }
-int get_id_msg_queue(key_t key){//funzione che crea la coda di messaggi
+int get_id_msg_queue(){//funzione che crea la coda di messaggi
     int msgid;
     if((msgid=msgget(IPC_PRIVATE,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in msgget\n");
     };
     return msgid;
 }
-int get_id_shared_mem(key_t shm_key,int size){
+int get_id_shared_mem(int size){
     int shmid;
-    if((shmid=shmget(shm_key,size,IPC_CREAT | 0666))==-1){
+    if((shmid=shmget(IPC_PRIVATE,size,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in get_id_shm\n");
     }
     return shmid;
