@@ -5,14 +5,12 @@
 #include "receiver.h"
 #include "sender2.h"
 
-//commit
-
 //variabili globali
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
-timer_t timeid;
+timer_t timeout_timer_id;
 char*dir_server;
 
 void handler(){
@@ -159,7 +157,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
             else if(great_alarm==1){
                 printf("il client non risponde\n");
                 great_alarm=0;
-                return;
+                return byte_readed;
             }
         }
     }
@@ -193,7 +191,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
     struct sigaction sa,sa_timeout;
-    make_timeout_timer(&timeid);
+    make_timeout_timer(&timeout_timer_id);
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
 

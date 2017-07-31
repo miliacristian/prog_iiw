@@ -26,7 +26,8 @@ set(SOURCE_FILES
         sender2.c
         sender2.h
         server
+        tester.c
         Server.c
-        tester.c)
+        Server2.c)
 
 add_executable(prog_iiw ${SOURCE_FILES})
