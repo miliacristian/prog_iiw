@@ -175,7 +175,7 @@ void unlock_sem(sem_t*sem){
 }
 int get_id_msg_queue(key_t key){//funzione che crea la coda di messaggi
     int msgid;
-    if((msgid=msgget(key,IPC_CREAT | 0666))==-1){
+    if((msgid=msgget(IPC_PRIVATE,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in msgget\n");
     };
     return msgid;

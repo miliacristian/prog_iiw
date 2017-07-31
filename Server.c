@@ -83,7 +83,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         //printf("pacchetto inviato con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
         seq_to_send=(seq_to_send+1)%(2*W);
         //wait for start send file
-        start_timeout_timer(timeout_timer_id, 5, 0);
+        start_timeout_timer(timeout_timer_id, 5000);
         while(1){
             if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&cli_addr, &len)!=-1){
                 if(&temp_buff!=NULL) {//start ricevuto
@@ -120,7 +120,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         }*/
         start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
         seq_to_send=(seq_to_send+1)%(2*W);
-        start_timeout_timer(timeout_timer_id, 5, 0);
+        start_timeout_timer(timeout_timer_id, 5000);
         while(1){//mi metto in ricezione dell'ultimo ack
             if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&cli_addr, &len)!=-1){
                 stop_timer(timeout_timer_id);
@@ -203,7 +203,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
       //  handle_error_with_exit("error in sendto SIN_ACK");
     //}//rispondo al syn con il syn_ack non in finestra
     send_syn_ack(sockfd, &request.addr, sizeof(request.addr),param_client.loss_prob );
-    start_timeout_timer(timeout_timer_id, 3, 0);
+    start_timeout_timer(timeout_timer_id, 3000);
     if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
         stop_timer(timeout_timer_id);
         printf("pacchetto ricevuto con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
@@ -419,11 +419,11 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     mtx_prefork_id=get_id_shared_mem(mtx_fork_key,sizeof(struct mtx_prefork));
     child_mtx_id=get_id_shared_mem(mtx_key,sizeof(sem_t));
     msgid=get_id_msg_queue(msg_key);//crea coda di messaggi id globale
-    msgctl(msgid, IPC_RMID, NULL);
+    /*msgctl(msgid, IPC_RMID, NULL);
     printf("coda cancellata\n" );
     msgid=get_id_msg_queue(msg_key);
     printf("coda creata da capo\n");
-
+*/
     mtx=(sem_t*)attach_shm(child_mtx_id);
     mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     initialize_mtx(mtx);
