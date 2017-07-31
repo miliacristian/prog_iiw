@@ -7,7 +7,6 @@
 #include <time.h>
 #include "timer.h"
 
-
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int great_alarm = 0;//se diventa 1 è scattato il timer grande
