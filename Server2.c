@@ -137,11 +137,12 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         while(1){//mi metto in ricezione dell'ultimo ack
             alarm(5);
             if(recvfrom(sockfd,&temp_buff,sizeof(struct temp_buffer),0,(struct sockaddr*)&cli_addr, &len)!=-1){
+                printf("entrato\n");
                 alarm(0);
                 printf("pacchetto ricevuto con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
                 if(temp_buff.ack==window_base_snd && temp_buff.seq==NOT_A_PKT){
                     window_base_snd = (window_base_snd + 1) % (2 * W);
-                    if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
+                    if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
                         handle_error_with_exit("error in timer_settime\n");
                     }
                     window_base_snd = (window_base_snd + 1) % (2 * W);
