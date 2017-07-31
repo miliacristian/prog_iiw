@@ -404,6 +404,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(param_serv.timer_ms<0){
         handle_error_with_exit("timer must be positive or 0\n");
     }
+    printf("%d\n", param_serv.timer_ms);
     if(close(fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
