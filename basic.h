@@ -32,6 +32,11 @@
 #define MAXPKTSIZE 1468//no packet fragmentation
 #define MAXLINE 1024
 #define SERVER_PORT 5194
+#define NOT_A_PKT -5
+#define NOT_AN_ACK -5
+#define FIN_SEQ -2
+#define FIN_ACK -2
+#define ACK_ERROR -1
 
 #ifndef LINE_H
 #define LINE_H

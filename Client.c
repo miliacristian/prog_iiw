@@ -22,7 +22,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
         struct temp_buffer temp_buf;
         strcpy(temp_buf.payload, win_buffer->payload);//dati del pacchetto da ritrasmettere
-        temp_buf.ack = -5;
+        temp_buf.ack = NOT_AN_ACK;
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         if (sendto(addr->sockfd, &temp_buf, MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
                    sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
@@ -88,9 +88,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
-    temp_buff.seq = 0;
-    temp_buff.ack = -5;//ack=-5 solo seq e payload
-    strcpy(win_buf_snd[0].payload, temp_buff.payload);//memorizzo pacchetto in finestra
+    temp_buff.seq = seq_to_send;
+    temp_buff.ack =NOT_AN_ACK;//ack=-5 solo seq e payload
+    strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);//memorizzo pacchetto in finestra
     if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) == -1) {//manda richiesta del client al server
         handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
     }
@@ -106,11 +106,12 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         //sleep(7);
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
-                if (temp_buff.ack == -1) {
+                if (temp_buff.ack == ACK_ERROR) {
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     reset_timeout_timer(timer_id, &rst_timer);
-                    temp_buff.seq = -5;
-                    temp_buff.ack = 0;
+                    temp_buff.ack=temp_buff.seq;
+                    temp_buff.seq = NOT_A_PKT;
+                    //temp_buff.ack = 0;
                     if(sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr))==-1) {
                         //riscontro il messaggio di errore
                             handle_error_with_exit("error in sendto\n");
@@ -124,9 +125,11 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                         set_timeout_timer(timer_id, &sett_timeout_cli,5, 0);//chiusura temporizzata
                         if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len)!=-1){
                             reset_timeout_timer(timer_id, &rst_timer);
-                            if(temp_buff.ack==-1){
-                                temp_buff.ack=0;
-                                temp_buff.seq=-5;
+                            if(temp_buff.ack==ACK_ERROR){
+                                temp_buff.ack=temp_buff.seq;
+                                temp_buff.seq=NOT_A_PKT;
+                                //temp_buff.ack=0;
+                                //temp_buff.seq=-5;
                                 if(sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr))==-1) {
                                     //riscontro il messaggio di errore
                                     handle_error_with_exit("error in sendto\n");
@@ -134,7 +137,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                                 //ritrasmissioni del pkt precedente
                                 printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
                             }
-                            else if(temp_buff.seq==-2){
+                            else if(temp_buff.seq==FIN_SEQ){
                                 printf("segmento di FIN ricevuto\n");
                                 return byte_written;
                             }
@@ -159,8 +162,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     window_base_snd = (window_base_snd + 1) % (2 * W);//avanzo finestra ora siamo a window base=1
                     //creo messaggio start
                     strcpy(temp_buff.payload, "START");//dati
+                    temp_buff.ack = temp_buff.seq;//0
                     temp_buff.seq = seq_to_send;//1
-                    temp_buff.ack = 0;//0
+
                     strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);
                     if (sendto(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr,
                                sizeof(struct sockaddr_in)) == -1) {//richiesta del client
