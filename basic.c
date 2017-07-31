@@ -35,6 +35,51 @@ char seq_is_in_window(int win_base,int end_win,int window,int seq){
         return 1;
     }
 }
+char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
+    int random_num=rand()%100;
+    if(loss_prob>(random_num)){
+        return 0;
+    }
+    return 1;
+}
+void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,double loss_prob) {
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
+            -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+    }
+    else{
+        printf("pacchetto con ack %d, seq %d perso\n",temp_buff->ack,temp_buff->seq);
+    }
+    return;
+}
+
+void send_syn(int sockfd,struct sockaddr_in *serv_addr,double loss_prob) {
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
+            -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+    }
+    else{
+        printf("pacchetto syn perso\n");
+    }
+    return;
+}
+
+void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,double loss_prob) {
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr_in)) ==
+            -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+    }
+    else{
+        printf("pacchetto syn ack perso\n");
+    }
+    return;
+}
 
 char* files_in_dir(char* path,int lenght) {
     //funzione che, dato un path, crea una stringa (file1\nfile2\nfile3\n...) contenente il nome di tutti file in quella directory

@@ -12,6 +12,7 @@ struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
+timer_t timeid;
 char*dir_server;
 
 void handler(){
@@ -28,7 +29,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     struct temp_buffer temp_buf;
     temp_buf.seq=win_buffer->seq_numb;
     strcpy(temp_buf.payload,win_buffer->payload);
-    temp_buf.ack=-5;
+    temp_buf.ack=NOT_AN_ACK;
     if (sendto(addr->sockfd,&temp_buf, MAXPKTSIZE, 0, (struct sockaddr *) &(addr->dest_addr),
                sizeof(addr->dest_addr)) == -1) {//ritrasmetto il pacchetto di cui è scaduto il timer
         handle_error_with_exit("error in sendto retrasmission\n");
@@ -125,8 +126,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         temp_buff.seq=seq_to_send;
         strcpy(temp_buff.payload,"il file non esiste\n");
         strcpy(win_buf_snd[seq_to_send].payload,temp_buff.payload);
-        //return;
-        if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&cli_addr,sizeof(struct sockaddr_in))==-1){//manda richiesta del client al server
+        if(sendto(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr*)&cli_addr,sizeof(struct sockaddr_in))==-1){//manda msg di errore
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         if(timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer,NULL)==-1){
@@ -193,6 +193,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
     struct sigaction sa,sa_timeout;
+    make_timeout_timer(&timeid);
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
 
@@ -250,7 +251,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
             }
         }
         else if(great_alarm==1){
-            great_alarm=0;//dopo 3 ritrasmissioni del syn_ack chiudo
+            great_alarm=0;
             printf("il client non è in ascolto\n");
             return ;
         }
@@ -375,6 +376,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(argc!=2){
        handle_error_with_exit("usage <directory>\n");
     }
+    srand(time(NULL));
     dir_server=argv[1];
     check_if_dir_exist(dir_server);
     strcpy(localname,"");

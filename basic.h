@@ -73,4 +73,8 @@ int count_char_dir(char*path);
 char* files_in_dir(char* path,int lenght);
 char seq_is_in_window(int start_win,int end_win,int window,int seq);
 char check_if_dir_exist(char*dir_path);
+char flip_coin(double loss_prob);
+void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,double loss_prob);
+void send_syn(int sockfd,struct sockaddr_in *serv_addr,double loss_prob);
+void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,double loss_prob);
 
