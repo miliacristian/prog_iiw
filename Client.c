@@ -5,15 +5,15 @@
 #include "receiver.h"
 #include "sender2.h"
 #include <time.h>
+#include "timer.h"
 
 
 struct addr *addr = NULL;
-struct itimerspec sett_timer, rst_timer, sett_timeout_cli;//timer e reset timer globali
+struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
 int great_alarm = 0;//se diventa 1 è scattato il timer grande
 timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
-
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {
     if (sig == SIGRTMIN) {
@@ -61,7 +61,6 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 
     make_timers(win_buf_snd, W);//crea 2w timer
     set_timer(&sett_timer, 0, 400);//inizializza struct necessaria per scegliere il timer
-    reset_timer(&rst_timer);//inizializza struct necessaria per resettare il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
@@ -89,7 +88,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }*/
     start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
-    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
+    start_timeout_timer(timeout_timer_id, 5, 0);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
@@ -97,7 +96,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     //reset_timeout_timer(timeout_timer_id, &rst_timer);
                     stop_timer(timeout_timer_id);
-                    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);//chiusura temporizzata
+                    start_timeout_timer(timeout_timer_id, 5, 0);//chiusura temporizzata
                     stop_timer(win_buf_snd[0].time_id);
 
                     temp_buff.ack=temp_buff.seq;
@@ -125,12 +124,14 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                                 //reset_timeout_timer(timeout_timer_id, &rst_timer);
                                 stop_timer(timeout_timer_id);
                                 printf("segmento di FIN ricevuto\n");
+                                stop_all_timers(win_buf_snd, W);
                                 return byte_written;
                             }
                         }
                         else if(great_alarm==1){
                             great_alarm=0;
                             printf("il server non risponde\n");
+                            stop_all_timers(win_buf_snd, W);
                             return byte_written;
                         }
                     }
@@ -139,7 +140,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     //alarm(0);
                     //reset_timeout_timer(timeout_timer_id, &rst_timer);
                     stop_timer(timeout_timer_id);
-                    set_timeout_timer(timeout_timer_id, &sett_timeout_cli,7, 0);
+                    start_timeout_timer(timeout_timer_id, 7, 0);
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     //pacchetto ack=0 seq=0 dati=dim ricevuto
                     byte_expected = parse_integer(temp_buff.payload);//segno la dimensione
@@ -169,6 +170,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         else if (great_alarm == 1) {//sono passati n secondi e senza risposta dal server
             great_alarm = 0;
             printf("server timeout & exit\n");
+            stop_all_timers(win_buf_snd, W);
             return byte_written;
         }
     }//ho una dimensione del file
@@ -193,7 +195,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                 //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
                 //reset_timeout_timer(timeout_timer_id, &rst_timer);
                 stop_timer(timeout_timer_id);
-                set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
+                start_timeout_timer(timeout_timer_id, 5, 0);
                 if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
                     //ignora
                 } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W, temp_buff.seq)) {
@@ -224,7 +226,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                         if (byte_written == byte_expected) {//fin_ack
                             while (1) {//chiusura di connessione
                                 //alarm(5);
-                                set_timeout_timer(timeout_timer_id, &sett_timeout_cli,5, 0);
+                                start_timeout_timer(timeout_timer_id, 5, 0);
                                 if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) !=
                                     -1) {//aspetta il fin
                                     //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
@@ -237,6 +239,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                                         strcpy(temp_buff.payload, "FIN_ACK");
                                         temp_buff.seq = -5;
                                         send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob );//mando fin_ack 1 sola volta;
+                                        stop_all_timers(win_buf_snd, W);
                                         return byte_written;
                                     } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W,
                                                                  temp_buff.seq)) {
@@ -256,11 +259,13 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         } else if (great_alarm == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm = 0;
+            stop_all_timers(win_buf_snd, W);
             return byte_written;
         }
 
     }
     great_alarm = 0;
+    stop_all_timers(win_buf_snd, W);
     return byte_written;
 }
 
@@ -285,14 +290,14 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     if (sigaction(SIGRTMIN+1, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    while (rtx < 5) {//scaduto 5 volte il timer il server non risponde
+    while (rtx < 5000) {//scaduto 5 volte il timer il server non risponde
         /*if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, sizeof(main_servaddr)) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
         }
         printf("syn mandato\n");*/
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        set_timeout_timer(timeout_timer_id, &sett_timeout_cli,1, 0);
+        start_timeout_timer(timeout_timer_id, 1, 0);
 
         if (recvfrom(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             // so l'indirizzo di chi contattare

@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "receiver.h"
 #include "sender2.h"
-
+/*
 void make_timeout_timer(timer_t* timer_id){
     struct sigevent te;
     int sigNo = SIGRTMIN+1;
@@ -18,16 +18,11 @@ void make_timeout_timer(timer_t* timer_id){
     return;
 
 }
-void set_timeout_timer(timer_t timer_id, struct itimerspec *its, int sec, long msec){
-    set_timer(its, sec, msec);
-    if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
-        handle_error_with_exit("error in timer_settime\n");
-    }
-    return;
-}
 
-void reset_timeout_timer(timer_t timer_id, struct itimerspec *its){
-    if (timer_settime(timer_id, 0, its, NULL) == -1) {//resetto timer
+void start_timeout_timer(timer_t timer_id, int sec, long msec){
+    struct itimerspec its;
+    set_timer(&its, sec, msec);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
     }
     return;
@@ -66,7 +61,7 @@ void reset_timer(struct itimerspec *its) {
 }
 
 
-/*void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
+void server_timeout_handler(int sig, siginfo_t *si, void *uc) {
     connection_failed = 1;
     return;
 }

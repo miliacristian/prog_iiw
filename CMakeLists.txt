@@ -28,6 +28,6 @@ set(SOURCE_FILES
         server
         tester.c
         Server.c
-        Server2.c)
+        timer.c timer.h)
 
-add_executable(prog_iiw ${SOURCE_FILES})
+add_executable(prog_iiw ${SOURCE_FILES} timer.c)

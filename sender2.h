@@ -25,7 +25,7 @@
 #include <zconf.h>
 #include "basic.h"
 
-#ifndef LINE1_H
+/*#ifndef LINE1_H
 #define LINE1_H
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
@@ -53,3 +53,4 @@ void set_timer(struct itimerspec*its,int sec,long msec);
 void reset_timer(struct itimerspec*its);
 void timer_handler(int sig, siginfo_t *si,void *uc);
 int selective_repeat_sender(int sockfd,int fd,int byte_expected,struct sockaddr_in dest_addr);
+void start_timeout_timer(timer_t timer_id, int sec, long msec);*/

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <wait.h>
 #include <zconf.h>
-#define MAXPKTSIZE 1468
+/*#define MAXPKTSIZE 1468
 #ifndef BUFF_H
 #define BUFF_H
 struct temp_buffer{
@@ -38,4 +38,4 @@ struct window_rcv_buf{
 };
 #endif
 
-int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr);
+int selective_repeat_receiver(int sockfd, int fd, int byte_expected, struct sockaddr_in dest_addr);*/

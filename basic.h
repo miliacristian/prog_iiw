@@ -42,6 +42,30 @@
 #ifndef LINE_H
 #define LINE_H
 
+struct temp_buffer{
+    int seq;
+    int ack;
+    char payload[MAXPKTSIZE-8];// dati pacchetto
+};
+struct window_rcv_buf{
+    int received;
+    char payload[MAXPKTSIZE-8];
+};
+
+struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
+// se diventa pesante come memoria è meglio allocata nell'heap?
+    int acked;
+    char payload[MAXPKTSIZE-8];
+    timer_t time_id;
+    int time_start;
+    int seq_numb;
+};
+
+
+struct addr{
+    int sockfd;
+    struct sockaddr_in dest_addr;
+};
 
 struct mtx_prefork{
     sem_t sem;
@@ -78,6 +102,6 @@ char flip_coin(double loss_prob);
 void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
 void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob);
 void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
-void start_timer(timer_t timer_id, struct itimerspec *its);
-void stop_timer(timer_t timer_id);
+/*void start_timer(timer_t timer_id, struct itimerspec *its);
+void stop_timer(timer_t timer_id);*/
 void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);

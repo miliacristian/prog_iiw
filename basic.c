@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "receiver.h"
 #include "sender2.h"
+#include "timer.h"
 
 char check_if_dir_exist(char*dir_path){
     DIR *dir;
@@ -68,7 +69,7 @@ void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *
     return;
 }
 
-void start_timer(timer_t timer_id, struct itimerspec *its){
+/*void start_timer(timer_t timer_id, struct itimerspec *its){
     if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
     }
@@ -80,7 +81,7 @@ void stop_timer(timer_t timer_id){
     if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
         handle_error_with_exit("error in timer_settime\n");
     }
-}
+}*/
 
 void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
@@ -224,3 +225,4 @@ int count_char_dir(char*path){
     return lenght;
 
 }
+
