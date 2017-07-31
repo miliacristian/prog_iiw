@@ -62,7 +62,7 @@ void make_timers(struct window_snd_buf *win_buf, int W) {
 
 void set_timer(struct itimerspec *its, long msec) {
     int msec2 = msec%1000;
-    int sec =(msec-msec2)/10000;
+    int sec =(msec-msec2)/1000;
     its->it_interval.tv_sec = 0;
     its->it_interval.tv_nsec = 0;
     its->it_value.tv_sec = sec;
