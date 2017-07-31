@@ -15,7 +15,7 @@ void start_timer(timer_t timer_id, struct itimerspec *its){
 
 void stop_timer(timer_t timer_id){
     struct itimerspec its;
-    set_timer(&its, 0 ,0);
+    set_timer(&its, 0);
     if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
         handle_error_with_exit("error in timer_settime\n");
     }
@@ -35,9 +35,9 @@ void make_timeout_timer(timer_t* timer_id){
 
 }
 
-void start_timeout_timer(timer_t timer_id, int sec, long msec){
+void start_timeout_timer(timer_t timer_id, long msec){
     struct itimerspec its;
-    set_timer(&its, sec, msec);
+    set_timer(&its, msec);
     if (timer_settime(timer_id, 0, &its, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
     }
@@ -60,11 +60,14 @@ void make_timers(struct window_snd_buf *win_buf, int W) {
     return;
 }
 
-void set_timer(struct itimerspec *its, int sec, long msec) {
+void set_timer(struct itimerspec *its, long msec) {
+    int msec2 = msec%1000;
+    int sec =(msec-msec2)/10000;
     its->it_interval.tv_sec = 0;
     its->it_interval.tv_nsec = 0;
     its->it_value.tv_sec = sec;
-    its->it_value.tv_nsec = msec * 1000000;//conversione nanosecondi millisecondi
+    its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
+    printf("msec %d, sec %d\n", msec2, sec);
     return;
 }
 

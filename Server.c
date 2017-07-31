@@ -59,22 +59,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
     printf("server execute_get\n");
     char *command,*path,dim[11];
     socklen_t len=sizeof(cli_addr);
-
-    command=malloc(sizeof(char)*MAXPKTSIZE);
-    path=malloc(sizeof(char)*MAXPKTSIZE);
-    if(command==NULL){
-        handle_error_with_exit("error in malloc\n");
-    }
-    if(path==NULL){
-        handle_error_with_exit("error in malloc\n");
-    }
-    memset(command,'\0',MAXPKTSIZE);
-    memset(path,'\0',MAXPKTSIZE);
-    strcpy(path,dir_server);
-    strncpy(command,temp_buff.payload+4,strlen(temp_buff.payload)-4);
-    strcat(path,command);
-    free(command);
-
+    path=generate_full_pathname(temp_buff.payload+4, dir_server);
     printf("%s\n",path);
     if(check_if_file_exist(path)){
         byte_left=get_file_size(path);
@@ -169,6 +154,11 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
     }
     printf("inizio invio file\n");
     //manca trasmissione file (deve avviarsi il proprio timer di timeout)
+    fd = open(path, O_RDONLY);
+    if(fd == -1){
+        handle_error_with_exit("error in open");
+    }
+    free(path);
     return byte_readed;
 }
 
@@ -203,7 +193,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, 0, 500);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = request.addr;

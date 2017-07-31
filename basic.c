@@ -226,3 +226,14 @@ int count_char_dir(char*path){
 
 }
 
+char* generate_full_pathname(char* filename, char* dir_server){
+    char* path;
+    path=malloc(sizeof(char)*MAXPKTSIZE);
+    if(path==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    memset(path,'\0',MAXPKTSIZE);
+    strcpy(path,dir_server);
+    strcat(path,filename);
+    return path;
+}

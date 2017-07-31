@@ -60,7 +60,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     socklen_t len = sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, 0, 400);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer, param_client.timer_ms);//inizializza struct necessaria per scegliere il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
@@ -88,7 +88,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }*/
     start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
-    start_timeout_timer(timeout_timer_id, 5, 0);
+    start_timeout_timer(timeout_timer_id, 5000);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             if (&temp_buff != NULL) {
@@ -96,7 +96,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     //reset_timeout_timer(timeout_timer_id, &rst_timer);
                     stop_timer(timeout_timer_id);
-                    start_timeout_timer(timeout_timer_id, 5, 0);//chiusura temporizzata
+                    start_timeout_timer(timeout_timer_id, 5000);//chiusura temporizzata
                     stop_timer(win_buf_snd[0].time_id);
 
                     temp_buff.ack=temp_buff.seq;
@@ -140,7 +140,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                     //alarm(0);
                     //reset_timeout_timer(timeout_timer_id, &rst_timer);
                     stop_timer(timeout_timer_id);
-                    start_timeout_timer(timeout_timer_id, 7, 0);
+                    start_timeout_timer(timeout_timer_id, 7000);
                     printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
                     //pacchetto ack=0 seq=0 dati=dim ricevuto
                     byte_expected = parse_integer(temp_buff.payload);//segno la dimensione
@@ -195,7 +195,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                 //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
                 //reset_timeout_timer(timeout_timer_id, &rst_timer);
                 stop_timer(timeout_timer_id);
-                start_timeout_timer(timeout_timer_id, 5, 0);
+                start_timeout_timer(timeout_timer_id, 5000);
                 if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
                     //ignora
                 } else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W, temp_buff.seq)) {
@@ -226,7 +226,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
                         if (byte_written == byte_expected) {//fin_ack
                             while (1) {//chiusura di connessione
                                 //alarm(5);
-                                start_timeout_timer(timeout_timer_id, 5, 0);
+                                start_timeout_timer(timeout_timer_id, 5000);
                                 if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) !=
                                     -1) {//aspetta il fin
                                     //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
@@ -297,7 +297,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         printf("syn mandato\n");*/
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id, 1, 0);
+        start_timeout_timer(timeout_timer_id, 3000);
 
         if (recvfrom(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             // so l'indirizzo di chi contattare
