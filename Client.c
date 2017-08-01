@@ -6,7 +6,8 @@
 #include "sender2.h"
 #include <time.h>
 #include "timer.h"
-
+#include "Client.h"
+#include "get_client.h"
 
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
@@ -25,11 +26,8 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         strcpy(temp_buf.payload, win_buffer->payload);//dati del pacchetto da ritrasmettere
         temp_buf.ack = NOT_AN_ACK;
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
+        temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        //printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buf.ack, temp_buf.seq, temp_buf.payload);
-        /*if (timer_settime((*win_buffer).time_id, 0, &sett_timer, NULL) == -1) {//avvio timer
-            handle_error_with_exit("error in timer_settime\n");
-        }*/
         start_timer((*win_buffer).time_id, &sett_timer);
     }
     else if(sig == SIGRTMIN+1){
@@ -38,13 +36,8 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
     return;
 }
-
-
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
-    int byte_written = 0, fd, byte_expected, seq_to_send = 0, window_base_snd = 0, ack_numb = 0, window_base_rcv = 0, W = param_client.window;//primo pacchetto della finestra->primo non riscontrato
-    int pkt_fly = 0;
-    char value,*pathname;//fare la free di pathname
-    double timer = param_client.timer_ms, loss_prob = param_client.loss_prob;
+    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2 * W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -74,218 +67,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    strcpy(temp_buff.payload, "get ");
-    strcat(temp_buff.payload, filename);
-    temp_buff.seq = seq_to_send;
-    temp_buff.ack =NOT_AN_ACK;//ack=-5 solo seq e payload
-    strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);//memorizzo pacchetto in finestra
-
-    send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob ); //invio pacchetto con probabilità loss_prob
-
-    //printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-    /*if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
-        handle_error_with_exit("error in timer_settime\n");
-    }*/
-    start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
-    seq_to_send = (seq_to_send + 1) % (2 * W);
-    start_timeout_timer(timeout_timer_id, 5000);
-    while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
-            if (&temp_buff != NULL) {
-                if (temp_buff.ack == ACK_ERROR) {
-                    printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                    //reset_timeout_timer(timeout_timer_id, &rst_timer);
-                    stop_timer(timeout_timer_id);
-                    start_timeout_timer(timeout_timer_id, 5000);//chiusura temporizzata
-                    stop_timer(win_buf_snd[0].time_id);
-
-                    temp_buff.ack=temp_buff.seq;
-                    temp_buff.seq = NOT_A_PKT;
-                    //temp_buff.ack = 0;
-                    //riscontro il messaggio di errore
-
-                    send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob );
-
-                    //printf("pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-                    /*if (timer_settime(win_buf_snd[0].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer del comando list
-                        handle_error_with_exit("error in timer_settime\n");
-                    }*/
-                    window_base_snd = (window_base_snd + 1) % (2 * W);
-                    while(1){
-                        if(recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len)!=-1){
-                            if(temp_buff.ack==ACK_ERROR){
-                                temp_buff.ack=temp_buff.seq;
-                                temp_buff.seq=NOT_A_PKT;
-                                send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob ); //riscontro il messaggio di errore
-                                //ritrasmissioni del pkt precedente
-                                //printf("pacchetto ritrasmesso con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-                            }
-                            else if(temp_buff.seq==FIN_SEQ){
-                                //reset_timeout_timer(timeout_timer_id, &rst_timer);
-                                stop_timer(timeout_timer_id);
-                                printf("segmento di FIN ricevuto\n");
-                                stop_all_timers(win_buf_snd, W);
-                                return byte_written;
-                            }
-                        }
-                        else if(great_alarm==1){
-                            great_alarm=0;
-                            printf("il server non risponde\n");
-                            stop_all_timers(win_buf_snd, W);
-                            return byte_written;
-                        }
-                    }
-                }
-                else {//pacchetto con dati:dimensione
-                    //alarm(0);
-                    //reset_timeout_timer(timeout_timer_id, &rst_timer);
-                    stop_timer(timeout_timer_id);
-                    start_timeout_timer(timeout_timer_id, 7000);
-                    printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                    //pacchetto ack=0 seq=0 dati=dim ricevuto
-                    byte_expected = parse_integer(temp_buff.payload);//segno la dimensione
-                    printf("dimensione file ricevuta dal server %d\n", byte_expected);
-                    /*if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {//resetta timer
-                        handle_error_with_exit("error in timer_settime\n");
-                    }*/
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
-                    window_base_snd = (window_base_snd + 1) % (2 * W);//avanzo finestra ora siamo a window base=1
-                    //creo messaggio start
-                    strcpy(temp_buff.payload, "START");//dati
-                    temp_buff.ack = temp_buff.seq;//0
-                    temp_buff.seq = seq_to_send;//1
-
-                    strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);
-                    send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob ); //notifica il server che può iniziare a mandare il file
-                    //pacchetto inviato con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,temp_buff.payload);
-                    /*if (timer_settime(win_buf_snd[seq_to_send].time_id, 0, &sett_timer, NULL) == -1) {
-                        handle_error_with_exit("error in timer_settime\n");
-                    }*/
-                    start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
-                    seq_to_send = (seq_to_send + 1) % (2 * W);
-                    break;
-                }
-            }
-        }
-        else if (great_alarm == 1) {//sono passati n secondi e senza risposta dal server
-            great_alarm = 0;
-            printf("server timeout & exit\n");
-            stop_all_timers(win_buf_snd, W);
-            return byte_written;
-        }
-    }//ho una dimensione del file
-
-    printf("inizio ricezione file\n");
-    pathname=malloc(sizeof(char)*MAXFILENAME);
-    if(pathname==NULL){
-        handle_error_with_exit("error in malloc\n");
-    }
-    strcpy(pathname,dir_client);
-    printf("%s\n",dir_client);
-    strcat(pathname,filename);
-    printf("%s\n",pathname);
-    fd = open(pathname, O_WRONLY | O_CREAT, 0666);
-    if (fd == -1) {
-        handle_error_with_exit("error in open\n");
-    }
-    start_timeout_timer(timeout_timer_id,5000);
-    while (byte_written < byte_expected) {
-        if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccante
-            if (&temp_buff != NULL) {
-                //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-                //reset_timeout_timer(timeout_timer_id, &rst_timer);
-                if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
-                    //ignora
-                }
-                else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W, temp_buff.seq)) {
-                    //se il numero  non è dentro la finestra
-                    // un ack è stato smarrito->rinvialo
-                    stop_timer(timeout_timer_id);
-                    start_timeout_timer(timeout_timer_id, 5000);
-                    temp_buff.ack=temp_buff.seq;
-                    temp_buff.seq=NOT_A_PKT;
-                    send_message(sockfd, &temp_buff, &serv_addr,sizeof(serv_addr),param_client.loss_prob ); //rinvio ack
-                }
-                else {//ricevuto numero sequenza in window
-                    if (temp_buff.ack >= 0) {//ack trasmesso insieme al pacchetto
-                        win_buf_snd[temp_buff.ack].acked = 1;//RISCONTRO PACCHETTO 1,1,FIRST PKT
-                        /*if (timer_settime(win_buf_snd[temp_buff.ack].time_id, 0, &rst_timer, NULL) == -1) {
-                            handle_error_with_exit("error in timer_settime\n");
-                        }*/
-                        stop_timer(timeout_timer_id);
-                        start_timeout_timer(timeout_timer_id, 5000);
-                        stop_timer(win_buf_snd[temp_buff.ack].time_id);
-                        window_base_rcv = (window_base_rcv + 1) % (2 * W);
-                        strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);
-                        temp_buff.ack=temp_buff.seq;
-                        temp_buff.seq=NOT_A_PKT;
-                        send_message(sockfd,&temp_buff,&serv_addr,sizeof(serv_addr),param_client.loss_prob);
-                    }
-                    else {
-                        win_buf_rcv[temp_buff.seq].received = 1;//segno pacchetto n-esimo come ricevuto
-                        strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//memorizzo il pacchetto n-esimo
-                        temp_buff.ack=temp_buff.seq;
-                        temp_buff.seq=NOT_A_PKT;
-                        if (temp_buff.seq == window_base_rcv) {//se pacchetto riempie un buco
-                            // scorro la finestra fino al primo ancora non ricevuto
-                            while (win_buf_rcv[window_base_rcv].received == 1) {
-                                writen(fd, win_buf_rcv[window_base_rcv].payload,
-                                       strlen(win_buf_rcv[window_base_rcv].payload));//necessario cosi non copia il terminatore
-                                //controllo su writen
-                                byte_written += strlen(win_buf_rcv[window_base_rcv].payload);
-                                win_buf_rcv[window_base_rcv].received = 0;//segna pacchetto come non ricevuto
-                                window_base_rcv = (window_base_rcv + 1) % (2 * W);//avanza la finestra con modulo di 2W
-                            }
-                            if (byte_written == byte_expected) {//fin_ack
-                                //timeout già avviato
-                                start_timeout_timer(timeout_timer_id, 5000);//riavvio timer
-                                while (1) {//chiusura di connessione
-                                    if (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//aspetta il fin
-                                        //alarm(0);//resetto il timer perchè ho ricevuto un pacchetto
-                                        //reset_timeout_timer(timeout_timer_id, &rst_timer);
-                                        //stop_timer(timeout_timer_id);
-                                        //start_timeout_timer(timeout_timer_id,5000);
-                                        if (temp_buff.seq > (2 * W - 1)) {//num sequenza imprevisto
-                                            //ignora
-                                        } else if (temp_buff.seq ==FIN_SEQ) {//fine trasferimento,
-                                            // chiudo e resetto timer senza mandare nulla
-                                            //temp_buff.ack = FIN_ACK;
-                                            //strcpy(temp_buff.payload, "FIN_ACK");
-                                            //temp_buff.seq =NOT_A_PKT;
-                                            //send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr), param_client.loss_prob);//mando fin_ack 1 sola volta;
-                                            stop_all_timers(win_buf_snd, W);
-                                            stop_timer(timeout_timer_id);
-                                            return byte_written;
-                                        }
-                                        else if (!seq_is_in_window(window_base_rcv, window_base_rcv + W - 1, W,
-                                                                     temp_buff.seq)) {
-                                            //se il numero  non è dentro la finestra un ack è stato smarrito->rinvialo
-                                            //senza memorizzarlo perchè hai già ricevuto tutto
-                                            temp_buff.ack=temp_buff.seq;
-                                            temp_buff.seq=NOT_A_PKT;
-                                            send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob);//rinvio ack
-                                        }
-                                    }
-                                    else if (great_alarm == 1) {
-                                        great_alarm = 0;
-                                        break;//vai a ritornare il numero di byte scritti
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else if (great_alarm == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
-            stop_all_timers(win_buf_snd, W);
-            return byte_written;
-        }
-
-    }
-    great_alarm = 0;
-    stop_all_timers(win_buf_snd, W);
+    byte_written= wait_for_dimension(sockfd, serv_addr, len, filename, byte_written , seq_to_send , window_base_snd , window_base_rcv, W, pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     return byte_written;
 }
 

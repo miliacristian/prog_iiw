@@ -33,30 +33,36 @@
 #define MAXPKTSIZE 1468//no packet fragmentation
 #define MAXLINE 1024
 #define SERVER_PORT 5194
+#define ERROR 5
+#define START 4
+#define DIMENSION 6
 #define NOT_A_PKT -5
 #define NOT_AN_ACK -5
-#define FIN_SEQ -2
-#define FIN_ACK -2
-#define ACK_ERROR -1
-
+#define FIN 2
+#define FIN_ACK 3
+#define COMMAND 1
+#define DATA 0
 #ifndef LINE_H
 #define LINE_H
 
 struct temp_buffer{
     int seq;
     int ack;
-    char payload[MAXPKTSIZE-8];// dati pacchetto
+    char command;
+    char payload[MAXPKTSIZE-9];// dati pacchetto
 };
 struct window_rcv_buf{
     int received;
-    char payload[MAXPKTSIZE-8];
+    char command;
+    char payload[MAXPKTSIZE-9];
 };
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 // se diventa pesante come memoria è meglio allocata nell'heap?
     int acked;
-    char payload[MAXPKTSIZE-8];
+    char payload[MAXPKTSIZE-9];
     timer_t time_id;
+    char command;
     int time_start;
     int seq_numb;
 };
@@ -80,7 +86,7 @@ struct select_param{
     int window;
     double loss_prob;
     long timer_ms;
-}param_serv,param_client;
+};
 #endif
 
 void handle_error_with_exit(char*errorString);
@@ -102,7 +108,5 @@ char flip_coin(double loss_prob);
 void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
 void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob);
 void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
-/*void start_timer(timer_t timer_id, struct itimerspec *its);
-void stop_timer(timer_t timer_id);*/
 char* generate_full_pathname(char* filename, char* dir_server);
 void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);

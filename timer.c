@@ -7,6 +7,7 @@
 #include "receiver.h"
 #include "sender2.h"
 
+
 void start_timer(timer_t timer_id, struct itimerspec *its){
     if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
         handle_error_with_exit("error in timer_settime\n");
