@@ -40,7 +40,6 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
     start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
     start_timeout_timer(timeout_timer_id, 5000);
-    great_alarm = 0;
     //printf("sono qui\n");
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) !=

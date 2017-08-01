@@ -77,6 +77,7 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.command = COMMAND;
     strcpy(win_buf_snd[seq_to_send].payload, temp_buff.payload);//memorizzo pacchetto in finestra
+    win_buf_snd[seq_to_send].command=temp_buff.command;
     send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr),param_client.loss_prob); //invio pacchetto con probabilità loss_prob
     strcpy(win_buf_snd[seq_to_send].payload,temp_buff.payload);
     win_buf_snd[seq_to_send].command=temp_buff.command;
