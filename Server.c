@@ -57,7 +57,7 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
     int byte_readed=0,fd,byte_send,W=param_serv.window,byte_left;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     printf("server execute_get\n");
-    char *command,*path,dim[11];
+    char *command,*path,dim[11],first_pkt;
     socklen_t len=sizeof(cli_addr);
     path=generate_full_pathname(temp_buff.payload+4, dir_server);
     printf("%s\n",path);
@@ -153,12 +153,61 @@ int execute_get(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int wind
         }
     }
     printf("inizio invio file\n");
-    //manca trasmissione file (deve avviarsi il proprio timer di timeout)
     fd = open(path, O_RDONLY);
     if(fd == -1){
         handle_error_with_exit("error in open");
     }
     free(path);
+    start_timeout_timer(timeout_timer_id,5000);
+    while (byte_left > 0) {
+        if (pkt_fly < W) {//finquando i pacchetti inviati e non ancora riscontrati sono minori di W
+            readn(fd, win_buf_snd[seq_to_send].payload,(MAXPKTSIZE - 4));//metto nel buffer il pacchetto proveniente dal file senza terminatore di stringa
+            //controllo su readn??
+            if(temp_buff.seq==1) {
+                readn(fd, win_buf_snd[seq_to_send].payload,(MAXPKTSIZE - 4));
+                temp_buff.ack=1;
+                temp_buff.seq=seq_to_send;
+                strcpy(temp_buff.payload, (win_buf_snd[seq_to_send].payload));//copio dentro temp_buf i dati
+            }
+            strcpy(temp_buff.payload, (win_buf_snd[seq_to_send].payload));//copio dentro temp_buf i dati del pacchetto con eventuali terminatori di stringa
+            temp_buff.seq = seq_to_send;//memorizzo il numero di sequenza
+            send_message(sockfd, &(temp_buff),&cli_addr, sizeof(cli_addr),param_serv.loss_prob);
+            start_timer(win_buf_snd[seq_to_send].time_id,500);//avvio timer
+            pkt_fly++;//segno che ho inviato un pacchetto
+            seq_to_send = (seq_to_send + 1) % (2 * W);//incremento ultimo inviato
+        }
+        while (recvfrom(sockfd, &temp_buff, sizeof(int), MSG_DONTWAIT, (struct sockaddr * )&cli_addr, &len) != -1) {//flag non bloccante,
+            //finquando ci sono ack prendili
+            if (seq_is_in_window(window_base_snd, window_base_snd+ W - 1, W,temp_buff.ack)) {
+                //se è dentro la finestra->ack con numero di sequenza dentro finestra ricevuto
+                stop_timer(win_buf_snd[temp_buff.ack].time_id);
+                stop_timer(timeout_timer_id);
+                start_timeout_timer(timeout_timer_id,5000);
+                win_buf_snd[temp_buff.ack].acked = 1;//segna pkt come riscontrato
+                if (temp_buff.ack == window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
+                    while (win_buf_snd[window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
+                        //avanzo la finestra
+                        byte_readed += strlen(win_buf_snd[window_base_snd].payload);//segno come letti
+                        win_buf_snd[window_base_snd].acked = 0;//resetta quando scorri finestra
+                        window_base_snd = (window_base_snd + 1) % (2 * W);//avanza la finestra
+                        pkt_fly--;
+                    }
+                }
+            }
+            else {//se è fuori la finestra ignoralo
+            }
+        }
+        if(great_alarm==1){
+            great_alarm=0;
+            printf("il client non risponde\n");
+            return byte_readed;
+        }
+    }
+    //fine trasmissione
+    temp_buff.ack=NOT_AN_ACK;
+    strcpy(temp_buff.payload,"FIN");
+    temp_buff.seq=FIN_SEQ;//fin number
+    send_message(sockfd, &temp_buff,&cli_addr,sizeof(cli_addr),param_serv.loss_prob);
     return byte_readed;
 }
 
