@@ -68,7 +68,6 @@ void set_timer(struct itimerspec *its, long msec) {
     its->it_interval.tv_nsec = 0;
     its->it_value.tv_sec = sec;
     its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
-    printf("msec %d, sec %d\n", msec2, sec);
     return;
 }
 

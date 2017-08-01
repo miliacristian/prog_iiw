@@ -244,11 +244,11 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     //if (sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in))==-1) {
       //  handle_error_with_exit("error in sendto SIN_ACK");
     //}//rispondo al syn con il syn_ack non in finestra
-    send_syn_ack(sockfd, &request.addr, sizeof(request.addr),param_serv.loss_prob );
+    send_syn_ack(sockfd, &request.addr, sizeof(request.addr),0 ); //param_serv.loss_prob
     start_timeout_timer(timeout_timer_id, 3000);
     if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
         stop_timer(timeout_timer_id);
-        printf("pacchetto ricevuto con ack %d seq %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.payload);
+        printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
         printf("connessione instaurata\n");
         great_alarm=0;
         window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto

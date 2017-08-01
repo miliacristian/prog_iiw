@@ -19,16 +19,18 @@ int close_connection(struct temp_buffer temp_buff,int seq_to_send,char*filename,
     send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr), param_client.loss_prob);//mando il fin
     start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
-    start_timeout_timer(timeout_timer_id, 5000);
+    //start_timeout_timer(timeout_timer_id, 5000);
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             stop_timer(timeout_timer_id);
+            start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
+            printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command, temp_buff.payload);
 
             if (temp_buff.seq == NOT_A_PKT) {
                 start_timeout_timer(timeout_timer_id, 5000);
-                printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.payload);
-                stop_timer(timeout_timer_id);
+
+                //stop_timer(timeout_timer_id);
                 stop_timer(win_buf_snd[temp_buff.ack].time_id);
                 win_buf_snd[temp_buff.ack].acked = 1;
                 if (temp_buff.ack == window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -39,17 +41,22 @@ int close_connection(struct temp_buffer temp_buff,int seq_to_send,char*filename,
                         pkt_fly--;
                     }
                 }
-            } else if (temp_buff.command==FIN_ACK) {
+            }
+            else if (temp_buff.command==FIN_ACK) {
                 stop_timer(timeout_timer_id);
+                stop_all_timers(win_buf_snd, W);
                 return byte_rcv;
-            } else if (!seq_is_in_window(window_base_snd, window_base_snd+ W - 1, W,temp_buff.seq)) {
-                start_timeout_timer(timeout_timer_id, 5000);
+            }
+            else if (!seq_is_in_window(window_base_rcv, window_base_rcv+ W - 1, W,temp_buff.seq)) {
+                //start_timeout_timer(timeout_timer_id, 5000);
                 temp_buff.command=DATA;
                 temp_buff.ack = temp_buff.seq;
                 temp_buff.seq = NOT_A_PKT;
                 send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr), param_client.loss_prob);
-            } else {
-                printf("ignora\n");
+            }
+            else {
+                printf("ignorato pacchetto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq,
+                       temp_buff.command, temp_buff.payload);
             }
         }
         else if (great_alarm == 1) {
@@ -79,10 +86,9 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
             stop_timer(timeout_timer_id);
-
+            start_timeout_timer(timeout_timer_id, 5000);
+            printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
             if (temp_buff.seq == NOT_A_PKT) {
-                printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.payload);
-                start_timeout_timer(timeout_timer_id, 5000);
                 stop_timer(win_buf_snd[temp_buff.ack].time_id);
                 win_buf_snd[temp_buff.ack].acked = 1;
                 if (temp_buff.ack == window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -98,6 +104,7 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 temp_buff.seq = NOT_A_PKT;
                 temp_buff.command=DATA;
                 send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr), param_client.loss_prob);
+                window_base_rcv=(window_base_rcv+1)%(2*W);
                 close_connection(temp_buff,seq_to_send,filename,win_buf_snd,sockfd,serv_addr, len,window_base_snd,window_base_rcv,pkt_fly,W,byte_rcv);
             } else if (temp_buff.command == DIMENSION) {
                 temp_buff.ack = temp_buff.seq;
@@ -106,7 +113,8 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 send_message(sockfd, &temp_buff, &serv_addr, sizeof(serv_addr), param_client.loss_prob);
                 //transmission();
             } else {
-                printf("ignora\n");
+                printf("ignorato pacchetto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq,
+                       temp_buff.command, temp_buff.payload);
             }
         }
         else if (great_alarm == 1) {

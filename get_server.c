@@ -15,6 +15,11 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
     char *command, *path, dim[11], first_pkt;
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
     printf("%s\n", path);
+    temp_buff.ack = temp_buff.seq;
+    temp_buff.seq= NOT_A_PKT;
+    temp_buff.command = DATA;
+    strcpy(temp_buff.payload, "ACK");
+    send_message(sockfd, &temp_buff, &cli_addr, sizeof(cli_addr), param_serv.loss_prob);
     if (check_if_file_exist(path)) {
         byte_left = get_file_size(path);
         printf("dimensione del file %d\n", byte_left);
@@ -35,14 +40,15 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
     start_timer(win_buf_snd[seq_to_send].time_id, &sett_timer);
     seq_to_send = (seq_to_send + 1) % (2 * W);
     start_timeout_timer(timeout_timer_id, 5000);
+    great_alarm = 0;
+    //printf("sono qui\n");
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) !=
             -1) {//risposta del server
             stop_timer(timeout_timer_id);
+            start_timeout_timer(timeout_timer_id, 5000);
+            printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
             if (temp_buff.seq == NOT_A_PKT) {
-                printf("pacchetto ricevuto con ack %d seq %d dati %s:\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.payload);
-                start_timeout_timer(timeout_timer_id, 5000);
                 stop_timer(win_buf_snd[temp_buff.ack].time_id);
                 win_buf_snd[temp_buff.ack].acked = 1;
                 if (temp_buff.ack ==
@@ -55,7 +61,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
                     }
                 }
             } else if (!seq_is_in_window(window_base_snd, window_base_snd + W - 1, W, temp_buff.seq)) {
-                start_timeout_timer(timeout_timer_id, 5000);
+                //start_timeout_timer(timeout_timer_id, 5000);
                 temp_buff.command = DATA;
                 temp_buff.ack = temp_buff.seq;
                 temp_buff.seq = NOT_A_PKT;
@@ -67,6 +73,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
                 strcpy(temp_buff.payload, "FIN_ACK");
                 send_message(sockfd, &temp_buff, &cli_addr, sizeof(cli_addr), param_serv.loss_prob);
                 stop_all_timers(win_buf_snd, W);
+                stop_timer(timeout_timer_id);
                 return byte_readed;//fine connesione
             } else if (temp_buff.command == START) {
                 temp_buff.command = DATA;

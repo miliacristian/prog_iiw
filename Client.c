@@ -92,14 +92,14 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     if (sigaction(SIGRTMIN+1, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    while (rtx < 5000) {//scaduto 5 volte il timer il server non risponde
+    while (rtx < 500000 ) {//scaduto 5 volte il timer il server non risponde
         /*if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, sizeof(main_servaddr)) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
         }
         printf("syn mandato\n");*/
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id, 3000);
+        start_timeout_timer(timeout_timer_id, 30);
 
         if (recvfrom(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             // so l'indirizzo di chi contattare
