@@ -250,15 +250,15 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
         great_alarm=0;
         window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
         if(temp_buff.command==LIST){
-            execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
+            execute_list(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             return;
         }
         else if(temp_buff.command==PUT){
-            execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
+            execute_put(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             return;
         }
         else if(temp_buff.command==GET){
-            execute_get(sockfd, request.addr, len, seq_to_send,window_base_snd,window_base_rcv,W, pkt_fly,temp_buff, win_buf_rcv, win_buf_snd);
+            execute_get(sockfd, request.addr, len, &seq_to_send,&window_base_snd,&window_base_rcv,W, &pkt_fly,temp_buff, win_buf_rcv, win_buf_snd);
             return;
         }
         else{
