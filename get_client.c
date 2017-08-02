@@ -323,10 +323,10 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
             }
             else if(seq_is_in_window(window_base_rcv, W,temp_buff.seq)){
                 rcv_data_send_ack_in_window_cli(sockfd,fd,&serv_addr,len,temp_buff,win_buf_rcv,&window_base_rcv,loss_prob,W,dimension,&byte_written);
-                start_timeout_timer(timeout_timer_id,5000);
                 if(byte_written==dimension){
                     wait_for_fin(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_rcv,loss_prob);
                 }
+                start_timeout_timer(timeout_timer_id, 5000);
             }
             else {
                 printf("ignorato pacchetto wait dimension con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq,
