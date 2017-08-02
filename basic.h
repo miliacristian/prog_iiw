@@ -40,7 +40,9 @@
 #define NOT_AN_ACK -5
 #define FIN 2
 #define FIN_ACK 3
-#define COMMAND 1
+#define GET 1
+#define PUT 7
+#define LIST 8
 #define DATA 0
 #ifndef LINE_H
 #define LINE_H
