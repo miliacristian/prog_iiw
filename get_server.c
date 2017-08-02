@@ -143,11 +143,11 @@ void send_message_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,str
     }
     return;
 }
-void close_get_send_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int W,double loss_prob){//manda fin non in finestra senza sequenza e ack e chiudi
+int  close_get_send_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int W,double loss_prob,int byte_written){//manda fin non in finestra senza sequenza e ack e chiudi
     send_message_serv(sockfd,&cli_addr,len,temp_buff,"FIN",FIN,loss_prob);
     stop_timer(timeout_timer_id);
     stop_all_timers(win_buf_snd, W);
-    return;
+    return byte_written;
 }
 int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_to_send, int window_base_snd,int window_base_rcv, int W,int pkt_fly,struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, struct window_snd_buf *win_buf_snd,int fd,int byte_readed,int dim,double loss_prob){
     errno=0;
@@ -213,8 +213,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
     errno=0;
     start_timeout_timer(timeout_timer_id, 5000);
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) !=
-            -1) {//risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//risposta del server
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
             if (temp_buff.seq == NOT_A_PKT) {
@@ -227,7 +226,6 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
                 start_timeout_timer(timeout_timer_id,5000);
             }
             else if (!seq_is_in_window(window_base_rcv, W, temp_buff.seq)) {
-                printf("pacchetto fuori finestra execut get \n");
                 rcv_msg_re_send_ack_in_window_serv(sockfd,&cli_addr,len,temp_buff,loss_prob,W);
                 start_timeout_timer(timeout_timer_id,5000);
             }

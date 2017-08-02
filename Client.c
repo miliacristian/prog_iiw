@@ -67,7 +67,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    byte_written= wait_for_dimension(sockfd, serv_addr, len, filename, byte_written , seq_to_send , window_base_snd , window_base_rcv, W, pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
+    wait_for_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     return byte_written;
 }
 
