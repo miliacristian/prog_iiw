@@ -18,23 +18,37 @@ void handle_error_with_exit(char*errorString){
     perror(errorString);
     exit(EXIT_FAILURE);
 }
-char seq_is_in_window(int win_base,int end_win,int window,int seq){
+char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
+    printf("winbase %d W %d seq %d\n",win_base,window,seq);
+    int end_win=(win_base+window-1)%(2*window);
     if(seq<0){
+        printf("0\n");
         return 0;
     }
-    if(win_base<=window){
-        if(seq>=win_base || seq<=end_win){
+    if(seq>((2*window)-1)){
+        printf("0\n");
+        return 0;
+    }
+    if(win_base<window+1){
+        printf("caso minore W");
+        if(seq>=win_base && seq<=end_win){
+            printf("1\n");
             return 1;
         }
+        printf("0\n");
         return 0;
     }
-    else{//window base>window
+    else {//window base>=window+1
+        printf("caso maggiore W");
         if(seq<win_base && seq>end_win){
+            printf("0\n");
             return 0;
         }
+        printf("1\n");
         return 1;
     }
+
 }
 char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
     int random_num=rand()%101;

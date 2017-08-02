@@ -92,6 +92,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     if (sigaction(SIGRTMIN+1, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
+    errno=0;
     while (rtx < 500000 ) {
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
@@ -101,6 +102,9 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
             printf("connessione instaurata\n");
             great_alarm = 0;
             return main_servaddr;//ritorna l'indirizzo del processo figlio del server
+        }
+        else if(errno!=EINTR){
+            handle_error_with_exit("error in recvfrom send_syn\n");
         }
 
         rtx++;

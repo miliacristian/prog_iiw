@@ -48,7 +48,7 @@
                     // scorro la finestra fino al primo ancora non ricevuto
                     while (win_buf[window_base].received ==1) {
                         //dentro il buffer non deve esserci il terminatore
-                        writen(fd,win_buf[window_base].payload,strlen(win_buf[window_base].payload));//necessario cosi non copia il terminatore
+                       writen (fd,win_buf[window_base].payload,strlen(win_buf[window_base].payload));//necessario cosi non copia il terminatore
 			//controllo su writen
                         byte_written+=strlen(win_buf[window_base].payload);
                         win_buf[window_base].received=0;//segna pacchetto come non ricevuto

@@ -241,9 +241,6 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     temp_addr.dest_addr = request.addr;
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
 
-    //if (sendto(sockfd,NULL,0,0,(struct sockaddr *)&(request.addr),sizeof(struct sockaddr_in))==-1) {
-      //  handle_error_with_exit("error in sendto SIN_ACK");
-    //}//rispondo al syn con il syn_ack non in finestra
     send_syn_ack(sockfd, &request.addr, sizeof(request.addr),0 ); //param_serv.loss_prob
     start_timeout_timer(timeout_timer_id, 3000);
     if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
@@ -252,15 +249,15 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
         printf("connessione instaurata\n");
         great_alarm=0;
         window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
-        if(strncmp(temp_buff.payload,"list",4)==0){
+        if(temp_buff.command==LIST){
             execute_list(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             return;
         }
-        else if(strncmp(temp_buff.payload,"put",3)==0){
+        else if(temp_buff.command==PUT){
             execute_put(sockfd,seq_to_send,temp_buff,window_base_rcv,window_base_snd,pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             return;
         }
-        else if(strncmp(temp_buff.payload,"get",3)==0){
+        else if(temp_buff.command==GET){
             execute_get(sockfd, request.addr, len, seq_to_send,window_base_snd,window_base_rcv,W, pkt_fly,temp_buff, win_buf_rcv, win_buf_snd);
             return;
         }
@@ -268,6 +265,9 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
             printf("invalid_command\n");
             return;
         }
+    }
+    else if(errno!=EINTR){
+        handle_error_with_exit("error in send_syn_ack recvfrom\n");
     }
     else if(great_alarm==1){
         great_alarm=0;
