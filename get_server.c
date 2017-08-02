@@ -238,6 +238,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int seq_
                 return byte_readed;//fine connesione
             }
             else if (temp_buff.command == START) {
+                printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,&window_base_rcv,loss_prob,W);
                 send_file(sockfd,cli_addr,len,seq_to_send,window_base_snd,window_base_rcv, W,pkt_fly,temp_buff,win_buf_rcv,win_buf_snd,fd,byte_readed,dimension,loss_prob);
             }
