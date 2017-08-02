@@ -112,3 +112,4 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
 void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
 char* generate_full_pathname(char* filename, char* dir_server);
 void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
+void copy_buf1_in_buf2(char*buf2,char*buf1,int dim);

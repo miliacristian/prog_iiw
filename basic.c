@@ -18,6 +18,14 @@ void handle_error_with_exit(char*errorString){
     perror(errorString);
     exit(EXIT_FAILURE);
 }
+void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
+    for(int i=0;i<dim;i++){
+        *buf2=*buf1;
+        buf1++;
+        buf2++;
+    }
+    return;
+}
 char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
     printf("winbase %d W %d seq %d\n",win_base,window,seq);

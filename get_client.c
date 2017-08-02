@@ -98,12 +98,13 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     if((dim-(*byte_sent))<(MAXPKTSIZE-9)){
         readn(fd,temp_buff.payload,(size_t)(dim-(*byte_sent)));
         *byte_sent+=(dim-(*byte_sent));
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,(dim-(*byte_sent)));
     }
     else {
         readn(fd, temp_buff.payload, (MAXPKTSIZE - 9));
         *byte_sent+=MAXPKTSIZE-9;
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-9);
     }
-    strcpy(win_buf_snd[*seq_to_send].payload,temp_buff.payload);
     win_buf_snd[*seq_to_send].command=DATA;
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
@@ -119,10 +120,10 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     (*pkt_fly)++;
     return;
 }
-void rcv_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim,int *byte_written){
+void rcv_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_,int dim,int *byte_written){
     struct temp_buffer ack_buff;
     win_buf_rcv[temp_buff.seq].command=temp_buff.command;
-    strcpy(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload);
+    copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload,MAXPKTSIZE-9);
     win_buf_rcv[temp_buff.seq].received=1;
     ack_buff.ack=temp_buff.seq;
     ack_buff.seq=NOT_A_PKT;
@@ -132,10 +133,14 @@ void rcv_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,sock
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
             if(win_buf_rcv[*window_base_rcv].command==DATA) {
-                writen(fd, win_buf_rcv[*window_base_rcv].payload,
-                       strlen(win_buf_rcv[*window_base_rcv].payload));//necessario cosi non copia il terminatore
-                //controllo su writen
-                *byte_written += strlen(win_buf_rcv[*window_base_rcv].payload);
+                if(dim-*byte_written>MAXPKTSIZE-9){
+                    writen(fd,win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE-9);
+                    *byte_written +=MAXPKTSIZE-9;
+                }
+                else {
+                    writen(fd, win_buf_rcv[*window_base_rcv].payload,(size_t)dim-*byte_written);
+                    *byte_written +=dim-*byte_written;
+                }
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
             }
