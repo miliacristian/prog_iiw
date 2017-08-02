@@ -354,6 +354,7 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
 int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len, char *filename, int *byte_written , int *seq_to_send , int *window_base_snd , int *window_base_rcv, int W, int *pkt_fly , struct temp_buffer temp_buff ,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd) {
     errno=0;
     int fd,dimension;
+    char*path;
     double loss_prob=param_client.loss_prob;
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
@@ -380,10 +381,13 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
             else if (temp_buff.command == DIMENSION) {
                 rcv_msg_send_ack_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 printf("dimensione %s\n",temp_buff.payload);//stampa dimensione
-                fd=open(filename,O_WRONLY | O_CREAT,0666);
+                path=generate_full_pathname(filename,dir_client);
+                printf("full pathname %s\n",path);
+                fd=open(path,O_WRONLY | O_CREAT,0666);
                 if(fd==-1){
                     handle_error_with_exit("error in open file\n");
                 }
+                free(path);
                 dimension=parse_integer(temp_buff.payload);
                 printf("dimensione intera %d\n",dimension);
                 rcv_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,byte_written);
