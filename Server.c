@@ -36,14 +36,14 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     return;
 }
 
-int execute_list(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
+int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     printf("server execute_list\n");
     return 0;
 }
 
-int execute_put(int sockfd,int seq_to_send,struct temp_buffer temp_buff,int window_base_rcv,int window_base_snd,int pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
+int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     printf("server execute_put\n");
