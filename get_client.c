@@ -405,6 +405,9 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 dimension=parse_integer(temp_buff.payload);
                 printf("dimensione intera %d\n",dimension);
                 rcv_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,byte_written);
+                if(close(fd)==-1){
+                    handle_error_with_exit("error in close file\n");
+                }
                 printf("return wait for dimension 2\n");
                 return *byte_written;
             }

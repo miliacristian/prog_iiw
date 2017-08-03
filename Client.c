@@ -53,7 +53,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     socklen_t len = sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, param_client.timer_ms);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
@@ -125,13 +125,15 @@ void client_list_job() {
     int sockfd;
     printf("client list job\n");
     make_timeout_timer(&timeout_timer_id);
-    memset((void *) &serv_addr, 0, sizeof(serv_addr));
+
+    memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
     }
     memset((void *) &cliaddr, 0, sizeof(cliaddr));
@@ -140,8 +142,9 @@ void client_list_job() {
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    serv_addr = send_syn_recv_ack(sockfd, serv_addr);
+    serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
     list_command(sockfd, serv_addr);
+    printf("finito comando list\n");
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
@@ -151,13 +154,15 @@ void client_get_job(char *filename) {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     make_timeout_timer(&timeout_timer_id);
-    memset((void *) &serv_addr, 0, sizeof(serv_addr));
+
+    memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
     }
     memset((void *) &cliaddr, 0, sizeof(cliaddr));
@@ -166,7 +171,7 @@ void client_get_job(char *filename) {
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    serv_addr = send_syn_recv_ack(sockfd, serv_addr);
+    serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
     get_command(sockfd, serv_addr, filename);
     printf("finito comando get\n");
     close(sockfd);
@@ -178,13 +183,15 @@ void client_put_job(char *filename) {//upload e filename già verificato
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     make_timeout_timer(&timeout_timer_id);
-    memset((void *) &serv_addr, 0, sizeof(serv_addr));
+
+    memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
     }
     memset((void *) &cliaddr, 0, sizeof(cliaddr));
@@ -193,11 +200,13 @@ void client_put_job(char *filename) {//upload e filename già verificato
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
-    serv_addr = send_syn_recv_ack(sockfd, serv_addr);
+    serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
     put_command(sockfd, serv_addr, filename);
+    printf("finito comando put\n");
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
+
 void *thread_job(void *arg) {
     (void) arg;
     //waitpid dei processi del client

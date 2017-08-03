@@ -10,7 +10,7 @@
 //variabili globali
 struct addr *addr = NULL;
 struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
-int msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
+int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 timer_t timeout_timer_id;
 char*dir_server;
@@ -74,11 +74,11 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
 
-    memset((void *)&serv_addr, 0, sizeof(serv_addr));
+    memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);
     serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         handle_error_with_exit("error in socket create\n");
     }
     if (bind(sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
@@ -107,20 +107,32 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         if(temp_buff.command==LIST){
             execute_list(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             printf("comando list finito\n");
+            if(close(sockfd)==-1){
+                handle_error_with_exit("error in close socket child process\n");
+            }
             return;
         }
         else if(temp_buff.command==PUT){
             execute_put(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
             printf("comando put finito\n");
+            if(close(sockfd)==-1){
+                handle_error_with_exit("error in close socket child process\n");
+            }
             return;
         }
         else if(temp_buff.command==GET){
             execute_get(sockfd, request.addr, len, &seq_to_send,&window_base_snd,&window_base_rcv,W, &pkt_fly,temp_buff, win_buf_rcv, win_buf_snd);
             printf("comando get finito\n");
+            if(close(sockfd)==-1){
+                handle_error_with_exit("error in close socket child process\n");
+            }
             return;
         }
         else{
             printf("invalid_command\n");
+            if(close(sockfd)==-1){
+                handle_error_with_exit("error in close socket child process\n");
+            }
             return;
         }
     }
@@ -138,23 +150,26 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
     printf("pid %d\n",getpid());
     struct msgbuf request;//contiene comando e indirizzi del client
-    int sockfd,value;
+    int value;
     char done_jobs=0;
     struct sigaction sa,sa_timeout;
 
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
     make_timeout_timer(&timeout_timer_id);
+    if(close(main_sockfd)==-1){//chiudi il socket del padre
+        handle_error_with_exit("error in close socket fd\n");
+    }
 
-    sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    sa.sa_flags = SA_SIGINFO;//gestione segnali e sigrtmin
+    sa.sa_sigaction = timer_handler;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_sigaction = timer_handler;//chiama handler quando scade un alarm
+    sa_timeout.sa_sigaction = timer_handler;
     if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
@@ -246,7 +261,7 @@ void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che cr
 }
 
 int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei segnali,farla prima di crearli
-    int sockfd,fd,readed;
+    int fd,readed;
 
     socklen_t len;
     char commandBuffer[MAXCOMMANDLINE+1],*line,*command,localname[80];
@@ -308,24 +323,24 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     initialize_mtx_prefork(mtx_prefork);
 
 
-    memset((void *)&addr, 0, sizeof(addr));
+    memset((void *)&addr, 0, sizeof(addr));//inizializza socket processo principale
     addr.sin_family=AF_INET;
     addr.sin_port=htons(SERVER_PORT);
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) { // crea il socket
+    if ((main_sockfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) {
         handle_error_with_exit("error in socket create\n");
     }
 
-    if (bind(sockfd,(struct sockaddr*)&addr,sizeof(addr)) < 0) {
+    if (bind(main_sockfd,(struct sockaddr*)&addr,sizeof(addr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
 
-    create_pool(1);//solo per ora num_child=0
-    //create_thread_pool_handler(mtx_prefork);
+    create_pool(1);//da cambiare
+    //create_thread_pool_handler(mtx_prefork);//da decommentare
 
     while(1) {
         len=sizeof(cliaddr);
-        if ((recvfrom(sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {
+        if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {
             handle_error_with_exit("error in recvcommand");//scrive nella struct le info del client
             // e nel buffer il comando ricevuto dal client
         }

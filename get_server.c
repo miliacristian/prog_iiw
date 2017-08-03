@@ -333,6 +333,9 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 send_file(sockfd,cli_addr,len,seq_to_send,window_base_snd,window_base_rcv, W,pkt_fly,temp_buff,win_buf_rcv,win_buf_snd,fd,&byte_readed,dimension,loss_prob);
+                if(close(fd)==-1){
+                    handle_error_with_exit("error in close file\n");
+                }
                 return byte_readed;
             }
             else {
