@@ -123,7 +123,8 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
 void rcv_data_send_ack_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W,int dim,int *byte_written){
     struct temp_buffer ack_buff;
     win_buf_rcv[temp_buff.seq].command=temp_buff.command;
-    copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload,MAXPKTSIZE-9);
+    copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload,MAXPKTSIZE-9);//memorizzzo tutti i dati
+    // alcuni saranno scartati sull'ultimo pacchetto
     win_buf_rcv[temp_buff.seq].received=1;
     ack_buff.ack=temp_buff.seq;
     ack_buff.seq=NOT_A_PKT;
@@ -133,13 +134,13 @@ void rcv_data_send_ack_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
             if(win_buf_rcv[*window_base_rcv].command==DATA) {
-                if(dim-*byte_written>=MAXPKTSIZE-9){
+                if(dim-*byte_written>=MAXPKTSIZE-9){//byte rimanenti
                     writen(fd,win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE-9);
-                    *byte_written +=MAXPKTSIZE-9;
+                    *byte_written +=MAXPKTSIZE-9;//aggiorna byte scritti
                 }
                 else {
                     writen(fd, win_buf_rcv[*window_base_rcv].payload,(size_t)dim-*byte_written);
-                    *byte_written +=dim-*byte_written;
+                    *byte_written +=dim-*byte_written;//aggiorna byte scritti
                 }
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
@@ -208,11 +209,11 @@ void send_message_cli(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,str
 
 int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
     printf("close connection\n");
-    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"FIN",FIN,seq_to_send,loss_prob,W,pkt_fly);
+    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"FIN",FIN,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio di fin
     start_timeout_timer(timeout_timer_id, 5000);
     errno=0;
     while(1){
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
@@ -233,7 +234,6 @@ int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
                 rcv_msg_re_send_ack_in_window_cli(sockfd,&serv_addr,len,temp_buff,loss_prob,W);
                 start_timeout_timer(timeout_timer_id, 5000);
-
             }
             else {
                 printf("ignorato close connect pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
@@ -259,7 +259,8 @@ int  wait_for_fin(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd
     start_timeout_timer(timeout_timer_id, 5000);//chiusura temporizzata
     errno=0;
     while(1){
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
+            // aspetto finquando non lo ricevo
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
@@ -309,7 +310,8 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
     printf("rcv file\n");
     errno=0;
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
+            // o altri messaggi
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT) {
@@ -360,10 +362,11 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     double loss_prob=param_client.loss_prob;
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
-    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,loss_prob,W,pkt_fly);
+    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio get
     start_timeout_timer(timeout_timer_id, 5000);
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
+            //mi blocco sulla risposta del server
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT) {
@@ -371,7 +374,7 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                     rcv_ack_in_window_cli(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    printf("ack duplicato\n");
+                    printf("ack duplicato non fare nulla\n");
                 }
                 start_timeout_timer(timeout_timer_id,5000);
             }

@@ -330,7 +330,6 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 send_file(sockfd,cli_addr,len,seq_to_send,window_base_snd,window_base_rcv, W,pkt_fly,temp_buff,win_buf_rcv,win_buf_snd,fd,&byte_readed,dimension,loss_prob);
                 return byte_readed;
             }
-
             else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);

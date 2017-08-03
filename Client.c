@@ -162,6 +162,7 @@ void client_get_job(char *filename) {
     }
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);
     get_command(sockfd, serv_addr, filename);
+    printf("finito comando get\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -195,7 +196,7 @@ void *thread_job(void *arg) {
     pid_t pid;
     while (1) {
         while ((pid = waitpid(-1, NULL, 0)) > 0) {
-            printf("process %d\n", pid);
+            printf("pool handler libera risose del processo %d\n", pid);
         }
     }
     return NULL;
