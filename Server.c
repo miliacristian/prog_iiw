@@ -137,7 +137,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
     printf("pid %d\n",getpid());
-    //struct sockaddr_in serv_addr;//struttura per processo locale
     struct msgbuf request;//contiene comando e indirizzi del client
     int sockfd,value;
     char done_jobs=0;
@@ -146,17 +145,6 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
     make_timeout_timer(&timeout_timer_id);
-
-    /*memset((void *)&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family=AF_INET;
-    serv_addr.sin_port=htons(0);
-    serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
-        handle_error_with_exit("error in socket create\n");
-    }
-    if (bind(sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
-        handle_error_with_exit("error in bind\n");
-    }*/
 
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
