@@ -177,7 +177,8 @@ void send_message_in_window_serv(int sockfd,struct sockaddr_in *cli_addr,socklen
 void send_fin_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
     temp_buff.command=FIN;
     strcpy(temp_buff.payload,"FIN");
-    //senza ack e senza sequenza
+    temp_buff.ack=NOT_AN_ACK;
+    temp_buff.seq=NOT_A_PKT;
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) cli_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
@@ -194,7 +195,8 @@ void send_fin_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,struct 
 void send_fin_ack_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
     temp_buff.command=FIN_ACK;
     strcpy(temp_buff.payload,"FIN_ACK");
-    //senza ack e senza sequenza
+    temp_buff.ack=NOT_AN_ACK;
+    temp_buff.seq=NOT_A_PKT;
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) cli_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
@@ -208,6 +210,8 @@ void send_fin_ack_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,str
 }
 void send_message_serv(int sockfd,struct sockaddr_in *cli_addr,socklen_t len,struct temp_buffer temp_buff,char*data,char command,double loss_prob){
     strcpy(temp_buff.payload,data);
+    temp_buff.ack=NOT_AN_ACK;
+    temp_buff.seq=NOT_A_PKT;
     temp_buff.command=command;
     //niente ack e sequenza
     if(flip_coin(loss_prob)) {
@@ -241,7 +245,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//risposta del server
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
-            if (temp_buff.seq == NOT_A_PKT) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_file_in_window_serv(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly,dim,byte_readed);
                     if(*byte_readed==dim){
@@ -305,7 +309,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//risposta del server
             stop_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
-            if (temp_buff.seq == NOT_A_PKT) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window_serv(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }

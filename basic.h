@@ -46,7 +46,7 @@
 #define DATA 0
 #ifndef LINE_H
 #define LINE_H
-
+//pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
 struct temp_buffer{
     int seq;
     int ack;

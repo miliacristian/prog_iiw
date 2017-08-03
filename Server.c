@@ -299,10 +299,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     free(line);
     command=NULL;
 
-   /* msg_key=create_key(".",'d');
-    mtx_key=create_key(".",'b');
-    mtx_fork_key=create_key(".",'c');*/
-
     mtx_prefork_id=get_id_shared_mem(sizeof(struct mtx_prefork));
     child_mtx_id=get_id_shared_mem(sizeof(sem_t));
     msgid=get_id_msg_queue();//crea coda di messaggi id globale

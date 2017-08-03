@@ -196,7 +196,7 @@ void *thread_job(void *arg) {
     pid_t pid;
     while (1) {
         while ((pid = waitpid(-1, NULL, 0)) > 0) {
-            printf("pool handler libera risose del processo %d\n", pid);
+            printf("pool handler libera risorse del processo %d\n", pid);
         }
     }
     return NULL;
