@@ -61,10 +61,10 @@ void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *se
         if (sendto(sockfd, temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf("pacchetto inviato con ack %d seq %d command %d dati %s:\n", temp_buff->ack, temp_buff->seq,temp_buff->command, temp_buff->payload);
+        printf("pacchetto inviato con ack %d seq %d command %d \n", temp_buff->ack, temp_buff->seq,temp_buff->command);
     }
     else{
-        printf("pacchetto con ack %d, seq %d command %d dati %s perso\n",temp_buff->ack,temp_buff->seq, temp_buff->command, temp_buff-> payload);
+        printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff->ack,temp_buff->seq, temp_buff->command);
     }
     return;
 }
@@ -74,10 +74,10 @@ void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *
         if (sendto(sockfd, temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf("pacchetto ritrasmesso con ack %d seq %d command %d dati %s:\n", temp_buff->ack, temp_buff->seq,temp_buff->command, temp_buff->payload);
+        printf("pacchetto ritrasmesso con ack %d seq %d command %d\n", temp_buff->ack, temp_buff->seq,temp_buff->command);
     }
     else{
-        printf("pacchetto ritrasmesso con ack %d, seq %d command %d perso\n",temp_buff->ack,temp_buff->seq, temp_buff->command);
+        printf("pacchetto ritrasmesso con ack %d, seq %d perso\n",temp_buff->ack,temp_buff->seq);
     }
     return;
 }
