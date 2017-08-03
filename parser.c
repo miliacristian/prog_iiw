@@ -23,7 +23,7 @@ void move_pointer(char**string,int n){
 }
 
 int skip_space(char**string){
-    if(string==NULL){
+    if(*string==NULL){
         handle_error_with_exit("error in move_pointer\n");
     }
     int count=0;
@@ -48,7 +48,7 @@ char is_blank(char*string){
     return 1;
 }
 int parse_integer_and_move(char**string) {
-    if(string==NULL){
+    if(*string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
     char*errptr;
@@ -63,7 +63,7 @@ int parse_integer_and_move(char**string) {
 }
 
 long parse_long_and_move(char**string) {
-    if(string==NULL){
+    if(*string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
     char*errptr;
@@ -78,7 +78,7 @@ long parse_long_and_move(char**string) {
 }
 
 double parse_double_and_move(char**string){
-    if(string==NULL){
+    if(*string==NULL){
         handle_error_with_exit("error in parse_double\n");
     }
     char*errptr;
@@ -130,45 +130,6 @@ double parse_double(char*string){
     }
     return value;
 }
-/*struct parameter check_and_parse_parameter_value(char**argv){//controlla parametri di esecuzione
-    if(argv==NULL){
-        handle_error_with_exit("error in check_and_parse_parameter_value\n");
-    }
-    struct parameter parameter;
-    errno=0;
-    parameter.server_port=parse_integer(argv[1]);
-    parameter.window=parse_integer(argv[2]);
-    parameter.timer=parse_double(argv[3]);
-    parameter.loss_probability=parse_double(argv[4]);
-    if((mkdir(argv[5],0777)==-1) && (errno!=EEXIST)){
-        handle_error_with_exit("error in make directory\n");
-    }
-    if(errno==EEXIST){
-        printf("directory already exist\n");
-    }
-    int path_len=strlen(argv[5]);
-    if(argv[5][path_len-1]=='/') {
-        parameter.directory=malloc(sizeof(char)*(path_len+1));
-        if(parameter.directory==NULL){
-            handle_error_with_exit("error in malloc\n");
-        }
-        strcpy(parameter.directory,argv[5]);
-        printf("%s\n",parameter.directory);
-    }
-    else{
-        parameter.directory=malloc(sizeof(char)*(path_len+2));
-        if(parameter.directory==NULL){
-            handle_error_with_exit("error in malloc\n");
-        }
-        strcpy(parameter.directory,argv[5]);
-        strcat(parameter.directory,"/");
-        printf("%s\n",parameter.directory);
-    }
-    if(parameter.timer<0 || parameter.window<=0 || parameter.loss_probability<0 || parameter.loss_probability>100 ){
-        handle_error_with_exit("invalid parameter\n");
-    }
-    return parameter;
-}*/
 
 void check_and_parse_command(char*command,char*filename){
     if(command==NULL || filename==NULL){

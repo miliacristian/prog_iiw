@@ -55,7 +55,7 @@ int readline(int fd, void *vptr, int maxlen)
 
     ptr = vptr;
     for (n = 1; n < maxlen; n++) {
-        if ((rc = read(fd, &c, 1)) == 1) {
+        if ((rc = (int)read(fd, &c, 1)) == 1) {
             *ptr++ = c;
             if (c == '\n') break;
         }

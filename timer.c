@@ -72,7 +72,7 @@ void set_timer(struct itimerspec *its, long msec) {
 }
 
 void stop_all_timers(struct window_snd_buf* win_buf_snd, int W){
-    for (int i = 0; i < 2*W; i++){
+    for (int i = 0; i <( 2*W); i++){
         timer_delete(win_buf_snd[i].time_id);
     }
     return;

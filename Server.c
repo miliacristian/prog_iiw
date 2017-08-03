@@ -30,8 +30,8 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         start_timer((*win_buffer).time_id, &sett_timer);
     }
     else if(sig == SIGRTMIN+1){
-        printf("great timeout expired\n");
         great_alarm = 1;
+        printf("tempo scaduto\n");
     }
     return;
 }
@@ -87,7 +87,9 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
 
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
-
+    for (int i = 0; i < 2 * W; i++) {
+        win_buf_snd[i].seq_numb = i;
+    }
     make_timers(win_buf_snd, W);//crea 2w timer
     set_timer(&sett_timer, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
 
