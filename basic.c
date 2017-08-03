@@ -28,32 +28,23 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
 }
 char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
-    printf("winbase %d W %d seq %d\n",win_base,window,seq);
     int end_win=(win_base+window-1)%(2*window);
     if(seq<0){
-        printf("0\n");
         return 0;
     }
     if(seq>((2*window)-1)){
-        printf("0\n");
         return 0;
     }
     if(win_base<window+1){
-        printf("caso minore W");
         if(seq>=win_base && seq<=end_win){
-            printf("1\n");
             return 1;
         }
-        printf("0\n");
         return 0;
     }
     else {//window base>=window+1
-        printf("caso maggiore W");
         if(seq<win_base && seq>end_win){
-            printf("0\n");
             return 0;
         }
-        printf("1\n");
         return 1;
     }
 
