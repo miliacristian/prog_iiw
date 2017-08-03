@@ -63,8 +63,10 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
     return;
 }
 
-void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi dalla coda il messaggio di syn
+void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda il messaggio di syn
     //e rispondi al client con syn_ack
+    int sockfd;
+    struct sockaddr_in serv_addr;
     socklen_t len=sizeof(request.addr);
     int seq_to_send =0,window_base_snd=0,window_base_rcv=0,W=param_serv.window, pkt_fly=0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
@@ -72,6 +74,16 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
 
+    memset((void *)&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family=AF_INET;
+    serv_addr.sin_port=htons(0);
+    serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
+        handle_error_with_exit("error in socket create\n");
+    }
+    if (bind(sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
+        handle_error_with_exit("error in bind\n");
+    }
 
     memset(win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*W));//inizializza a zero
     memset(win_buf_snd,0,sizeof(struct window_snd_buf)*(2*W));//inizializza a zero
@@ -83,13 +95,13 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
     temp_addr.dest_addr = request.addr;
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
 
-    send_syn_ack(sockfd, &request.addr, sizeof(request.addr),0 ); //param_serv.loss_prob
+    send_syn_ack(sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
     start_timeout_timer(timeout_timer_id, 3000);
     if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
         stop_timer(timeout_timer_id);
         printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
-        printf("connessione instaurata\n");
+        printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
         great_alarm=0;
         window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
         if(temp_buff.command==LIST){
@@ -125,7 +137,7 @@ void reply_to_syn_and_execute_command(int sockfd,struct msgbuf request){//prendi
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
     printf("pid %d\n",getpid());
-    struct sockaddr_in serv_addr;//struttura per processo locale
+    //struct sockaddr_in serv_addr;//struttura per processo locale
     struct msgbuf request;//contiene comando e indirizzi del client
     int sockfd,value;
     char done_jobs=0;
@@ -133,19 +145,18 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
 
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
+    make_timeout_timer(&timeout_timer_id);
 
-    memset((void *)&serv_addr, 0, sizeof(serv_addr));
+    /*memset((void *)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);
     serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    make_timeout_timer(&timeout_timer_id);
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) { // crea il socket
         handle_error_with_exit("error in socket create\n");
     }
     if (bind(sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
         handle_error_with_exit("error in bind\n");
-    }
-
+    }*/
 
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
@@ -187,7 +198,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
         printf("ho trovato una richiesta in coda\n");
         mtx_prefork->free_process-=1;
         unlock_sem(&(mtx_prefork->sem));
-        reply_to_syn_and_execute_command(sockfd,request);
+        reply_to_syn_and_execute_command(request);
         done_jobs++;
         if(done_jobs>10){
             printf("pid %d\n ha fatto molto lavoro!\n",getpid());
@@ -256,7 +267,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
 
     struct mtx_prefork*mtx_prefork;//mutex tra processi e thread pool handler
     sem_t*mtx;//semaforo tra i processi che provano ad accedere alla coda di messaggi
-    key_t msg_key,shm_key,mtx_key,mtx_fork_key;
+    //key_t msg_key,shm_key,mtx_key,mtx_fork_key;
 
     if(argc!=2){
         handle_error_with_exit("usage <directory>\n");

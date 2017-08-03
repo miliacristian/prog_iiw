@@ -23,7 +23,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         (void) uc;
         struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
         struct temp_buffer temp_buf;
-        strcpy(temp_buf.payload, win_buffer->payload);//dati del pacchetto da ritrasmettere
+        copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere
         temp_buf.ack = NOT_AN_ACK;
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
@@ -83,6 +83,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
 // e server risponde con ack cosi il client sa chi contattare per mandare i messaggi di comando
     struct sigaction sa;
     socklen_t len = sizeof(main_servaddr);
+    struct temp_buffer temp_buff;
     sa.sa_flags =SA_SIGINFO;
     sa.sa_sigaction = timer_handler;
     char rtx = 0;
@@ -93,20 +94,24 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         handle_error_with_exit("error in sigaction\n");
     }
     errno=0;
-    while (rtx < 500000 ) {
+    while (rtx < 500000 ) {//parametro da cambiare
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id, 30);
-        if (recvfrom(sockfd, NULL, 0, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
-            stop_timer(timeout_timer_id);
-            printf("connessione instaurata\n");
-            great_alarm = 0;
-            return main_servaddr;//ritorna l'indirizzo del processo figlio del server
+        start_timeout_timer(timeout_timer_id, 30);//parametro da cambiare
+        if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
+            if (temp_buff.command == SYN_ACK) {
+                stop_timer(timeout_timer_id);
+                printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
+                great_alarm = 0;
+                return main_servaddr;//ritorna l'indirizzo del processo figlio del server
+            }
+            else {
+                printf("pacchetto con comando diverso da syn_ack ignorato");
+            }
         }
-        else if(errno!=EINTR){
+        if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom send_syn\n");
         }
-
         rtx++;
     }
     great_alarm = 0;
@@ -137,6 +142,7 @@ void client_list_job() {
     }
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);
     list_command(sockfd, serv_addr);
+    close(sockfd);
     exit(EXIT_SUCCESS);
 }
 
@@ -163,6 +169,7 @@ void client_get_job(char *filename) {
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);
     get_command(sockfd, serv_addr, filename);
     printf("finito comando get\n");
+    close(sockfd);
     exit(EXIT_SUCCESS);
 }
 
@@ -188,6 +195,7 @@ void client_put_job(char *filename) {//upload e filename già verificato
     }
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);
     put_command(sockfd, serv_addr, filename);
+    close(sockfd);
     exit(EXIT_SUCCESS);
 }
 void *thread_job(void *arg) {
@@ -219,6 +227,7 @@ int main(int argc, char *argv[]) {
     if (argc != 2) {
         handle_error_with_exit("usage <directory>\n");
     }
+    srand(time(NULL));
     dir_client = argv[1];
     check_if_dir_exist(dir_client);
     strcpy(localname, "");
@@ -248,7 +257,7 @@ int main(int argc, char *argv[]) {
     if (param_client.timer_ms < 0) {
         handle_error_with_exit("timer must be positive or zero");
     }
-    path_len = strlen(dir_client);
+    path_len = (int)strlen(dir_client);
     if (close(fd) == -1) {
         handle_error_with_exit("error in close file\n");
     }

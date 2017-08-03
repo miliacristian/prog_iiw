@@ -36,14 +36,16 @@
 #define ERROR 5
 #define START 4
 #define DIMENSION 6
-#define NOT_A_PKT -5
-#define NOT_AN_ACK -5
+#define NOT_A_PKT (-5)
+#define NOT_AN_ACK (-5)
 #define FIN 2
 #define FIN_ACK 3
 #define GET 1
 #define PUT 7
 #define LIST 8
 #define DATA 0
+#define SYN 9
+#define SYN_ACK 10
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -65,7 +67,7 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     char payload[MAXPKTSIZE-9];
     timer_t time_id;
     char command;
-    int time_start;
+    int time_start;//usato per timer adattativo
     int seq_numb;
 };
 

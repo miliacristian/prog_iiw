@@ -82,23 +82,14 @@ void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *
     return;
 }
 
-/*void start_timer(timer_t timer_id, struct itimerspec *its){
-    if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
-        handle_error_with_exit("error in timer_settime\n");
-    }
-}
-
-void stop_timer(timer_t timer_id){
-    struct itimerspec its;
-    set_timer(&its, 0 ,0);
-    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
-        handle_error_with_exit("error in timer_settime\n");
-    }
-}*/
-
 void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double loss_prob) {
+    struct temp_buffer temp_buff;
+    temp_buff.seq=NOT_AN_ACK;
+    temp_buff.command=SYN;
+    temp_buff.ack=NOT_AN_ACK;
+    strcpy(temp_buff.payload,"SYN");
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto syn mandato\n");
@@ -110,9 +101,13 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
 }
 
 void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
+    struct temp_buffer temp_buff;
+    temp_buff.seq=NOT_AN_ACK;
+    temp_buff.command=SYN_ACK;
+    temp_buff.ack=NOT_AN_ACK;
+    strcpy(temp_buff.payload,"SYN_ACK");
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, NULL, 0, 0, (struct sockaddr *) serv_addr, len) ==
-            -1) {//manda richiesta del client al server
+        if (sendto(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto syn ack mandato\n");
@@ -208,13 +203,13 @@ void*attach_shm(int shmid){
     return mtx;
 }
 
-key_t create_key(char*k,char k1){//funzione che crea la chiave per la msgqueue
+/*key_t create_key(char*k,char k1){//funzione che crea la chiave per la msgqueue
     key_t key=ftok(k,k1);
     if(key==-1){
         handle_error_with_exit("error in ftok\n");
     }
     return key;
-}
+}*/
 
 int count_char_dir(char*path){
     DIR *d;
