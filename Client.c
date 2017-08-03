@@ -49,7 +49,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     for (int i = 0; i < 2 * W; i++) {
         win_buf_snd[i].seq_numb = i;
     }
-
+//
     socklen_t len = sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
