@@ -39,7 +39,7 @@ send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     }
     win_buf_snd[*seq_to_send].command = DATA;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -86,7 +86,7 @@ void rcv_data_send_ack_in_window_serv(int sockfd, int fd, struct sockaddr_in *se
         }
     }
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &ack_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) ==
+        if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -105,7 +105,7 @@ void rcv_msg_re_send_ack_in_window_serv(int sockfd, struct sockaddr_in *cli_addr
     strcpy(temp_buff.payload, "ACK");
     temp_buff.command = DATA;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -135,7 +135,7 @@ rcv_msg_send_ack_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockle
         }
     }
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &ack_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -190,7 +190,7 @@ void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockl
     strcpy(win_buf_snd[*seq_to_send].payload, temp_buff.payload);
     win_buf_snd[*seq_to_send].command = command;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -211,7 +211,7 @@ send_fin_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct te
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = NOT_A_PKT;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -230,7 +230,7 @@ void send_fin_ack_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, 
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = NOT_A_PKT;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -250,7 +250,7 @@ send_message_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struc
     temp_buff.command = command;
     //niente ack e sequenza
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
