@@ -232,7 +232,7 @@ int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename
     errno=0;
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -245,7 +245,7 @@ int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (temp_buff.command==FIN_ACK) {
-                stop_timer(timeout_timer_id);
+                stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
                 printf("return close connection 1\n");
                 return *byte_written;
@@ -267,7 +267,7 @@ int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("return close connection 2\n");
             return *byte_written;
         }
@@ -281,10 +281,10 @@ int  wait_for_fin(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN) {
-                stop_timer(timeout_timer_id);
+                stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
                 printf("return wait_for_fin 1\n");
                 return *byte_written;
@@ -316,7 +316,7 @@ int  wait_for_fin(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("return wait_for_fin 2\n");
             return *byte_written;
         }
@@ -332,7 +332,7 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -370,7 +370,7 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("return rcv file 2\n");
             return *byte_written;
         }
@@ -389,7 +389,7 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -439,7 +439,7 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("return wait for dimension 3\n");
             return *byte_written;
         }

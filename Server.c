@@ -102,7 +102,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     start_timeout_timer(timeout_timer_id, 3000);
     if(recvfrom(sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(request.addr),&len)!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
-        stop_timer(timeout_timer_id);
+        stop_timeout_timer(timeout_timer_id);
         printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
         printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
         great_alarm=0;

@@ -21,6 +21,14 @@ void stop_timer(timer_t timer_id){
         handle_error_with_exit("error in timer_settime\n");
     }
 }
+void stop_timeout_timer(timer_t timer_id){
+    struct itimerspec its;
+    set_timer(&its, 0);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+    printf("timeout stoppato\n");
+}
 
 void make_timeout_timer(timer_t* timer_id){
     struct sigevent te;

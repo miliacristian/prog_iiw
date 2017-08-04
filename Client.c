@@ -101,7 +101,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         start_timeout_timer(timeout_timer_id, 30);//parametro da cambiare
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
-                stop_timer(timeout_timer_id);
+                stop_timeout_timer(timeout_timer_id);
                 printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
                 great_alarm = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server

@@ -266,7 +266,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
                         struct window_snd_buf *win_buf_snd, int W, double loss_prob,
                         int *byte_readed) {//manda fin non in finestra senza sequenza e ack e chiudi
     printf("close_get_send_file\n");
-    stop_timer(timeout_timer_id);
+    stop_timeout_timer(timeout_timer_id);
     stop_all_timers(win_buf_snd, W);
     send_message_serv(sockfd, &cli_addr, len, temp_buff, "FIN", FIN, loss_prob);
     printf("close get send_file\n");
@@ -286,7 +286,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             send_data_in_window_serv(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
@@ -351,7 +351,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            stop_timer(timeout_timer_id);
+            stop_timeout_timer(timeout_timer_id);
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -367,7 +367,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
             } else if (temp_buff.command == FIN) {
                 send_message_serv(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK, loss_prob);
                 stop_all_timers(win_buf_snd, W);
-                stop_timer(timeout_timer_id);
+                stop_timeout_timer(timeout_timer_id);
                 return byte_readed;//fine connesione
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
