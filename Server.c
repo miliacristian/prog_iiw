@@ -32,6 +32,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
     else if(sig == SIGRTMIN+1){
         great_alarm = 1;
         printf("tempo scaduto\n");
+        printf("%d\n",errno);
     }
     return;
 }
