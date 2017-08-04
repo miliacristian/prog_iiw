@@ -14,7 +14,7 @@ ssize_t writen(int fd, void *buf, size_t n){
     nleft = n;
     while (nleft > 0) {
         if ((nwritten = write(fd, ptr, nleft)) <= 0) {
-            if ((nwritten < 0) && (errno == EINTR)){
+            if ((nwritten < 0) && (errno == EINTR)){//se è stato interrotto da un segnale continua
             nwritten = 0;
             }
             else{
@@ -35,7 +35,7 @@ ssize_t readn(int fd,void *buf, size_t n){
     nleft = n;
     while (nleft > 0) {
         if ((nread = read(fd, ptr, nleft)) <= 0) {
-            if ((nread < 0) && (errno == EINTR)){
+            if ((nread < 0) && (errno == EINTR)){//se è stato interrotto da un segnale continua
                 nread = 0;
             }
             else{

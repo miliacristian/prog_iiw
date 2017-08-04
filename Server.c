@@ -142,7 +142,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     else if(errno!=EINTR){
         handle_error_with_exit("error in send_syn_ack recvfrom\n");
     }
-    else if(great_alarm==1){
+    if(great_alarm==1){
         great_alarm=0;
         printf("il client non è in ascolto\n");
         return ;
@@ -324,7 +324,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);//mutex tra processi e pool handler
     initialize_mtx(mtx);
     initialize_mtx_prefork(mtx_prefork);
-
 
     memset((void *)&addr, 0, sizeof(addr));//inizializza socket processo principale
     addr.sin_family=AF_INET;

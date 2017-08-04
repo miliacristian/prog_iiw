@@ -46,6 +46,7 @@
 #define DATA 0
 #define SYN 9
 #define SYN_ACK 10
+#define TIMEOUT 5000
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt

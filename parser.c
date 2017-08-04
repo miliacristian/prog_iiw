@@ -6,7 +6,7 @@
 #include "sender2.h"
 
 void move_pointer(char**string,int n){
-    if(string==NULL){
+    if(string==NULL || *string==NULL){
         handle_error_with_exit("error in move_pointer\n");
     }
     else if(n>0) {
@@ -23,7 +23,7 @@ void move_pointer(char**string,int n){
 }
 
 int skip_space(char**string){
-    if(*string==NULL){
+    if(*string==NULL || string==NULL){
         handle_error_with_exit("error in move_pointer\n");
     }
     int count=0;
@@ -48,7 +48,7 @@ char is_blank(char*string){
     return 1;
 }
 int parse_integer_and_move(char**string) {
-    if(*string==NULL){
+    if(*string==NULL || string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
     char*errptr;
@@ -63,7 +63,7 @@ int parse_integer_and_move(char**string) {
 }
 
 long parse_long_and_move(char**string) {
-    if(*string==NULL){
+    if(*string==NULL || string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
     char*errptr;
@@ -78,7 +78,7 @@ long parse_long_and_move(char**string) {
 }
 
 double parse_double_and_move(char**string){
-    if(*string==NULL){
+    if(*string==NULL || string==NULL){
         handle_error_with_exit("error in parse_double\n");
     }
     char*errptr;

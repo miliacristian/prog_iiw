@@ -32,6 +32,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
     }
     else if(sig == SIGRTMIN+1){
         printf("great timeout expired\n");
+        printf("%d\n",errno);
         great_alarm = 1;
     }
     return;
