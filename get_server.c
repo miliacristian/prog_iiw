@@ -8,11 +8,19 @@
 #include "Server.h"
 #include "get_server.h"
 
+void*try_to_sleep(void*arg){
+    printf("tid %d\n",(int)pthread_self());
+    while(1){
+        pause();
+    }
+}
+
 void
 send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff,
                          struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly,
                          int *byte_sent, int dim) {
     int readed=0;
+
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
@@ -144,9 +152,7 @@ rcv_msg_send_ack_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockle
     return;
 }
 
-void
-rcv_ack_in_window_serv(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,
-                       int *pkt_fly) {
+void rcv_ack_in_window_serv(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -155,6 +161,7 @@ rcv_ack_in_window_serv(struct temp_buffer temp_buff, struct window_snd_buf *win_
             win_buf_snd[*window_base_snd].acked = 0;//resetta quando scorri finestra
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
             (*pkt_fly)--;
+            printf("son qui\n");
         }
     }
 
@@ -328,6 +335,8 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 struct window_rcv_buf *win_buf_rcv, struct window_snd_buf *win_buf_snd) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     int byte_readed = 0, fd, dimension;
+    pthread_t tid;
+    sigset_t set;
     double timer = param_serv.timer_ms, loss_prob = param_serv.loss_prob;
     char *command, *path, dim[11], first_pkt;
     rcv_msg_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
@@ -340,8 +349,14 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
         if (fd == -1) {
             handle_error_with_exit("error in open\n");
         }
-        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send,
-                                    loss_prob, W, pkt_fly);
+        printf("thread tid %d\n",(int)pthread_self());
+        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
+        pthread_create(&tid,NULL,try_to_sleep,NULL);
+        sigemptyset(&set);
+        sigaddset(&set,SIGRTMIN+1);
+        sigaddset(&set,SIGRTMIN);
+        pthread_sigmask(SIG_BLOCK,&set,NULL);
+
     } else {
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR,
                                     seq_to_send, loss_prob, W, pkt_fly);

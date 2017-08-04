@@ -16,13 +16,15 @@ timer_t timeout_timer_id;
 char*dir_server;
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è associata una struct che contiene i dati da ritrasmettere
+    //printf("handler tid %d\n",(int)pthread_self());
     if (sig == SIGRTMIN) {
         (void) sig;
         (void) si;
         (void) uc;
         struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
         struct temp_buffer temp_buf;
-        copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere
+        copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere,
+        // si può evitare usando la struct win_buf_snd?
         temp_buf.ack = NOT_AN_ACK;
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;

@@ -329,6 +329,7 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
     printf("messaggio start inviato\n");
     printf("rcv file\n");
     errno=0;
+    //exit(EXIT_SUCCESS);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
