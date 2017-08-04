@@ -137,6 +137,7 @@ void check_and_parse_command(char*command,char*filename){
     }
     char*main_command,*temp_command;
     int moved=0;
+    size_t lenght;
     temp_command=alloca(sizeof(char)*(MAXCOMMANDLINE+1));
     main_command=alloca(sizeof(char)*5);
     while(1){
@@ -153,7 +154,7 @@ void check_and_parse_command(char*command,char*filename){
             continue;
         }
         strncpy(main_command,temp_command,4);//copio in main_command i 4 byte del comando
-        main_command[4]='\0';
+        main_command[4]='\0';//aggiungo terminatore
         if(strcmp(main_command,"list")==0){
             move_pointer(&temp_command,4);
             moved+=4;
@@ -171,9 +172,7 @@ void check_and_parse_command(char*command,char*filename){
         else if(strcmp(main_command,"get ")==0){
             move_pointer(&temp_command,4);
             moved+=4;
-            int lenght;
             lenght=strlen(temp_command);
-            printf("%d\n",lenght);
             if(lenght==0){
                 printf("invalid filename\n");
                 temp_command=temp_command-moved;
@@ -188,7 +187,6 @@ void check_and_parse_command(char*command,char*filename){
         else if(strcmp(main_command,"put ")==0){
             move_pointer(&temp_command,4);
             moved+=4;
-            int lenght;
             lenght=strlen(temp_command);
             if(lenght==0){
                 printf("invalid filename\n");

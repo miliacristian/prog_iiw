@@ -58,7 +58,7 @@ char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrim
 }
 void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd, temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto inviato con ack %d seq %d command %d \n", temp_buff->ack, temp_buff->seq,temp_buff->command);
@@ -71,7 +71,7 @@ void send_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *se
 
 void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, temp_buff, MAXPKTSIZE,MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd, temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto ritrasmesso con ack %d seq %d command %d\n", temp_buff->ack, temp_buff->seq,temp_buff->command);
@@ -89,7 +89,7 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
     temp_buff.ack=NOT_AN_ACK;
     strcpy(temp_buff.payload,"SYN");
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd,&temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto syn mandato\n");
@@ -107,7 +107,7 @@ void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double
     temp_buff.ack=NOT_AN_ACK;
     strcpy(temp_buff.payload,"SYN_ACK");
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd,&temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto syn ack mandato\n");

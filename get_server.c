@@ -326,8 +326,8 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
     int byte_readed = 0, fd, dimension;
     pthread_t tid;
     sigset_t set;
-    double timer = param_serv.timer_ms, loss_prob = param_serv.loss_prob;
-    char *command, *path, dim[11], first_pkt;
+    double loss_prob = param_serv.loss_prob;
+    char *command, *path, dim[11];
     rcv_msg_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
     if (check_if_file_exist(path)) {

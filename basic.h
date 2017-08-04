@@ -90,7 +90,7 @@ struct msgbuf{
 struct select_param{
     int window;
     double loss_prob;
-    long timer_ms;
+    int timer_ms;
 };
 #endif
 

@@ -282,7 +282,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
 
     struct mtx_prefork*mtx_prefork;//mutex tra processi e thread pool handler
     sem_t*mtx;//semaforo tra i processi che provano ad accedere alla coda di messaggi
-    //key_t msg_key,shm_key,mtx_key,mtx_fork_key;
 
     if(argc!=2){
         handle_error_with_exit("usage <directory>\n");
@@ -295,9 +294,12 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     strcat(localname,"/parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
-        handle_error_with_exit("error in open file  parameter\n");
+        handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
     }
     line=malloc(sizeof(char)*MAXLINE);
+    if(line==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
     command=line;
     memset(line,'\0',MAXLINE);
     readed=readline(fd,line,MAXLINE);
@@ -314,7 +316,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("invalid loss prob\n");
     }
     skip_space(&line);
-    param_serv.timer_ms=parse_long_and_move(&line);
+    param_serv.timer_ms=parse_integer_and_move(&line);
     if(param_serv.timer_ms<0){
         handle_error_with_exit("timer must be positive or 0\n");
     }

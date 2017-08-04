@@ -10,8 +10,8 @@
 void start_timer(timer_t timer_id, struct itimerspec *its);
 void stop_timer(timer_t timer_id);
 void make_timeout_timer(timer_t* timer_id);
-void start_timeout_timer(timer_t timer_id, long msec);
+void start_timeout_timer(timer_t timer_id, int msec);
 void make_timers(struct window_snd_buf *win_buf, int W);
-void set_timer(struct itimerspec *its, long msec);
+void set_timer(struct itimerspec *its, int msec);
 void stop_all_timers(struct window_snd_buf* win_buf_snd, int W);
 void stop_timeout_timer(timer_t timer_id);

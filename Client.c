@@ -234,10 +234,9 @@ void create_thread_waitpid() {
 
 int main(int argc, char *argv[]) {
     char *filename, *command, conf_upload[4], buff[MAXPKTSIZE + 1], *line, localname[80];
+    //non fare mai la free su filename e command(servono ad ogni richiesta)
     int path_len, fd;
-    socklen_t len;
     pid_t pid;
-    struct sockaddr_in servaddr, cliaddr, main_servaddr;
 
     if (argc != 2) {
         handle_error_with_exit("usage <directory>\n");
@@ -253,6 +252,9 @@ int main(int argc, char *argv[]) {
         handle_error_with_exit("error in read parameters into file\n");
     }
     line = malloc(sizeof(char) * MAXLINE);
+    if(line==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
     command = line;
     memset(line, '\0', MAXLINE);
     if (readline(fd, line, MAXLINE) <= 0) {
@@ -268,7 +270,7 @@ int main(int argc, char *argv[]) {
         handle_error_with_exit("invalid loss prob\n");
     }
     skip_space(&line);
-    param_client.timer_ms = parse_long_and_move(&line);
+    param_client.timer_ms = parse_integer_and_move(&line);
     if (param_client.timer_ms < 0) {
         handle_error_with_exit("timer must be positive or zero");
     }
@@ -280,16 +282,14 @@ int main(int argc, char *argv[]) {
     command = NULL;
     free(line);
     create_thread_waitpid();
-    if ((command = malloc(sizeof(char) * 5)) == NULL) {
+    if ((command = malloc(sizeof(char) * 5)) == NULL) {//contiene il comando digitato,5==lunghezza massima:list\0,get\0 o put\0
         handle_error_with_exit("error in malloc buffercommand\n");
     }
-    if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {
+    if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
     for (;;) {
         check_and_parse_command(command, filename);//inizializza command,filename e size
-        if (filename != NULL) {
-        }
         if (!is_blank(filename) && (strcmp(command, "put") == 0)) {
             char *path = alloca(sizeof(char) * (strlen(filename) + path_len + 1));
             strcpy(path, dir_client);
@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-        } else if (!is_blank(filename) && strcmp(command, "get") == 0) {
+        } else if (!is_blank(filename) && strcmp(command,"get") == 0) {
             //fai richiesta al server del file
             if ((pid = fork()) == -1) {
                 handle_error_with_exit("error in fork\n");

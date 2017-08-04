@@ -44,7 +44,7 @@ void make_timeout_timer(timer_t* timer_id){
 
 }
 
-void start_timeout_timer(timer_t timer_id, long msec){
+void start_timeout_timer(timer_t timer_id, int msec){
     struct itimerspec its;
     set_timer(&its, msec);
     if (timer_settime(timer_id, 0, &its, NULL) == -1) {//avvio timer
@@ -70,7 +70,7 @@ void make_timers(struct window_snd_buf *win_buf, int W) {
     return;
 }
 
-void set_timer(struct itimerspec *its, long msec) {
+void set_timer(struct itimerspec *its, int msec) {
     int msec2 = msec%1000;
     int sec =(msec-msec2)/1000;
     its->it_interval.tv_sec = 0;
