@@ -27,7 +27,7 @@ void stop_timeout_timer(timer_t timer_id){
     if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
         handle_error_with_exit("error in timer_settime\n");
     }
-    printf("timeout stoppato\n");
+    printf("timer stoppato\n");
 }
 
 void make_timeout_timer(timer_t* timer_id){

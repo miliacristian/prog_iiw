@@ -92,7 +92,7 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     return;
 }
 void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim){
-    int readed=0;
+    ssize_t readed=0;
     temp_buff.command=DATA;
     temp_buff.ack=NOT_AN_ACK;
     temp_buff.seq=*seq_to_send;
@@ -128,7 +128,7 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     return;
 }
 void rcv_data_send_ack_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W,int dim,int *byte_written){
-    int written=0;
+    ssize_t written=0;
     struct temp_buffer ack_buff;
     win_buf_rcv[temp_buff.seq].command=temp_buff.command;
     copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload,MAXPKTSIZE-9);//memorizzzo tutti i dati
@@ -232,7 +232,12 @@ int close_connection(struct temp_buffer temp_buff,int *seq_to_send,char*filename
     errno=0;
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
-            stop_timeout_timer(timeout_timer_id);
+            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+                //ignora pacchetto
+            }
+            else{
+                stop_timeout_timer(timeout_timer_id);
+            }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -281,7 +286,12 @@ int  wait_for_fin(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
-            stop_timeout_timer(timeout_timer_id);
+            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+                //ignora pacchetto
+            }
+            else{
+                stop_timeout_timer(timeout_timer_id);
+            }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id);
@@ -329,11 +339,15 @@ int rcv_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
     printf("messaggio start inviato\n");
     printf("rcv file\n");
     errno=0;
-    //exit(EXIT_SUCCESS);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
-            stop_timeout_timer(timeout_timer_id);
+            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+                //ignora pacchetto
+            }
+            else{
+                stop_timeout_timer(timeout_timer_id);
+            }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -390,7 +404,12 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
-            stop_timeout_timer(timeout_timer_id);
+            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+                //ignora pacchetto
+            }
+            else{
+                stop_timeout_timer(timeout_timer_id);
+            }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){

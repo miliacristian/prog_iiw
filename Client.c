@@ -10,11 +10,16 @@
 #include "get_client.h"
 
 struct addr *addr = NULL;
-struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
+struct itimerspec sett_timer;//timer e reset timer globali
 int great_alarm = 0;//se diventa 1 è scattato il timer grande
 timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
+
+void timeout_handler(int sig, siginfo_t *si, void *uc){
+    great_alarm=1;
+    return;
+}
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {
     if (sig == SIGRTMIN) {

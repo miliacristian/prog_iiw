@@ -15,6 +15,10 @@ struct select_param param_serv;
 timer_t timeout_timer_id;
 char*dir_server;
 
+void timeout_handler(int sig, siginfo_t *si, void *uc){
+    great_alarm=1;
+    return;
+}
 void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è associata una struct che contiene i dati da ritrasmettere
     //printf("handler tid %d\n",(int)pthread_self());
     if (sig == SIGRTMIN) {
@@ -132,6 +136,9 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
                 handle_error_with_exit("error in close socket child process\n");
             }
             return;
+        }
+        else if(temp_buff.command==SYN_ACK || temp_buff.command==SYN){
+            printf("pacchetto di connessione ricevuto e ignorato\n");
         }
         else{
             printf("invalid_command\n");
