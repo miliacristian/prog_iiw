@@ -6,6 +6,37 @@
 #include "sender2.h"
 #include "timer.h"
 
+void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
+    printf("tid %d\n",(int)pthread_self());
+    while(1){
+        pause();
+    }
+}
+pthread_t create_thread_signal_handler(){
+    pthread_t tid;
+    sigset_t set;
+    if(pthread_create(&tid,NULL,try_to_sleep,NULL)!=0){
+
+    }
+    if(sigemptyset(&set)==-1){
+        handle_error_with_exit("error in sigemptyset\n");
+    }
+    if(sigaddset(&set,SIGRTMIN+1)==-1){
+        handle_error_with_exit("error in sigaddset\n");
+    }
+    if(sigaddset(&set,SIGRTMIN)==-1){
+        handle_error_with_exit("error in sigaddset\n");
+    }
+    if(pthread_sigmask(SIG_BLOCK,&set,NULL)!=0){
+        handle_error_with_exit("error in pthread_sigmask\n");
+    }
+    return tid;
+
+}
+void destroy_thread_signal_handler(pthread_t tid){
+    pthread_kill(tid,SIGTERM);
+    return;
+}
 char check_if_dir_exist(char*dir_path){
     DIR *dir;
     if((dir=opendir(dir_path))==NULL){
