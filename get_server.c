@@ -256,7 +256,6 @@ send_message_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struc
 }
 
 int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed) {//manda fin non in finestra senza sequenza e ack e chiudi
-    printf("close_get_send_file\n");
     stop_timeout_timer(timeout_timer_id);
     stop_all_timers(win_buf_snd, W);
     send_message_serv(sockfd, &cli_addr, len, temp_buff, "FIN", FIN, loss_prob);
@@ -286,6 +285,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     if (*byte_readed == dim) {
                         close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
                         destroy_thread_signal_handler(tid);
+                        printf("close sendfile\n");
                         return *byte_readed;
                     }
                 } else {
@@ -333,7 +333,9 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
             handle_error_with_exit("error in open\n");
         }
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
+        printf("thread_principale tid %d\n",pthread_self());
         tid=create_thread_signal_handler();
+        printf("tid creato %d\n");
     }
     else {
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, loss_prob, W, pkt_fly);

@@ -429,7 +429,10 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
             else if (temp_buff.command == DIMENSION) {
                 rcv_msg_send_ack_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 printf("dimensione %s\n",temp_buff.payload);//stampa dimensione
-                path=generate_full_pathname(filename,dir_client);
+                path=generate_multi_copy(dir_client,filename);
+                if(path==NULL){
+                    handle_error_with_exit("error:there are too much copies of the file");
+                }
                 printf("full pathname %s\n",path);
                 fd=open(path,O_WRONLY | O_CREAT,0666);
                 if(fd==-1){

@@ -7,7 +7,7 @@
 #include "timer.h"
 
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
-    printf("tid %d\n",(int)pthread_self());
+    printf("tid %d\n",pthread_self());
     while(1){
         pause();
     }
@@ -16,7 +16,7 @@ pthread_t create_thread_signal_handler(){
     pthread_t tid;
     sigset_t set;
     if(pthread_create(&tid,NULL,try_to_sleep,NULL)!=0){
-
+        handle_error_with_exit("error in pthread_create\n");
     }
     if(sigemptyset(&set)==-1){
         handle_error_with_exit("error in sigemptyset\n");
@@ -34,7 +34,12 @@ pthread_t create_thread_signal_handler(){
 
 }
 void destroy_thread_signal_handler(pthread_t tid){
-    pthread_kill(tid,SIGTERM);
+    errno=0;
+    printf("tid da ammazzare %d\n",tid);
+    if(pthread_cancel(tid)!=0){
+        printf("%d\n",errno);
+        handle_error_with_exit("error in pthread kill errno %d\n");
+    }
     return;
 }
 char check_if_dir_exist(char*dir_path){
@@ -57,6 +62,66 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
     }
     return;
 }
+void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
+    char num_format_string[4];
+    memset(num_format_string,'\0',4);
+    strcpy(temp,"(");
+    sprintf(num_format_string, "%d",copy_number);
+    strcat(temp,num_format_string);
+    strcat(temp,")");
+    return;
+}
+
+char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path assoluti tutti diversi tra loro partendo da un file che esiste,o ritorna null se ci sono troppe copie del file(255)
+// fare la free di absolut path dopo aver creato il file
+    unsigned char copy_number=1;
+    char temp[6],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
+    memset(temp,'\0',6);
+    absolute_path=generate_full_pathname(filename,path_to_filename);
+    if(!check_if_file_exist(absolute_path)){
+        return absolute_path;
+    }
+    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+6));;//6==terminatore+ "(" + ")" +3 cifre per il numero
+    if(first_of_the_dot==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    memset(first_of_the_dot,'\0',strlen(filename)+6);
+    generate_branches_and_number(temp,copy_number);//scrive dentro temp la stringa da concatenare
+    occurence=strchr(filename,'.');
+    if(occurence==NULL){//non esiste un punto nel filename
+        strcpy(first_of_the_dot,filename);
+        strcat(first_of_the_dot,temp);
+    }
+    else{//esiste un punto nel filename
+        strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
+        strcat(first_of_the_dot,temp);
+        strcat(first_of_the_dot,occurence);
+    }
+    absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+    while(check_if_file_exist(absolute_path)){
+        copy_number+=1;
+        if(copy_number>=255){
+            return NULL;
+        }
+        if(occurence==NULL) {//aggiungi alla fine del filename le parentesi e il numero
+            generate_branches_and_number(temp, copy_number);
+            strcpy(first_of_the_dot,filename);
+            strcat(first_of_the_dot,temp);
+            absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+        }
+        else{//esiste un punto nel filename
+            generate_branches_and_number(temp, copy_number);
+            memset(first_of_the_dot,'\0',strlen(filename)+6);
+            strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
+            strcat(first_of_the_dot,temp);
+            strcat(first_of_the_dot,occurence);
+            absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+        }
+    }
+    free(first_of_the_dot);
+    return absolute_path;
+}
+
 char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
     int end_win=(win_base+window-1)%(2*window);
