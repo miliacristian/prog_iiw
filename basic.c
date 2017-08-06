@@ -7,7 +7,6 @@
 #include "timer.h"
 
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
-    printf("tid %d\n",pthread_self());
     while(1){
         pause();
     }
@@ -32,15 +31,6 @@ pthread_t create_thread_signal_handler(){
     }
     return tid;
 
-}
-void destroy_thread_signal_handler(pthread_t tid){
-    errno=0;
-    printf("tid da ammazzare %d\n",tid);
-    if(pthread_cancel(tid)!=0){
-        printf("%d\n",errno);
-        handle_error_with_exit("error in pthread kill errno %d\n");
-    }
-    return;
 }
 char check_if_dir_exist(char*dir_path){
     DIR *dir;

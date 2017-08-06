@@ -433,7 +433,6 @@ int wait_for_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 if(path==NULL){
                     handle_error_with_exit("error:there are too much copies of the file");
                 }
-                printf("full pathname %s\n",path);
                 fd=open(path,O_WRONLY | O_CREAT,0666);
                 if(fd==-1){
                     handle_error_with_exit("error in open file\n");

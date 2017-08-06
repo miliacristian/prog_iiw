@@ -188,7 +188,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     if (sigaction(SIGRTMIN+1, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-
+    create_thread_signal_handler();
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
         printf("mtx prefork\n");

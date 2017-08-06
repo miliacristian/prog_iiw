@@ -284,7 +284,6 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     rcv_ack_file_in_window_serv(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
                     if (*byte_readed == dim) {
                         close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
-                        destroy_thread_signal_handler(tid);
                         printf("close sendfile\n");
                         return *byte_readed;
                     }
@@ -333,9 +332,6 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
             handle_error_with_exit("error in open\n");
         }
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
-        printf("thread_principale tid %d\n",pthread_self());
-        tid=create_thread_signal_handler();
-        printf("tid creato %d\n");
     }
     else {
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, loss_prob, W, pkt_fly);
