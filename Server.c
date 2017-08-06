@@ -16,12 +16,11 @@ timer_t timeout_timer_id;
 char*dir_server;
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
+    printf("tempo scaduto\n");
     great_alarm=1;
     return;
 }
 void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è associata una struct che contiene i dati da ritrasmettere
-    //printf("handler tid %d\n",(int)pthread_self());
-    if (sig == SIGRTMIN) {
         (void) sig;
         (void) si;
         (void) uc;
@@ -34,12 +33,6 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
         start_timer((*win_buffer).time_id, &sett_timer);
-    }
-    else if(sig == SIGRTMIN+1){
-        great_alarm = 1;
-        printf("tempo scaduto\n");
-        printf("%d\n",errno);
-    }
     return;
 }
 
@@ -181,7 +174,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    sa_timeout.sa_sigaction = timer_handler;
+    sa_timeout.sa_sigaction = timeout_handler;
     if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }

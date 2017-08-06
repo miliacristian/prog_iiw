@@ -17,12 +17,12 @@ struct select_param param_client;
 char *dir_client;
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
+    printf("great timeout expired\n");
     great_alarm=1;
     return;
 }
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {
-    if (sig == SIGRTMIN) {
         (void) sig;
         (void) si;
         (void) uc;
@@ -34,12 +34,6 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
         start_timer((*win_buffer).time_id, &sett_timer);
-    }
-    else if(sig == SIGRTMIN+1){
-        printf("great timeout expired\n");
-        printf("%d\n",errno);
-        great_alarm = 1;
-    }
     return;
 }
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
@@ -91,7 +85,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     socklen_t len = sizeof(main_servaddr);
     struct temp_buffer temp_buff;
     sa.sa_flags =SA_SIGINFO;
-    sa.sa_sigaction = timer_handler;
+    sa.sa_sigaction = timeout_handler;
     char rtx = 0;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
