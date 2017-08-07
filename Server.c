@@ -35,6 +35,22 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         start_timer((*win_buffer).time_id, &sett_timer);
     return;
 }
+void add_slash_to_dir_serv(char*argument){
+    if((argument[strlen(argument)-1])!='/'){
+        dir_server=malloc(strlen(argument)+2);//1 per "/" uno per terminatore
+        if(dir_server==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir_server,'\0',strlen(argument)+2);
+        strcpy(dir_server,argument);
+        strcat(dir_server,"/");
+        dir_server[strlen(argument)+2]='\0';
+    }
+    else {
+        dir_server = argument;
+    }
+    return;
+}
 
 int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
@@ -267,7 +283,7 @@ void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che cr
 
 int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei segnali,farla prima di crearli
     int fd,readed;
-
+    size_t temp_len;
     socklen_t len;
     char commandBuffer[MAXCOMMANDLINE+1],*line,*command,localname[80];
     struct sockaddr_in addr,cliaddr;
@@ -280,8 +296,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("usage <directory>\n");
     }
     srand(time(NULL));
-    dir_server=argv[1];
-    check_if_dir_exist(dir_server);
+    check_if_dir_exist(argv[1]);
+    add_slash_to_dir_serv(argv[1]);
+    printf("%s\n",dir_server);
     strcpy(localname,"");
     strcpy(localname,getenv("HOME"));
     strcat(localname,"/parameter.txt");
@@ -296,6 +313,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     command=line;
     memset(line,'\0',MAXLINE);
     readed=readline(fd,line,MAXLINE);
+    if(count_word_in_buf(line)!=3){
+        handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
+    }
     if(readed<=0){
         handle_error_with_exit("error in read line\n");
     }

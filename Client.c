@@ -36,6 +36,22 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         start_timer((*win_buffer).time_id, &sett_timer);
     return;
 }
+void add_slash_to_dir_client(char*argument){
+    if ((argument[strlen(argument) - 1]) != '/') {
+        dir_client = malloc(strlen(argument) + 2);//1 per "/" uno per terminatore
+        if (dir_client == NULL) {
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir_client, '\0', strlen(argument) + 2);
+        strcpy(dir_client, argument);
+        strcat(dir_client, "/");
+        dir_client[strlen(argument) + 2] = '\0';
+    } else {
+        dir_client = argument;
+    }
+    return;
+}
+
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
@@ -97,7 +113,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     while (rtx < 500000 ) {//parametro da cambiare
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id, 30);//parametro da cambiare
+        start_timeout_timer(timeout_timer_id, 300);//parametro da cambiare
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
                 stop_timeout_timer(timeout_timer_id);
@@ -124,6 +140,7 @@ void client_list_job() {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     printf("client list job\n");
+    create_thread_signal_handler();
     make_timeout_timer(&timeout_timer_id);
 
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
@@ -153,6 +170,7 @@ void client_get_job(char *filename) {
     printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
+    create_thread_signal_handler();
     make_timeout_timer(&timeout_timer_id);
 
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
@@ -183,6 +201,7 @@ void client_put_job(char *filename) {//upload e filename già verificato
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     make_timeout_timer(&timeout_timer_id);
+    create_thread_signal_handler();
 
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
@@ -236,8 +255,9 @@ int main(int argc, char *argv[]) {
         handle_error_with_exit("usage <directory>\n");
     }
     srand(time(NULL));
-    dir_client = argv[1];
-    check_if_dir_exist(dir_client);
+    check_if_dir_exist(argv[1]);
+    add_slash_to_dir_client(argv[1]);
+    printf("%s\n",dir_client);
     strcpy(localname, "");
     strcpy(localname, getenv("HOME"));
     strcat(localname, "/parameter.txt");
@@ -253,6 +273,11 @@ int main(int argc, char *argv[]) {
     memset(line, '\0', MAXLINE);
     if (readline(fd, line, MAXLINE) <= 0) {
         handle_error_with_exit("error in read line\n");
+    }
+    printf("ciao\n");
+    printf("%s\n",line);
+    if(count_word_in_buf(line)!=3){
+        handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
     }
     param_client.window = parse_integer_and_move(&line);
     if (param_client.window < 1) {

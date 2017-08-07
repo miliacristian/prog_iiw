@@ -5,12 +5,16 @@
 #include "receiver.h"
 #include "sender2.h"
 #include "timer.h"
+#include "Server.h"
+#include "Client.h"
 
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
+    printf("tider %d\n",pthread_self());
     while(1){
         pause();
     }
 }
+
 pthread_t create_thread_signal_handler(){
     pthread_t tid;
     sigset_t set;
@@ -51,6 +55,32 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
         buf2++;
     }
     return;
+}
+int count_word_in_buf(char*buf){
+    int word=0;
+    size_t lun;
+    lun=strlen(buf);
+    for(int i=0;i<lun;){
+        if(*buf==' '){
+            buf++;
+            i++;
+            while(*buf==' '){
+                buf++;
+                i++;
+            }
+        }
+        if(*buf!='\0'){
+            word++;
+        }
+        else{
+            break;
+        }
+        while(*buf!=' '){
+            buf++;
+            i++;
+        }
+    }
+    return word;
 }
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];
