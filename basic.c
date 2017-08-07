@@ -19,6 +19,7 @@ void block_signal(int signal){
     }
 }
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
+    (void)arg;
     block_signal(SIGRTMIN+1);
     while(1){
         pause();
@@ -27,7 +28,6 @@ void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi ge
 
 pthread_t create_thread_signal_handler(){
     pthread_t tid;
-    sigset_t set;
     if(pthread_create(&tid,NULL,try_to_sleep,NULL)!=0){
         handle_error_with_exit("error in pthread_create\n");
     }
@@ -319,14 +319,6 @@ void*attach_shm(int shmid){
     }
     return mtx;
 }
-
-/*key_t create_key(char*k,char k1){//funzione che crea la chiave per la msgqueue
-    key_t key=ftok(k,k1);
-    if(key==-1){
-        handle_error_with_exit("error in ftok\n");
-    }
-    return key;
-}*/
 
 int count_char_dir(char*path){
     DIR *d;

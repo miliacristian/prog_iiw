@@ -16,6 +16,9 @@ timer_t timeout_timer_id;
 char*dir_server;
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
+    (void)sig;
+    (void)si;
+    (void)uc;
     printf("tempo scaduto\n");
     great_alarm=1;
     return;
@@ -283,7 +286,6 @@ void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che cr
 
 int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei segnali,farla prima di crearli
     int fd,readed;
-    size_t temp_len;
     socklen_t len;
     char commandBuffer[MAXCOMMANDLINE+1],*line,*command,localname[80];
     struct sockaddr_in addr,cliaddr;

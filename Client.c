@@ -17,6 +17,9 @@ struct select_param param_client;
 char *dir_client;
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
+    (void)sig;
+    (void)si;
+    (void)uc;
     printf("great timeout expired\n");
     great_alarm=1;
     return;
@@ -58,7 +61,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     struct window_rcv_buf win_buf_rcv[2 * W];
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
-    struct sigaction sa, sa_timeout;
+    struct sigaction sa;
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
@@ -88,10 +91,15 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 }
 
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
+    (void)sockfd;
+    (void)serv_addr;
     return 0;
 }
 
-int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {
+int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la put con connessione già instaurata
+    (void)sockfd;
+    (void)serv_addr;
+    (void)filename;
     return 0;
 }
 
@@ -245,7 +253,7 @@ void create_thread_waitpid() {
 
 
 int main(int argc, char *argv[]) {
-    char *filename, *command, conf_upload[4], buff[MAXPKTSIZE + 1], *line, localname[80];
+    char *filename, *command, conf_upload[4], *line, localname[80];
     //non fare mai la free su filename e command(servono ad ogni richiesta)
     int path_len, fd;
     pid_t pid;
@@ -256,7 +264,6 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_client(argv[1]);
-    printf("%s\n",dir_client);
     strcpy(localname, "");
     strcpy(localname, getenv("HOME"));
     strcat(localname, "/parameter.txt");

@@ -92,7 +92,7 @@ void rcv_data_send_ack_in_window_serv(int sockfd, int fd, struct sockaddr_in *se
 }
 
 //chiamata per riscontrare un ack perso
-void rcv_msg_re_send_ack_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, double loss_prob, int W) {
+void rcv_msg_re_send_ack_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, double loss_prob) {
     //già memorizzato in finestra
     temp_buff.ack = temp_buff.seq;
     temp_buff.seq = NOT_A_PKT;
@@ -263,7 +263,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
     return *byte_readed;
 }
 
-int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob,pthread_t tid) {
+int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob) {
     printf("send_file\n");
     int value = 0,*byte_sent = &value;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -293,7 +293,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, loss_prob, W);
+                rcv_msg_re_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
@@ -318,10 +318,8 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
 int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, struct window_snd_buf *win_buf_snd) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     int byte_readed = 0, fd, dimension;
-    sigset_t set;
-    pthread_t tid;
     double loss_prob = param_serv.loss_prob;
-    char *command, *path, dim[11];
+    char *path, dim[11];
     rcv_msg_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
     if (check_if_file_exist(path)) {
@@ -357,7 +355,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, loss_prob, W);
+                rcv_msg_re_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (temp_buff.command == FIN) {
                 send_message_serv(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK, loss_prob);
@@ -368,8 +366,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
                                                 loss_prob, W);
-                send_file(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff,
-                          win_buf_rcv, win_buf_snd, fd, &byte_readed, dimension, loss_prob,tid);
+                send_file(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, fd, &byte_readed, dimension, loss_prob);
                 if (close(fd) == -1) {
                     handle_error_with_exit("error in close file\n");
                 }
