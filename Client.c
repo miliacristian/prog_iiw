@@ -202,7 +202,6 @@ void client_put_job(char *filename) {//upload e filename già verificato
     int sockfd;
     make_timeout_timer(&timeout_timer_id);
     create_thread_signal_handler();
-
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -276,9 +275,9 @@ int main(int argc, char *argv[]) {
     }
     printf("ciao\n");
     printf("%s\n",line);
-    if(count_word_in_buf(line)!=3){
+    /*if(count_word_in_buf(line)!=3){
         handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
-    }
+    }*/
     param_client.window = parse_integer_and_move(&line);
     if (param_client.window < 1) {
         handle_error_with_exit("window must be greater than 0\n");

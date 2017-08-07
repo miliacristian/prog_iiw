@@ -7,9 +7,20 @@
 #include "timer.h"
 #include "Server.h"
 #include "Client.h"
-
+void block_signal(int signal){
+    sigset_t set;
+    if(sigemptyset(&set)==-1){
+        handle_error_with_exit("error in sigemptyset\n");
+    }
+    if(sigaddset(&set,signal)==-1){//aggiungi segnale al sigset
+        handle_error_with_exit("error in sigaddset\n");
+    }
+    if(pthread_sigmask(SIG_BLOCK,&set,NULL)!=0){//blocca i segnali presenti nel sig_set
+        handle_error_with_exit("error in pthread_sigmask\n");
+    }
+}
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
-    printf("tider %d\n",pthread_self());
+    block_signal(SIGRTMIN+1);
     while(1){
         pause();
     }
@@ -21,18 +32,7 @@ pthread_t create_thread_signal_handler(){
     if(pthread_create(&tid,NULL,try_to_sleep,NULL)!=0){
         handle_error_with_exit("error in pthread_create\n");
     }
-    if(sigemptyset(&set)==-1){
-        handle_error_with_exit("error in sigemptyset\n");
-    }
-    if(sigaddset(&set,SIGRTMIN+1)==-1){
-        handle_error_with_exit("error in sigaddset\n");
-    }
-    if(sigaddset(&set,SIGRTMIN)==-1){
-        handle_error_with_exit("error in sigaddset\n");
-    }
-    if(pthread_sigmask(SIG_BLOCK,&set,NULL)!=0){
-        handle_error_with_exit("error in pthread_sigmask\n");
-    }
+    block_signal(SIGRTMIN);
     return tid;
 
 }

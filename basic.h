@@ -120,3 +120,4 @@ void*try_to_sleep(void*arg);
 pthread_t create_thread_signal_handler();
 char* generate_multi_copy(char*path_to_filename,char*filename);
 int count_word_in_buf(char*buf);
+void block_signal(int signal);
