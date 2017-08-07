@@ -273,11 +273,9 @@ int main(int argc, char *argv[]) {
     if (readline(fd, line, MAXLINE) <= 0) {
         handle_error_with_exit("error in read line\n");
     }
-    printf("ciao\n");
-    printf("%s\n",line);
-    /*if(count_word_in_buf(line)!=3){
+    if(count_word_in_buf(line)!=3){
         handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
-    }*/
+    }
     param_client.window = parse_integer_and_move(&line);
     if (param_client.window < 1) {
         handle_error_with_exit("window must be greater than 0\n");

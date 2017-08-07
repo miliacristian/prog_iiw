@@ -5,8 +5,7 @@
 #include "receiver.h"
 #include "sender2.h"
 #include "timer.h"
-#include "Server.h"
-#include "Client.h"
+
 void block_signal(int signal){
     sigset_t set;
     if(sigemptyset(&set)==-1){
@@ -56,11 +55,12 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
     }
     return;
 }
+
 int count_word_in_buf(char*buf){
     int word=0;
     size_t lun;
     lun=strlen(buf);
-    for(int i=0;i<lun;){
+    for(int i=0;i<(int)lun;){
         if(*buf==' '){
             buf++;
             i++;
@@ -69,19 +69,20 @@ int count_word_in_buf(char*buf){
                 i++;
             }
         }
-        if(*buf!='\0'){
+        if(*buf!='\0' && *buf!='\n'){
             word++;
         }
         else{
             break;
         }
-        while(*buf!=' '){
+        while(*buf!=' ' && *buf!='\n'){
             buf++;
             i++;
         }
     }
     return word;
 }
+
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];
     memset(num_format_string,'\0',4);

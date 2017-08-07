@@ -298,7 +298,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_serv(argv[1]);
-    printf("%s\n",dir_server);
     strcpy(localname,"");
     strcpy(localname,getenv("HOME"));
     strcat(localname,"/parameter.txt");
@@ -313,9 +312,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     command=line;
     memset(line,'\0',MAXLINE);
     readed=readline(fd,line,MAXLINE);
-    /*if(count_word_in_buf(line)!=3){
+    if(count_word_in_buf(line)!=3){
         handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
-    }*/
+    }
     if(readed<=0){
         handle_error_with_exit("error in read line\n");
     }
