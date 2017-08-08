@@ -6,6 +6,7 @@
 #include "sender2.h"
 #include "timer.h"
 #include "get_server.h"
+#include "communication.h"
 
 //variabili globali
 struct addr *addr = NULL;
@@ -14,6 +15,23 @@ int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork t
 struct select_param param_serv;
 timer_t timeout_timer_id;
 char*dir_server;
+
+void add_slash_to_dir_serv(char*argument){
+    if((argument[strlen(argument)-1])!='/'){
+        dir_server=malloc(strlen(argument)+2);//1 per "/" uno per terminatore
+        if(dir_server==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir_server,'\0',strlen(argument)+2);
+        strcpy(dir_server,argument);
+        strcat(dir_server,"/");
+        dir_server[strlen(argument)+2]='\0';
+    }
+    else {
+        dir_server = argument;
+    }
+    return;
+}
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
     (void)sig;
@@ -38,22 +56,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         start_timer((*win_buffer).time_id, &sett_timer);
     return;
 }
-void add_slash_to_dir_serv(char*argument){
-    if((argument[strlen(argument)-1])!='/'){
-        dir_server=malloc(strlen(argument)+2);//1 per "/" uno per terminatore
-        if(dir_server==NULL){
-            handle_error_with_exit("error in malloc\n");
-        }
-        memset(dir_server,'\0',strlen(argument)+2);
-        strcpy(dir_server,argument);
-        strcat(dir_server,"/");
-        dir_server[strlen(argument)+2]='\0';
-    }
-    else {
-        dir_server = argument;
-    }
-    return;
-}
+
 
 int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;

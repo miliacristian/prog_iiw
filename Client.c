@@ -8,6 +8,7 @@
 #include "timer.h"
 #include "Client.h"
 #include "get_client.h"
+#include "communication.h"
 
 struct addr *addr = NULL;
 struct itimerspec sett_timer;//timer e reset timer globali
@@ -15,6 +16,23 @@ int great_alarm = 0;//se diventa 1 è scattato il timer grande
 timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
+
+
+void add_slash_to_dir_client(char*argument){
+    if ((argument[strlen(argument) - 1]) != '/') {
+        dir_client = malloc(strlen(argument) + 2);//1 per "/" uno per terminatore
+        if (dir_client == NULL) {
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir_client, '\0', strlen(argument) + 2);
+        strcpy(dir_client, argument);
+        strcat(dir_client, "/");
+        dir_client[strlen(argument) + 2] = '\0';
+    } else {
+        dir_client = argument;
+    }
+    return;
+}
 
 void timeout_handler(int sig, siginfo_t *si, void *uc){
     (void)sig;
@@ -39,21 +57,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         start_timer((*win_buffer).time_id, &sett_timer);
     return;
 }
-void add_slash_to_dir_client(char*argument){
-    if ((argument[strlen(argument) - 1]) != '/') {
-        dir_client = malloc(strlen(argument) + 2);//1 per "/" uno per terminatore
-        if (dir_client == NULL) {
-            handle_error_with_exit("error in malloc\n");
-        }
-        memset(dir_client, '\0', strlen(argument) + 2);
-        strcpy(dir_client, argument);
-        strcat(dir_client, "/");
-        dir_client[strlen(argument) + 2] = '\0';
-    } else {
-        dir_client = argument;
-    }
-    return;
-}
+
 
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
@@ -133,7 +137,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
                 printf("pacchetto con comando diverso da syn_ack ignorato");
             }
         }
-        if(errno!=EINTR){
+        if(errno!=EINTR && errno!=0){
             handle_error_with_exit("error in recvfrom send_syn\n");
         }
         rtx++;

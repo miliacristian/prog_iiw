@@ -28,6 +28,6 @@ set(SOURCE_FILES
         server
         tester.c
         Server.c
-        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h)
+        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h communication.c communication.h)
 
 add_executable(prog_iiw ${SOURCE_FILES} timer.c)

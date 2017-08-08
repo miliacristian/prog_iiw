@@ -23,6 +23,7 @@ with any of the above operations.*/
 //for  example,  fork(2) or dup(2)) refer to the same lock, and this lock
   //      may be modified or released using any of these  descriptors.
 #include "file_lock.h"
+#include "basic.h"
 
 int file_lock_read(int fd){
     int file_lock;
