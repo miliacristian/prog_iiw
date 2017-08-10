@@ -97,9 +97,38 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 }
 
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
-    (void)sockfd;
-    (void)serv_addr;
-    return 0;
+    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
+    struct temp_buffer temp_buff;//pacchetto da inviare
+    struct window_rcv_buf win_buf_rcv[2 * W];
+    struct window_snd_buf win_buf_snd[2 * W];
+    struct addr temp_addr;
+    struct sigaction sa;
+    memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
+    memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
+    //inizializzo numeri di sequenza nell'array di struct
+    for (int i = 0; i < 2 * W; i++) {
+        win_buf_snd[i].seq_numb = i;
+    }
+//
+    socklen_t len = sizeof(serv_addr);
+
+    make_timers(win_buf_snd, W);//crea 2w timer
+    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
+
+    temp_addr.sockfd = sockfd;
+    temp_addr.dest_addr = serv_addr;
+    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
+
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa.sa_mask) == -1) {
+        handle_error_with_exit("error in sig_empty_set\n");
+    }
+    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+        handle_error_with_exit("error in sigaction\n");
+    }
+    wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
+    return byte_written;
 }
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la put con connessione già instaurata

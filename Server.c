@@ -57,17 +57,17 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        start_timer((*win_buffer).time_id, &timer_server);
+        start_timer((*win_buffer).time_id, &sett_timer_server);
     return;
 }
 
 
-int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
+/*int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
     double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
     printf("server execute_list\n");
     return 0;
-}
+}*/
 
 int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
     int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
@@ -117,7 +117,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         win_buf_snd[i].seq_numb = i;
     }
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&timer_server, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
+    set_timer(&sett_timer_server, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = request.addr;
@@ -133,7 +133,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         great_alarm=0;
         window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
         if(temp_buff.command==LIST){
-            execute_list(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
+            execute_list(sockfd,request.addr,len,&seq_to_send,&window_base_snd,&window_base_rcv,W,&pkt_fly,temp_buff,win_buf_rcv,win_buf_snd);
             printf("comando list finito\n");
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");

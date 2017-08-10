@@ -354,3 +354,6 @@ void send_fin_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct 
     }
     return;
 }
+void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
+    //copia rcv data send_ack_in_window
+}
