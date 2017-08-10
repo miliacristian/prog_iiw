@@ -2,8 +2,6 @@
 #include "io.h"
 #include "lock_fcntl.h"
 #include "parser.h"
-#include "receiver.h"
-#include "sender2.h"
 #include "timer.h"
 #include "Server.h"
 

@@ -22,8 +22,18 @@ with any of the above operations.*/
 //(see open(2)).  This means that duplicate file descriptors (created by,
 //for  example,  fork(2) or dup(2)) refer to the same lock, and this lock
   //      may be modified or released using any of these  descriptors.
-#include "file_lock.h"
 #include "basic.h"
+#include "io.h"
+#include "lock_fcntl.h"
+#include "parser.h"
+#include "timer.h"
+#include "Client.h"
+#include "Server.h"
+#include "list_client.h"
+#include "list_server.h"
+#include "get_client.h"
+#include "get_server.h"
+#include "communication.h"
 
 int file_lock_read(int fd){
     int file_lock;

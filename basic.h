@@ -26,7 +26,6 @@
 #include <zconf.h>
 #include <wchar.h>
 #include <signal.h>
-#include "receiver.h"
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255

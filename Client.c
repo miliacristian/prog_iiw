@@ -2,16 +2,18 @@
 #include "io.h"
 #include "lock_fcntl.h"
 #include "parser.h"
-#include "receiver.h"
-#include "sender2.h"
-#include <time.h>
 #include "timer.h"
 #include "Client.h"
+#include "Server.h"
+#include "list_client.h"
+#include "list_server.h"
 #include "get_client.h"
+#include "get_server.h"
 #include "communication.h"
 
+
 struct addr *addr = NULL;
-struct itimerspec sett_timer;//timer e reset timer globali
+struct itimerspec sett_timer_cli;//timer e reset timer globali
 int great_alarm = 0;//se diventa 1 è scattato il timer grande
 timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
@@ -54,7 +56,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        start_timer((*win_buffer).time_id, &sett_timer);
+        start_timer((*win_buffer).time_id, &sett_timer_cli);
     return;
 }
 
@@ -76,7 +78,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     socklen_t len = sizeof(serv_addr);
 
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
+    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
@@ -90,7 +92,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
-    wait_for_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
+    wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     return byte_written;
 }
 

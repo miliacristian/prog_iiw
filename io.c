@@ -1,10 +1,18 @@
 
 #include "basic.h"
 #include "io.h"
+#include "basic.h"
+#include "io.h"
 #include "lock_fcntl.h"
 #include "parser.h"
-#include "receiver.h"
-#include "sender2.h"
+#include "timer.h"
+#include "Client.h"
+#include "Server.h"
+#include "list_client.h"
+#include "list_server.h"
+#include "get_client.h"
+#include "get_server.h"
+#include "communication.h"
 
 ssize_t writen(int fd, void *buf, size_t n){
     size_t nleft;

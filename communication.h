@@ -27,10 +27,12 @@
 #include <wchar.h>
 #include <signal.h>
 #include "basic.h"
+
 #ifndef PROG_IIW_COMMUNICATION_H
 #define PROG_IIW_COMMUNICATION_H
 
 #endif //PROG_IIW_COMMUNICATION_H
+
 
 void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
 void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob);
@@ -45,3 +47,6 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed);
 void send_fin(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, double loss_prob);
 void send_fin_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob);
+void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) ;
+void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly);
+void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,char*message,char command,int *seq_to_send,double loss_prob,int W,int *pkt_fly);

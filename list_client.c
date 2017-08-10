@@ -11,8 +11,7 @@
 #include "get_server.h"
 #include "communication.h"
 
-
-int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
+int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
     printf("close connection\n");
     send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"FIN",FIN,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio di fin
     start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -66,7 +65,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
     }
 }
 
-int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
+int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
     printf("wait for fin\n");
     start_timeout_timer(timeout_timer_id,TIMEOUT);//chiusura temporizzata
     errno=0;
@@ -121,7 +120,7 @@ int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
 
 }
 
-int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
+int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
     printf("messaggio start inviato\n");
@@ -153,7 +152,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
             else if(seq_is_in_window(*window_base_rcv, W,temp_buff.seq)){
                 rcv_data_send_ack_in_window(sockfd,fd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
                 if(*byte_written==dimension){
-                    wait_for_fin_get(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
+                    wait_for_fin_list(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
                     printf("return rcv file 1\n");
                     return *byte_written;
                 }
@@ -180,70 +179,70 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
     }
 
 }
-
-int wait_for_get_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len, char *filename, int *byte_written , int *seq_to_send , int *window_base_snd , int *window_base_rcv, int W, int *pkt_fly , struct temp_buffer temp_buff ,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd) {
-    errno=0;
-    int fd,dimension;
-    char*path;
-    double loss_prob=param_client.loss_prob;
+int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len, char *filename, int *byte_written , int *seq_to_send , int *window_base_snd , int *window_base_rcv, int W, int *pkt_fly , struct temp_buffer temp_buff ,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd) {
+    errno = 0;
+    int fd, dimension;
+    char *path;
+    double loss_prob = param_client.loss_prob;
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
-    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio get
-    start_timeout_timer(timeout_timer_id,TIMEOUT);
+    send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload, GET, seq_to_send,
+                               loss_prob, W, pkt_fly);//manda messaggio get
+    start_timeout_timer(timeout_timer_id, TIMEOUT);
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
+        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) !=
+            -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
-            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+            if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 //ignora pacchetto
-            }
-            else{
+            } else {
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
-                if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
-                }
-                else{
+            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command);
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
+                if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
+                    rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
+                } else {
                     printf("ack duplicato non fare nulla\n");
                 }
-                start_timeout_timer(timeout_timer_id,TIMEOUT);
-            }
-            else if (temp_buff.command == ERROR) {
-                rcv_msg_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
-                close_connection_get(temp_buff,seq_to_send,win_buf_snd,sockfd,serv_addr, len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
+                start_timeout_timer(timeout_timer_id, TIMEOUT);
+            } else if (temp_buff.command == ERROR) {
+                rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
+                                           W);
+                close_connection_list(temp_buff, seq_to_send, win_buf_snd, sockfd, serv_addr, len, window_base_snd,
+                                 window_base_rcv, pkt_fly, W, byte_written, loss_prob);
                 printf("return wait for dimension 1\n");
                 return *byte_written;
-            }
-            else if (temp_buff.command == DIMENSION) {
-                rcv_msg_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
-                printf("dimensione %s\n",temp_buff.payload);//stampa dimensione
-                path=generate_multi_copy(dir_client,filename);
-                if(path==NULL){
+            } else if (temp_buff.command == DIMENSION) {
+                rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
+                                           W);
+                printf("dimensione %s\n", temp_buff.payload);//stampa dimensione
+                path = generate_multi_copy(dir_client, filename);
+                if (path == NULL) {
                     handle_error_with_exit("error:there are too much copies of the file");
                 }
-                fd=open(path,O_WRONLY | O_CREAT,0666);
-                if(fd==-1){
+                fd = open(path, O_WRONLY | O_CREAT, 0666);
+                if (fd == -1) {
                     handle_error_with_exit("error in open file\n");
                 }
                 free(path);
-                dimension=parse_integer(temp_buff.payload);
-                printf("dimensione intera %d\n",dimension);
-                rcv_get_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,byte_written);
-                if(close(fd)==-1){
+                dimension = parse_integer(temp_buff.payload);
+                printf("dimensione intera %d\n", dimension);
+                rcv_list(sockfd, serv_addr, len, temp_buff, win_buf_snd, win_buf_rcv, seq_to_send, W, pkt_fly, fd,
+                         dimension, loss_prob, window_base_snd, window_base_rcv, byte_written);
+                if (close(fd) == -1) {
                     handle_error_with_exit("error in close file\n");
                 }
                 printf("return wait for dimension 2\n");
                 return *byte_written;
-            }
-            else {
+            } else {
                 printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
-                start_timeout_timer(timeout_timer_id,TIMEOUT);
+                printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
+                start_timeout_timer(timeout_timer_id, TIMEOUT);
             }
-        }
-        else if(errno!=EINTR){
+        } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {

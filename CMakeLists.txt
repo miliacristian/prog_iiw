@@ -21,13 +21,8 @@ set(SOURCE_FILES
         makefile
         parser.c
         parser.h
-        receiver.c
-        receiver.h
-        sender2.c
-        sender2.h
-        server
         tester.c
         Server.c
-        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h communication.c communication.h)
+        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h communication.c communication.h list_client.c list_server.c list_server.h list_client.h)
 
-add_executable(prog_iiw ${SOURCE_FILES} timer.c)
+add_executable(prog_iiw ${SOURCE_FILES})

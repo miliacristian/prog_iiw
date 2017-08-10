@@ -2,15 +2,19 @@
 #include "io.h"
 #include "lock_fcntl.h"
 #include "parser.h"
-#include "receiver.h"
-#include "sender2.h"
 #include "timer.h"
+#include "Client.h"
+#include "Server.h"
+#include "list_client.h"
+#include "list_server.h"
+#include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
 
+
 //variabili globali
 struct addr *addr = NULL;
-struct itimerspec sett_timer, rst_timer;//timer e reset timer globali
+struct itimerspec timer_server;//timer e reset timer globali
 int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 timer_t timeout_timer_id;
@@ -53,7 +57,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        start_timer((*win_buffer).time_id, &sett_timer);
+        start_timer((*win_buffer).time_id, &timer_server);
     return;
 }
 
@@ -113,7 +117,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         win_buf_snd[i].seq_numb = i;
     }
     make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
+    set_timer(&timer_server, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
 
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = request.addr;
