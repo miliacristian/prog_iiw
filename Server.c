@@ -14,7 +14,7 @@
 
 //variabili globali
 struct addr *addr = NULL;
-struct itimerspec timer_server;//timer e reset timer globali
+struct itimerspec sett_timer_server;//timer e reset timer globali
 int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 timer_t timeout_timer_id;

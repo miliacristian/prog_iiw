@@ -6,8 +6,9 @@
 #include "Server.h"
 #include "Client.h"
 #include "communication.h"
+
 struct itimerspec sett_timer_cli;
-struct itimerspec timer_server;
+struct itimerspec sett_timer_server;
 void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly) {
     temp_buff.command = command;
     temp_buff.ack = NOT_AN_ACK;
@@ -24,7 +25,7 @@ void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockl
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    start_timer(win_buf_snd[*seq_to_send].time_id, &timer_server);
+    start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -117,7 +118,7 @@ void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr,
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    start_timer(win_buf_snd[*seq_to_send].time_id, &timer_server);
+    start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
