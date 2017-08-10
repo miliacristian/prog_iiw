@@ -19,13 +19,14 @@ int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct te
     return *byte_readed;
 }
 
-int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob) {
+int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *byte_readed, int dim, double loss_prob) {
     printf("send_file\n");
+    char*list;//creare la lista e poi inviarla in parti
     int value = 0,*byte_sent = &value;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
-            send_data_in_window_serv(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
+            send_list_in_window_serv(sockfd,list, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -37,7 +38,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
+                    rcv_ack_list_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
                     if (*byte_readed == dim) {
                         close_list(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
                         printf("close sendfile\n");
@@ -77,14 +78,9 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
     double loss_prob = param_serv.loss_prob;
     char *path, dim[11];
     rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
-    path = generate_full_pathname(temp_buff.payload + 4, dir_server);
-    if (check_if_file_exist(path)) {
-        dimension = get_file_size(path);
+    dimension=count_char_dir(dir_server);
+    if(dimension!=0){
         sprintf(dim, "%d", dimension);
-        fd = open(path, O_RDONLY);
-        if (fd == -1) {
-            handle_error_with_exit("error in open\n");
-        }
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
     }
     else {
@@ -122,9 +118,12 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
                                            loss_prob, W);
-                send_list(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, fd, &byte_readed, dimension, loss_prob);
-                if (close(fd) == -1) {
-                    handle_error_with_exit("error in close file\n");
+                send_list(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, &byte_readed, dimension, loss_prob);
+                if(byte_readed==dimension){
+                    printf("lista correttamente inviata");
+                }
+                else{
+                    printf("errore nell'invio della lista\n");
                 }
                 return byte_readed;
             } else {

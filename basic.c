@@ -179,7 +179,28 @@ char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrim
     }
     return 1;
 }
+int count_char_dir(char*path){
+    DIR *d;
+    struct dirent *dir;
+    int lenght=1;
+    if(path==NULL){
+        handle_error_with_exit("path is NULL\n");
+    }
+    d = opendir(path);
+    if (d==NULL){
+        handle_error_with_exit("error in scan directory\n");
+    }
+    while ((dir = readdir(d)) != NULL)
+    {
+        if (dir->d_type != DT_DIR) {
+            lenght += strlen(dir->d_name);
+            lenght++;// newline o terminatore stringa
+        }
+    }
+    closedir(d);//chiudendo la directory una volta riaperta ripunta al primo file della directory
+    return lenght;
 
+}
 char* files_in_dir(char* path,int lenght) {
     //funzione che, dato un path, crea una stringa (file1\nfile2\nfile3\n...) contenente il nome di tutti file in quella directory
     DIR *d;
@@ -265,28 +286,7 @@ void*attach_shm(int shmid){
     return mtx;
 }
 
-int count_char_dir(char*path){
-    DIR *d;
-    struct dirent *dir;
-    int lenght=1;
-    if(path==NULL){
-        handle_error_with_exit("path is NULL\n");
-    }
-    d = opendir(path);
-    if (d==NULL){
-        handle_error_with_exit("error in scan directory\n");
-    }
-    while ((dir = readdir(d)) != NULL)
-    {
-        if (dir->d_type != DT_DIR) {
-            lenght += strlen(dir->d_name);
-            lenght++;// newline o terminatore stringa
-        }
-    }
-    closedir(d);//chiudendo la directory una volta riaperta ripunta al primo file della directory
-    return lenght;
 
-}
 
 char* generate_full_pathname(char* filename, char* dir_server){//ricordarsi di fare la free di path nella funzione chiamante
     char* path;
