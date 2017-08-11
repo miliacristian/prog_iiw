@@ -172,6 +172,7 @@ char seq_is_in_window(int win_base,int window,int seq){
     }
 
 }
+
 char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
     int random_num=rand()%101;
     if(loss_prob>(random_num)){
@@ -179,6 +180,7 @@ char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrim
     }
     return 1;
 }
+
 int count_char_dir(char*path){
     DIR *d;
     struct dirent *dir;
@@ -215,7 +217,6 @@ char* files_in_dir(char* path,int lenght) {
     }
     memset(list,'\0',(size_t)lenght);
     d = opendir(path);
-    strcat(list,"list:");
     if (d!=NULL) {
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type != DT_DIR) {

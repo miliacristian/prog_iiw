@@ -344,9 +344,9 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(close(fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
-    line=command;
-    free(line);
-    command=NULL;
+    //line=command;
+    free(command);//liberazione memoria della linea retta dal file
+    line=NULL;
 
     mtx_prefork_id=get_id_shared_mem(sizeof(struct mtx_prefork));
     child_mtx_id=get_id_shared_mem(sizeof(sem_t));

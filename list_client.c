@@ -39,7 +39,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             else if (temp_buff.command==FIN_ACK) {
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
-                printf("return close connection 1\n");
+                printf("return close connection\n");
                 return *byte_written;
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
@@ -60,7 +60,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return close connection 2\n");
+            printf("return close connection\n");
             return *byte_written;
         }
     }
@@ -83,7 +83,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
-                printf("return wait_for_fin 1\n");
+                printf("return wait_for_fin\n");
                 return *byte_written;
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -114,18 +114,18 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return wait_for_fin 2\n");
+            printf("return wait_for_fin\n");
             return *byte_written;
         }
     }
-
 }
+
 
 int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,char*list,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
     printf("messaggio start inviato\n");
-    printf("rcv file\n");
+    printf("rcv list\n");
     errno=0;
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
@@ -154,7 +154,7 @@ int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
                 rcv_list_send_ack_in_window(sockfd,list,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
                 if(*byte_written==dimension){
                     wait_for_fin_list(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
-                    printf("return rcv file 1\n");
+                    printf("return rcv list\n");
                     return *byte_written;
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -174,19 +174,25 @@ int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return rcv file 2\n");
+            printf("return rcv list\n");
             return *byte_written;
         }
     }
-
 }
+
 int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  len, int *byte_written , int *seq_to_send , int *window_base_snd , int *window_base_rcv, int W, int *pkt_fly , struct temp_buffer temp_buff ,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd) {
     errno = 0;
-    int dimension;
+    int dimension=0;
     double loss_prob = param_client.loss_prob;
+    char*list,*first;
+    list=malloc(sizeof(char)*dimension);
+    if(list==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    memset(list,'\0',(size_t)dimension);
+    first=list;
     strcpy(temp_buff.payload, "list");
-    send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload, GET, seq_to_send,
-                               loss_prob, W, pkt_fly);//manda messaggio get
+    send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload,LIST, seq_to_send,loss_prob, W, pkt_fly);//manda messaggio get
     start_timeout_timer(timeout_timer_id, TIMEOUT);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) !=
@@ -211,25 +217,24 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                                            W);
                 close_connection_list(temp_buff, seq_to_send, win_buf_snd, sockfd, serv_addr, len, window_base_snd,
                                  window_base_rcv, pkt_fly, W, byte_written, loss_prob);
-                printf("return wait for dimension 1\n");
+                printf("lista vuota\n");
+                free(list);
                 return *byte_written;
             } else if (temp_buff.command == DIMENSION) {
                 rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
                                            W);
                 dimension = parse_integer(temp_buff.payload);
-                char*list=malloc(sizeof(char)*dimension);
-                memset(list,'\0',dimension);
-                if(list==NULL){
-                    handle_error_with_exit("error in malloc\n");
-                }
+
                 rcv_list(sockfd, serv_addr, len, temp_buff, win_buf_snd, win_buf_rcv, seq_to_send, W, pkt_fly,list,
                          dimension, loss_prob, window_base_snd, window_base_rcv, byte_written);
-                if(((int)strlen(list)+1)==dimension){//+1 per il terminatore ,in dimension la lunghezza comprende il terminatore
-                    printf("list:%s\n",list);//stampa della lista ottenuta
+                if(((int)strlen(first)+1)==dimension){//+1 per il terminatore ,in dimension la lunghezza comprende il terminatore
+                    printf("list:\n%s",first);//stampa della lista ottenuta
                 }
                 else{
                     printf("errore,lista non correttamente ricevuta\n");
                 }
+                //free(first);//il puntatore di list è stato spostato per inviare la lista
+                list=NULL;
                 return *byte_written;
             } else {
                 printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
@@ -245,7 +250,6 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return wait for dimension 3\n");
             return *byte_written;
         }
     }

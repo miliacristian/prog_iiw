@@ -336,9 +336,10 @@ int main(int argc, char *argv[]) {
     if (close(fd) == -1) {
         handle_error_with_exit("error in close file\n");
     }
-    line = command;//rimando indietro line spostato
-    command = NULL;
-    free(line);
+    //line = command;//rimando indietro line spostato
+    //command = NULL;
+    free(command);
+    line=NULL;
     create_thread_waitpid();
     if ((command = malloc(sizeof(char) * 5)) == NULL) {//contiene il comando digitato,5==lunghezza massima:list\0,get\0 o put\0
         handle_error_with_exit("error in malloc buffercommand\n");

@@ -15,14 +15,19 @@ int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct te
     stop_timeout_timer(timeout_timer_id);
     stop_all_timers(win_buf_snd, W);
     send_message(sockfd, &cli_addr, len, temp_buff, "FIN", FIN, loss_prob);
-    printf("close get send_file\n");
+    printf("close send_list\n");
     return *byte_readed;
 }
 
 int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *byte_readed, int dim, double loss_prob) {
-    printf("send_file\n");
-    char*list;//creare la lista e poi inviarla in parti
+    printf("send_list\n");
     int value = 0,*byte_sent = &value;
+    char*list,*temp_list;//creare la lista e poi inviarla in parti
+    printf("%s\n",dir_server);
+    printf("%d\n",dim);
+    list=files_in_dir(dir_server,dim);
+    printf("%s\n",list);
+    temp_list=list;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
@@ -41,7 +46,9 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     rcv_ack_list_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
                     if (*byte_readed == dim) {
                         close_list(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
-                        printf("close sendfile\n");
+                        printf("close sendlist\n");
+                        free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
+                        list=NULL;
                         return *byte_readed;
                     }
                 } else {
@@ -76,7 +83,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     int byte_readed = 0, fd, dimension;
     double loss_prob = param_serv.loss_prob;
-    char *path, dim[11];
+    char dim[11];
     rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     dimension=count_char_dir(dir_server);
     if(dimension!=0){
@@ -84,7 +91,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
     }
     else {
-        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, loss_prob, W, pkt_fly);
+        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "la lista è vuota", ERROR, seq_to_send, loss_prob, W, pkt_fly);
     }
     errno = 0;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -120,7 +127,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
                                            loss_prob, W);
                 send_list(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, &byte_readed, dimension, loss_prob);
                 if(byte_readed==dimension){
-                    printf("lista correttamente inviata");
+                    printf("lista correttamente inviata\n");
                 }
                 else{
                     printf("errore nell'invio della lista\n");
