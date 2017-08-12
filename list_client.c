@@ -185,12 +185,6 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
     int dimension=0;
     double loss_prob = param_client.loss_prob;
     char*list,*first;
-    list=malloc(sizeof(char)*dimension);
-    if(list==NULL){
-        handle_error_with_exit("error in malloc\n");
-    }
-    memset(list,'\0',(size_t)dimension);
-    first=list;
     strcpy(temp_buff.payload, "list");
     send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload,LIST, seq_to_send,loss_prob, W, pkt_fly);//manda messaggio get
     start_timeout_timer(timeout_timer_id, TIMEOUT);
@@ -218,13 +212,17 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 close_connection_list(temp_buff, seq_to_send, win_buf_snd, sockfd, serv_addr, len, window_base_snd,
                                  window_base_rcv, pkt_fly, W, byte_written, loss_prob);
                 printf("lista vuota\n");
-                free(list);
                 return *byte_written;
             } else if (temp_buff.command == DIMENSION) {
                 rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
                                            W);
                 dimension = parse_integer(temp_buff.payload);
-
+                list=malloc(sizeof(char)*dimension);
+                if(list==NULL){
+                  handle_error_with_exit("error in malloc\n");
+                }
+                memset(list,'\0',(size_t)dimension);
+                first=list;
                 rcv_list(sockfd, serv_addr, len, temp_buff, win_buf_snd, win_buf_rcv, seq_to_send, W, pkt_fly,list,
                          dimension, loss_prob, window_base_snd, window_base_rcv, byte_written);
                 if(((int)strlen(first)+1)==dimension){//+1 per il terminatore ,in dimension la lunghezza comprende il terminatore
@@ -233,7 +231,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 else{
                     printf("errore,lista non correttamente ricevuta\n");
                 }
-                //free(first);//il puntatore di list è stato spostato per inviare la lista
+                free(first);//il puntatore di list è stato spostato per inviare la lista
                 list=NULL;
                 return *byte_written;
             } else {
