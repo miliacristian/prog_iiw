@@ -10,6 +10,7 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
+#include "put_client.h"
 
 
 struct addr *addr = NULL;
@@ -131,11 +132,39 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     return byte_written;
 }
 
-int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la put con connessione già instaurata
-    (void)sockfd;
-    (void)serv_addr;
-    (void)filename;
-    return 0;
+int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
+    int byte_readed = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
+    struct temp_buffer temp_buff;//pacchetto da inviare
+    struct window_rcv_buf win_buf_rcv[2 * W];
+    struct window_snd_buf win_buf_snd[2 * W];
+    struct addr temp_addr;
+    struct sigaction sa;
+    memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
+    memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
+    //inizializzo numeri di sequenza nell'array di struct
+    for (int i = 0; i < 2 * W; i++) {
+        win_buf_snd[i].seq_numb = i;
+    }
+//
+    socklen_t len = sizeof(serv_addr);
+
+    make_timers(win_buf_snd, W);//crea 2w timer
+    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
+
+    temp_addr.sockfd = sockfd;
+    temp_addr.dest_addr = serv_addr;
+    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
+
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    if (sigemptyset(&sa.sa_mask) == -1) {
+        handle_error_with_exit("error in sig_empty_set\n");
+    }
+    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+        handle_error_with_exit("error in sigaction\n");
+    }
+    wait_for_put_start(sockfd, serv_addr, len, filename, &byte_readed , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd,dimension);
+    return byte_readed;
 }
 
 struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servaddr) {//client manda messaggio syn
@@ -239,7 +268,7 @@ void client_get_job(char *filename) {
     exit(EXIT_SUCCESS);
 }
 
-void client_put_job(char *filename) {//upload e filename già verificato
+void client_put_job(char *filename,int dimension) {//upload e filename già verificato
     printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
@@ -262,7 +291,7 @@ void client_put_job(char *filename) {//upload e filename già verificato
         handle_error_with_exit("error in bind\n");
     }
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
-    put_command(sockfd, serv_addr, filename);
+    put_command(sockfd, serv_addr, filename,dimension);
     printf("finito comando put\n");
     close(sockfd);
     exit(EXIT_SUCCESS);
@@ -376,7 +405,7 @@ int main(int argc, char *argv[]) {
                             handle_error_with_exit("error in fork\n");
                         }
                         if (pid == 0) {
-                            client_put_job(filename);//i figli non ritorna mai
+                            client_put_job(filename,get_file_size(path));//i figli non ritorna mai
                         }
                         break;
                     } else if (strncmp(conf_upload, "n", 1) == 0) {

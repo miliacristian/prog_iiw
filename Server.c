@@ -10,6 +10,7 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
+#include "put_server.h"
 
 
 //variabili globali
@@ -59,21 +60,6 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
         start_timer((*win_buffer).time_id, &sett_timer_server);
     return;
-}
-
-
-/*int execute_list(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
-    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
-    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
-    printf("server execute_list\n");
-    return 0;
-}*/
-
-int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
-    int byte_written=0,byte_readed,fd,byte_expected,W=param_serv.window;
-    double timer=param_serv.timer_ms,loss_prob=param_serv.loss_prob;
-    printf("server execute_put\n");
-    return 0;
 }
 
 void initialize_mtx(sem_t*mtx){
@@ -344,7 +330,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     if(close(fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
-    //line=command;
     free(command);//liberazione memoria della linea retta dal file
     line=NULL;
 
