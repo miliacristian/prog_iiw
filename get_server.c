@@ -76,17 +76,17 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     int byte_readed = 0, fd, dimension;
     double loss_prob = param_serv.loss_prob;
-    char *path, dim[11];
+    char *path, dim_string[11];
     rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
     if (check_if_file_exist(path)) {
         dimension = get_file_size(path);
-        sprintf(dim, "%d", dimension);
+        sprintf(dim_string, "%d", dimension);
         fd = open(path, O_RDONLY);
         if (fd == -1) {
             handle_error_with_exit("error in open\n");
         }
-        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
+        send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim_string, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);
     }
     else {
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, loss_prob, W, pkt_fly);
