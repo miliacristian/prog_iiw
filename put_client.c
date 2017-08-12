@@ -58,7 +58,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
     }
 }
 
-int send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob) {
+int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob) {
     printf("send_file\n");
     int value = 0,*byte_sent = &value;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -150,7 +150,7 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                     handle_error_with_exit("error in open file\n");
                 }
                 free(path);
-                send_file(sockfd,serv_addr,len,seq_to_send,window_base_snd,window_base_rcv,W,pkt_fly,temp_buff,win_buf_snd,fd,byte_readed,dimension,loss_prob);
+                send_put_file(sockfd,serv_addr,len,seq_to_send,window_base_snd,window_base_rcv,W,pkt_fly,temp_buff,win_buf_snd,fd,byte_readed,dimension,loss_prob);
                 if(close(fd)==-1){
                     handle_error_with_exit("error in close file\n");
                 }
