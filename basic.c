@@ -100,7 +100,7 @@ void generate_branches_and_number(char*temp,char copy_number){//fa diventare tem
 }
 
 char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path assoluti tutti diversi tra loro partendo da un file che esiste,o ritorna null se ci sono troppe copie del file(255)
-// fare la free di absolut path dopo aver creato il file
+// fare la free di absolut path nella funzione chiamante dopo aver creato il file
     unsigned char copy_number=1;
     char temp[6],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
     memset(temp,'\0',6);

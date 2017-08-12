@@ -66,10 +66,6 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
         }
     }
 }
-//ricevuto pacchetto con put dimensione e filename
-int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
-
-}
 int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
@@ -128,6 +124,37 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
         }
     }
 
+}
+
+//ricevuto pacchetto con put dimensione e filename
+int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr){
+    //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
+    int byte_written= 0, fd, dimension,W;
+    double loss_prob = param_serv.loss_prob;
+    W=param_serv.window;
+    socklen_t len=sizeof(cli_addr);
+    char*path,*first,*payload;
+    payload=malloc(sizeof(char)*(MAXPKTSIZE-9));
+    if(payload==NULL){
+        handle_error_with_exit("error in payload\n");
+    }
+    strcpy(payload,temp_buff.payload);
+    first=payload;
+    dimension=parse_integer_and_move(&payload);
+    payload++;
+    path=generate_multi_copy(dir_server,payload);
+    fd = open(path, O_WRONLY | O_CREAT,0666);
+    if (fd == -1) {
+        handle_error_with_exit("error in open\n");
+    }
+    free(path);
+    free(first);
+    payload=NULL;
+    rcv_put_file(sockfd,cli_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,&byte_written);
+    if(close(fd)==-1){
+        handle_error_with_exit("error in close file\n");
+    }
+    return byte_written;
 }
 
 
