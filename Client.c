@@ -365,8 +365,6 @@ int main(int argc, char *argv[]) {
     if (close(fd) == -1) {
         handle_error_with_exit("error in close file\n");
     }
-    //line = command;//rimando indietro line spostato
-    //command = NULL;
     free(command);
     line=NULL;
     create_thread_waitpid();

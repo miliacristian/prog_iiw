@@ -29,7 +29,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
-                send_message_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_snd,"FIN_ACK",FIN_ACK,seq_to_send,loss_prob,W,pkt_fly);
+                send_message(sockfd,&cli_addr,len,temp_buff,"FIN_ACK",FIN_ACK,loss_prob);
                 printf("return wait_for_fin\n");
                 return *byte_written;
             }
@@ -123,7 +123,6 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
             return *byte_written;
         }
     }
-
 }
 
 //ricevuto pacchetto con put dimensione e filename
@@ -150,10 +149,12 @@ int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *wi
     free(path);
     free(first);
     payload=NULL;
+    rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     rcv_put_file(sockfd,cli_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,&byte_written);
     if(close(fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
+    printf("return execute put\n");
     return byte_written;
 }
 

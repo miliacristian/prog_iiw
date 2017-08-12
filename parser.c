@@ -148,7 +148,7 @@ void check_and_parse_command(char*command,char*filename){
     temp_command=alloca(sizeof(char)*(MAXCOMMANDLINE+1));
     main_command=alloca(sizeof(char)*5);
     while(1){
-        printf("Choose one command:\n1)list\n2)get <filename>\n3)put <path_file> <byte_file>\n");
+        printf("Choose one command:\n1)list\n2)get <filename>\n3)put <path_file>\n");
         if(fgets(temp_command,MAXCOMMANDLINE,stdin)==NULL){//fgets aggiunge automaticamente
             // newline e il terminatore di stringa!
             handle_error_with_exit("error in read_line\n");
