@@ -47,7 +47,7 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
             if (win_buf_rcv[*window_base_rcv].command == DATA) {
-                if (dim - *byte_written > MAXPKTSIZE - 9) {
+                if (dim - *byte_written >=MAXPKTSIZE - 9) {
                     copy_buf1_in_buf2(list,temp_buff.payload,MAXPKTSIZE - 9);//scrivo in list la parte di lista
                     *byte_written += MAXPKTSIZE - 9;
                     list+=MAXPKTSIZE-9;

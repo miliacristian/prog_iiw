@@ -96,7 +96,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
@@ -224,6 +224,8 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 first=list;
                 rcv_list(sockfd, serv_addr, len, temp_buff, win_buf_snd, win_buf_rcv, seq_to_send, W, pkt_fly,list,
                          dimension, loss_prob, window_base_snd, window_base_rcv, byte_written);
+                printf("dimension %d\n",dimension);
+                printf("%d\n",strlen(first));
                 if(strlen(first)==(dimension-1)){
                     printf("list:\n%s",first);//stampa della lista ottenuta
                 }
