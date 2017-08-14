@@ -38,7 +38,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 stop_all_timers(win_buf_snd, W);
                 stop_timeout_timer(timeout_timer_id);
                 printf("close put send file\n");
-                return byte_readed;//fine connesione
+                return *byte_readed;//fine connesione
             }else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
                 rcv_msg_re_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -55,7 +55,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
             great_alarm = 0;
             printf("il server non è in ascolto close_put_send_file\n");
             stop_all_timers(win_buf_snd, W);
-            return byte_readed;
+            return *byte_readed;
         }
     }
 }
@@ -146,9 +146,6 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 path=generate_full_pathname(filename,dir_client);
-                if(path==NULL){
-                    handle_error_with_exit("error:there are too much copies of the file");
-                }
                 fd=open(path,O_RDONLY);
                 if(fd==-1){
                     handle_error_with_exit("error in open file\n");

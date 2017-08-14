@@ -23,10 +23,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     printf("send_list\n");
     int value = 0,*byte_sent = &value;
     char*list,*temp_list;//creare la lista e poi inviarla in parti
-    printf("%s\n",dir_server);
-    printf("%d\n",dim);
     list=files_in_dir(dir_server,dim);
-    printf("%s\n",list);
     temp_list=list;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
@@ -43,27 +40,32 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_list_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
-                    if (*byte_readed == dim) {
-                        close_list(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
-                        printf("close sendlist\n");
-                        free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
-                        list=NULL;
-                        return *byte_readed;
+                    if(temp_buff.command==DATA) {//se è un messaggio contenente dati
+                        rcv_ack_list_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
+                        if (*byte_readed == dim) {
+                            close_list(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
+                            printf("close sendlist\n");
+                            free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
+                            list = NULL;
+                            return *byte_readed;
+                        }
                     }
-                } else {
+                    else{//se è un messaggio speciale
+                        rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    }
+                }
+                else {
                     printf("ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -84,7 +86,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
     int byte_readed = 0, fd, dimension;
     double loss_prob = param_serv.loss_prob;
     char dim[11];
-    rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
+    rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     dimension=count_char_dir(dir_server);
     if(dimension!=0){
         sprintf(dim, "%d", dimension);
@@ -114,7 +116,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (temp_buff.command == FIN) {
                 send_message(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK, loss_prob);
@@ -123,7 +125,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
                 return byte_readed;//fine connesione
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
+                rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
                                            loss_prob, W);
                 send_list(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, &byte_readed, dimension, loss_prob);
                 if(byte_readed==dimension){
@@ -136,7 +138,6 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         } else if (errno != EINTR) {

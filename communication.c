@@ -10,7 +10,9 @@
 struct itimerspec sett_timer_cli;
 struct itimerspec sett_timer_server;
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
-                            int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {
+                            int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {//ack di un messaggio contenente
+    // parte di lista,tempbuff.command deve essere uguale a data
+
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -31,7 +33,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
 
 }
 void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
-    //copia rcv data send_ack_in_window
+    //ricevi parte di lista e invia ack
     struct temp_buffer ack_buff;
     int written=0;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
@@ -70,6 +72,7 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
     }
     return;
 }
+
 void send_list_in_window_serv(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
     int readed=0;
     temp_buff.command = DATA;
@@ -93,7 +96,7 @@ void send_list_in_window_serv(int sockfd,char*list, struct sockaddr_in *serv_add
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf("pacchetto inviato con ack %d seq %d command %d \n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf("pacchetto inviato con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
@@ -204,8 +207,7 @@ void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr,
     }
     win_buf_snd[*seq_to_send].command = DATA;
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
-            -1) {//manda richiesta del client al server
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto inviato con ack %d seq %d command %d \n", temp_buff.ack, temp_buff.seq, temp_buff.command);
@@ -237,15 +239,15 @@ void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double
     return;
 }
 
-void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *serv_addr,socklen_t len, double loss_prob) {
+void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *addr,socklen_t len, double loss_prob) {
     if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+        if (sendto(sockfd, temp_buff, MAXPKTSIZE,0, (struct sockaddr *) addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
         printf("pacchetto ritrasmesso con ack %d seq %d command %d\n", temp_buff->ack, temp_buff->seq,temp_buff->command);
     }
     else{
-        printf("pacchetto ritrasmesso con ack %d, seq %d perso\n",temp_buff->ack,temp_buff->seq);
+        printf("pacchetto ritrasmesso con ack %d, seq %d command %d perso\n",temp_buff->ack,temp_buff->seq,temp_buff->command);
     }
     return;
 }
@@ -286,8 +288,25 @@ void rcv_msg_re_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,sock
     }
     return;
 }
+void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
+    //già memorizzato in finestra
+    temp_buff.ack=temp_buff.seq;
+    temp_buff.seq=NOT_A_PKT;
+    strcpy(temp_buff.payload,"ACK");
+    //lascia invariato il tipo di comando
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("pacchetto inviato con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
+    }
+    else{
+        printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
+    }
+    return;
+}
 
-void send_message(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, char *data,
+void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct temp_buffer temp_buff, char *data,
                   char command, double loss_prob) {
     strcpy(temp_buff.payload, data);
     temp_buff.ack = NOT_AN_ACK;
@@ -295,7 +314,7 @@ void send_message(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struc
     temp_buff.command = command;
     //niente ack e sequenza
     if (flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
@@ -309,6 +328,8 @@ void send_message(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struc
 void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written) {
     struct temp_buffer ack_buff;
     int written=0;
+    int window_base_iniz=*window_base_rcv;
+    int received_iniziale=win_buf_rcv[0].received;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
     copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
     win_buf_rcv[temp_buff.seq].received = 1;
@@ -316,17 +337,29 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     ack_buff.seq = NOT_A_PKT;
     strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
+    printf("1\n");
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
+        printf("2\n");
         while (win_buf_rcv[*window_base_rcv].received == 1) {
+            printf("win base rcv %d,W %d,byte_written %d ",*window_base_rcv,W,*byte_written);
+            printf("loop\n");
+            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("windo iniziale %d \n",window_base_iniz);
+            printf("received iniziale %d\n",received_iniziale);
+            printf("command %d\n",win_buf_rcv[*window_base_rcv].command);
             if (win_buf_rcv[*window_base_rcv].command == DATA) {
+                printf("loop 2\n");
                 if (dim - *byte_written > MAXPKTSIZE - 9) {
-                    written=writen(fd, win_buf_rcv[*window_base_rcv].payload, MAXPKTSIZE - 9);
+                    printf("3\n");
+                    written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - 9);
+                    printf("4\n");
                     if(written<MAXPKTSIZE-9){
                         handle_error_with_exit("error in write\n");
                     }
                     *byte_written += MAXPKTSIZE - 9;
                 } else {
+                    printf("5\n");
                     written=writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
                     if(written<dim - *byte_written){
                         handle_error_with_exit("error in write\n");
@@ -338,15 +371,19 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
             }
         }
     }
+    printf("6\n");
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
+        printf("7\n");
         printf("pacchetto inviato con ack %d seq %d command %d \n", ack_buff.ack, ack_buff.seq, ack_buff.command);
-    } else {
+    }
+    else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", ack_buff.ack, ack_buff.seq, ack_buff.command);
     }
+    printf("8\n");
     return;
 }
 
@@ -378,6 +415,34 @@ void rcv_msg_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen
     }
     return;
 }
+//chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
+void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
+    struct temp_buffer ack_buff;
+    win_buf_rcv[temp_buff.seq].command=temp_buff.command;
+    strcpy(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload);
+    win_buf_rcv[temp_buff.seq].received=1;
+    ack_buff.ack=temp_buff.seq;
+    ack_buff.seq=NOT_A_PKT;
+    strcpy(ack_buff.payload,"ACK");
+    ack_buff.command=temp_buff.command;
+    if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
+        // scorro la finestra fino al primo ancora non ricevuto
+        while (win_buf_rcv[*window_base_rcv].received == 1) {
+            win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
+            *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
+        }
+    }
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("pacchetto inviato con ack %d seq %d command %d\n", ack_buff.ack, ack_buff.seq,ack_buff.command);
+    }
+    else{
+        printf("pacchetto con ack %d, seq %d command %d perso\n",ack_buff.ack, ack_buff.seq,ack_buff.command);
+    }
+    return;
+}
 
 void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
@@ -390,11 +455,11 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
             (*pkt_fly)--;
         }
     }
-
 }
 
 void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                                  int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {
+    //tempbuff.command deve essere uguale a data
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -412,7 +477,6 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
         }
     }
     return;
-
 }
 
 void send_fin(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, double loss_prob) {

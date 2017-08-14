@@ -29,7 +29,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 }
                 else{
                     printf("ack duplicato\n");
@@ -43,7 +43,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
                 return *byte_written;
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
@@ -67,7 +67,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
 }
 
 int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
-    printf("wait for fin\n");
+    printf("wait for fin list\n");
     start_timeout_timer(timeout_timer_id,TIMEOUT);//chiusura temporizzata
     errno=0;
     while(1){
@@ -83,7 +83,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
-                printf("return wait_for_fin\n");
+                printf("fin ricevuto\n");
                 return *byte_written;
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -147,14 +147,13 @@ int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if(seq_is_in_window(*window_base_rcv, W,temp_buff.seq)){
                 rcv_list_send_ack_in_window(sockfd,list,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
                 if(*byte_written==dimension){
                     wait_for_fin_list(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
-                    printf("return rcv list\n");
                     return *byte_written;
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -207,14 +206,14 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 }
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else if (temp_buff.command == ERROR) {
-                rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
+                rcv_msg_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
                                            W);
                 close_connection_list(temp_buff, seq_to_send, win_buf_snd, sockfd, serv_addr, len, window_base_snd,
                                  window_base_rcv, pkt_fly, W, byte_written, loss_prob);
                 printf("lista vuota\n");
                 return *byte_written;
             } else if (temp_buff.command == DIMENSION) {
-                rcv_msg_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
+                rcv_msg_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
                                            W);
                 dimension = parse_integer(temp_buff.payload);
                 list=malloc(sizeof(char)*dimension);
@@ -225,7 +224,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 first=list;
                 rcv_list(sockfd, serv_addr, len, temp_buff, win_buf_snd, win_buf_rcv, seq_to_send, W, pkt_fly,list,
                          dimension, loss_prob, window_base_snd, window_base_rcv, byte_written);
-                if(((int)strlen(first)+1)==dimension){//+1 per il terminatore ,in dimension la lunghezza comprende il terminatore
+                if(strlen(first)==(dimension-1)){
                     printf("list:\n%s",first);//stampa della lista ottenuta
                 }
                 else{

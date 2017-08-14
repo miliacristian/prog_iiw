@@ -63,7 +63,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
 
 
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
-    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2 * W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -98,7 +98,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 }
 
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
-    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
+    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2 * W];
     struct window_snd_buf win_buf_snd[2 * W];
@@ -133,7 +133,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
 }
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
-    int byte_readed = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;;//primo pacchetto della finestra->primo non riscontrato
+    int byte_readed = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct window_rcv_buf win_buf_rcv[2 * W];
     struct window_snd_buf win_buf_snd[2 * W];

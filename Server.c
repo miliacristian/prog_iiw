@@ -117,7 +117,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
         printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
         great_alarm=0;
-        window_base_rcv=(window_base_rcv+1)%(2*W);//pkt con num sequenza zero ricevuto
         if(temp_buff.command==LIST){
             execute_list(sockfd,request.addr,len,&seq_to_send,&window_base_snd,&window_base_rcv,W,&pkt_fly,temp_buff,win_buf_rcv,win_buf_snd);
             printf("comando list finito\n");
@@ -127,7 +126,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             return;
         }
         else if(temp_buff.command==PUT){
-            execute_put(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr);
+            execute_put(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr,len,W);
             printf("comando put finito\n");
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
