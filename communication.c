@@ -12,7 +12,6 @@ struct itimerspec sett_timer_server;
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
-
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -35,7 +34,6 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
 void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
     //ricevi parte di lista e invia ack
     struct temp_buffer ack_buff;
-    int written=0;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
     copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
     win_buf_rcv[temp_buff.seq].received = 1;
@@ -46,7 +44,6 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-            if (win_buf_rcv[*window_base_rcv].command == DATA) {
                 if (dim - *byte_written >=MAXPKTSIZE - 9) {
                     copy_buf1_in_buf2(list,temp_buff.payload,MAXPKTSIZE - 9);//scrivo in list la parte di lista
                     *byte_written += MAXPKTSIZE - 9;
@@ -58,7 +55,6 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
                 }
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
-            }
         }
     }
     if (flip_coin(loss_prob)) {
@@ -147,6 +143,7 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     (*pkt_fly)++;
     return;
 }
+
 void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim){
     ssize_t readed=0;
     temp_buff.command=DATA;
@@ -326,8 +323,6 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
 void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written) {
     struct temp_buffer ack_buff;
     int written=0;
-    int window_base_iniz=*window_base_rcv;
-    int received_iniziale=win_buf_rcv[0].received;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
     copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
     win_buf_rcv[temp_buff.seq].received = 1;
@@ -338,9 +333,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-            if (win_buf_rcv[*window_base_rcv].command == DATA) {
-
-                if (dim - *byte_written > MAXPKTSIZE - 9) {
+                if (dim - *byte_written >=MAXPKTSIZE - 9) {
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - 9);
                     if(written<MAXPKTSIZE-9){
                         handle_error_with_exit("error in write\n");
@@ -355,7 +348,6 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
                 }
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
-            }
         }
     }
     if (flip_coin(loss_prob)) {
