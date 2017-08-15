@@ -470,7 +470,6 @@ void send_fin(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct te
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     return;
-
 }
 
 void send_fin_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){

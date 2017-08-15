@@ -20,7 +20,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -74,7 +74,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -131,7 +131,7 @@ int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -192,7 +192,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
-                //ignora pacchetto
+                continue;//ignora pacchetto
             } else {
                 stop_timeout_timer(timeout_timer_id);
             }

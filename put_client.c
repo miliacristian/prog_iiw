@@ -12,7 +12,7 @@
 #include "communication.h"
 #include "put_client.h"
 
-int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send) {//manda fin non in finestra senza sequenza e ack e chiudi
+int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send,int dimension) {//manda fin non in finestra senza sequenza e ack e chiudi
     printf("function close_put_send_file\n");
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff,win_buf_snd, "FIN", FIN,seq_to_send, loss_prob,W,pkt_fly);
@@ -20,7 +20,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -29,7 +29,12 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
+                    if(temp_buff.command==DATA){
+                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly,dimension, byte_readed);
+                    }
+                    else {
+                        rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
+                    }
                 } else {
                     printf("ack duplicato\n");
                 }
@@ -48,13 +53,14 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
-        } else if (errno != EINTR) {
+        } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {
             great_alarm = 0;
             printf("il server non è in ascolto close_put_send_file\n");
             stop_all_timers(win_buf_snd, W);
+            stop_timeout_timer(timeout_timer_id);
             return *byte_readed;
         }
     }
@@ -67,11 +73,10 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
             send_data_in_window_cli(sockfd, fd, &serv_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
-            printf("pkt_fly %d\n",*pkt_fly);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &serv_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -80,18 +85,15 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
-                        printf("rcv ack file in window\n");
                         rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
-                        printf("pkt_fly %d\n",*pkt_fly);
                         if (*byte_readed == dim) {
                             close_put_send_file(sockfd, serv_addr, len, temp_buff, win_buf_snd, W, loss_prob,
-                                                byte_readed, window_base_snd, pkt_fly, window_base_rcv, seq_to_send);
+                                                byte_readed, window_base_snd, pkt_fly, window_base_rcv, seq_to_send,dim);
                             printf("close sendfile\n");
                             return *byte_readed;
                         }
                     }
                     else{
-                        printf("rcv ack in window\n");
                         rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                     }
                 }else {
@@ -117,6 +119,7 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
             great_alarm = 0;
             printf("il server non è in ascolto send_put_file\n");
             stop_all_timers(win_buf_snd, W);
+            stop_timeout_timer(timeout_timer_id);
             return *byte_readed;
         }
     }
@@ -131,13 +134,14 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
     strcpy(temp_buff.payload,dim_string);
     strcat(temp_buff.payload," ");
     strcat(temp_buff.payload, filename);
+    //invia messaggio put
     send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,PUT,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio get
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -175,7 +179,7 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
-        else if(errno!=EINTR){
+        else if(errno!=EINTR && errno!=0){
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {

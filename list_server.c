@@ -32,7 +32,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -101,7 +101,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);

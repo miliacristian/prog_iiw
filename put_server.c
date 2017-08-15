@@ -20,13 +20,13 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
-            if (temp_buff.command==FIN) {
+            if (temp_buff.command==FIN){
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
                 send_message(sockfd,&cli_addr,len,temp_buff,"FIN_ACK",FIN_ACK,loss_prob);
@@ -42,18 +42,18 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
-            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
+            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq ||seq_is_in_window(*window_base_rcv, W,temp_buff.seq))) {
                 rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
-                printf("ignorato close connect pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
+                printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
-        else if(errno!=EINTR){
+        else if(errno!=EINTR && errno!=0){
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {
@@ -61,7 +61,6 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return wait_for_fin 2\n");
             return *byte_written;
         }
     }
@@ -70,13 +69,12 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
     printf("messaggio start inviato\n");
-    printf("rcv file\n");
     errno=0;
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                //ignora pacchetto
+                continue;//ignora pacchetto
             }
             else{
                 stop_timeout_timer(timeout_timer_id);
@@ -115,7 +113,7 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
-        else if(errno!=EINTR){
+        else if(errno!=EINTR && errno!=0){
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {
@@ -123,7 +121,6 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
             great_alarm = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
-            printf("return rcv file\n");
             return *byte_written;
         }
     }
