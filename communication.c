@@ -74,7 +74,6 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
 }
 
 void send_list_in_window_serv(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
-    int readed=0;
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
@@ -148,7 +147,7 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     (*pkt_fly)++;
     return;
 }
-/*void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim){
+void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim){
     ssize_t readed=0;
     temp_buff.command=DATA;
     temp_buff.ack=NOT_AN_ACK;
@@ -163,8 +162,8 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     }
     else {
         readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - 9));
-        if(readed<MAXPKTSIZE){
-            handle_error_with_exit("error in read\n");
+        if(readed<MAXPKTSIZE-9){
+            handle_error_with_exit("error in read 2\n");
         }
         *byte_sent+=MAXPKTSIZE-9;
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-9);
@@ -183,10 +182,9 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
-}*/
+}
 void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
     int readed=0;
-
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
@@ -337,29 +335,18 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     ack_buff.seq = NOT_A_PKT;
     strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
-    printf("1\n");
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
-        printf("2\n");
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-            printf("win base rcv %d,W %d,byte_written %d ",*window_base_rcv,W,*byte_written);
-            printf("loop\n");
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
-            printf("windo iniziale %d \n",window_base_iniz);
-            printf("received iniziale %d\n",received_iniziale);
-            printf("command %d\n",win_buf_rcv[*window_base_rcv].command);
             if (win_buf_rcv[*window_base_rcv].command == DATA) {
-                printf("loop 2\n");
+
                 if (dim - *byte_written > MAXPKTSIZE - 9) {
-                    printf("3\n");
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - 9);
-                    printf("4\n");
                     if(written<MAXPKTSIZE-9){
                         handle_error_with_exit("error in write\n");
                     }
                     *byte_written += MAXPKTSIZE - 9;
                 } else {
-                    printf("5\n");
                     written=writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
                     if(written<dim - *byte_written){
                         handle_error_with_exit("error in write\n");
@@ -371,19 +358,16 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
             }
         }
     }
-    printf("6\n");
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf("7\n");
         printf("pacchetto inviato con ack %d seq %d command %d \n", ack_buff.ack, ack_buff.seq, ack_buff.command);
     }
     else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", ack_buff.ack, ack_buff.seq, ack_buff.command);
     }
-    printf("8\n");
     return;
 }
 

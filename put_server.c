@@ -36,7 +36,6 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
-                    //rcv ack file??
                 }
                 else{
                     printf("ack duplicato\n");
@@ -44,7 +43,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
@@ -84,7 +83,6 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
             }
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
-                printf("put file1\n");
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
@@ -94,26 +92,26 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                printf("put file2\n");
-                rcv_msg_re_send_ack_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if(seq_is_in_window(*window_base_rcv, W,temp_buff.seq)){
-                printf("put file3\n");
-                rcv_data_send_ack_in_window(sockfd,fd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
-                printf("llol\n");
-                if(*byte_written==dimension){
-                    printf("ciao\n");
-                    wait_for_fin_put(temp_buff,win_buf_snd,sockfd,cli_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob,seq_to_send);
-                    printf("return rcv file\n");
-                    return *byte_written;
+                if(temp_buff.command==DATA){
+                    rcv_data_send_ack_in_window(sockfd,fd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
+                    if(*byte_written==dimension){
+                        wait_for_fin_put(temp_buff,win_buf_snd,sockfd,cli_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob,seq_to_send);
+                        printf("return rcv file\n");
+                        return *byte_written;
+                    }
+                }
+                else{
+                    rcv_msg_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
                 printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -154,7 +152,7 @@ int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *wi
     free(path);
     free(first);
     payload=NULL;
-    rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);//invio ack della put
+    rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);//invio ack della put
     rcv_put_file(sockfd,cli_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,&byte_written);
     if(close(fd)==-1){
         handle_error_with_exit("error in close file\n");

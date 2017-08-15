@@ -40,7 +40,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 printf("close put send file\n");
                 return *byte_readed;//fine connesione
             }else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
@@ -66,7 +66,8 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
-            send_data_in_window_serv(sockfd, fd, &serv_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
+            send_data_in_window_cli(sockfd, fd, &serv_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
+            printf("pkt_fly %d\n",*pkt_fly);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &serv_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -78,19 +79,28 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
             printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
-                    if (*byte_readed == dim) {
-                        close_put_send_file(sockfd, serv_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed,window_base_snd,pkt_fly,window_base_rcv,seq_to_send);
-                        printf("close sendfile\n");
-                        return *byte_readed;
+                    if (temp_buff.command == DATA) {
+                        printf("rcv ack file in window\n");
+                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
+                        printf("pkt_fly %d\n",*pkt_fly);
+                        if (*byte_readed == dim) {
+                            close_put_send_file(sockfd, serv_addr, len, temp_buff, win_buf_snd, W, loss_prob,
+                                                byte_readed, window_base_snd, pkt_fly, window_base_rcv, seq_to_send);
+                            printf("close sendfile\n");
+                            return *byte_readed;
+                        }
                     }
-                } else {
+                    else{
+                        printf("rcv ack in window\n");
+                        rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    }
+                }else {
                     printf("ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
@@ -144,7 +154,7 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
             }
             else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
+                rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 path=generate_full_pathname(filename,dir_client);
                 fd=open(path,O_RDONLY);
                 if(fd==-1){
