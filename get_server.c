@@ -35,25 +35,32 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto send_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
-                    if (*byte_readed == dim) {
-                        close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob, byte_readed);
-                        printf("close sendfile\n");
-                        return *byte_readed;
+                    if(temp_buff.command==DATA) {
+                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
+                        if (*byte_readed == dim) {
+                            close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob,
+                                                byte_readed);
+                            printf("close sendfile\n");
+                            return *byte_readed;
+                        }
                     }
-                } else {
-                    printf("ack duplicato\n");
+                    else{
+                        rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    }
+                }
+                else {
+                    printf("send_file ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
+                printf("ignorato pacchetto send_file con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
@@ -66,6 +73,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (great_alarm == 1) {
             great_alarm = 0;
             printf("il client non è in ascolto send file\n");
+            stop_timeout_timer(timeout_timer_id);
             stop_all_timers(win_buf_snd, W);
             return *byte_readed;
         }
@@ -77,7 +85,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
     int byte_readed = 0, fd, dimension;
     double loss_prob = param_serv.loss_prob;
     char *path, dim_string[11];
-    rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
+    rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
     if (check_if_file_exist(path)) {
         dimension = get_file_size(path);
@@ -102,17 +110,17 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 } else {
-                    printf("ack duplicato\n");
+                    printf("execute get ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (temp_buff.command == FIN) {
                 send_message(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK, loss_prob);
@@ -121,7 +129,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 return byte_readed;//fine connesione
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
+                rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
                                                 loss_prob, W);
                 send_file(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd, fd, &byte_readed, dimension, loss_prob);
                 if (close(fd) == -1) {
@@ -134,12 +142,13 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
-        } else if (errno != EINTR) {
+        } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm == 1) {
             great_alarm = 0;
             printf("il client non è in ascolto execut get\n");
+            stop_timeout_timer(timeout_timer_id);
             stop_all_timers(win_buf_snd, W);
             return byte_readed;
         }

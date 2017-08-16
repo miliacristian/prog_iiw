@@ -37,7 +37,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto send_list con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {//se è un messaggio contenente dati
@@ -55,7 +55,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     }
                 }
                 else {
-                    printf("ack duplicato\n");
+                    printf("send_list ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
@@ -63,7 +63,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
+                printf("ignorato pacchetto send_list con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -108,13 +108,13 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto execute list con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 } else {
-                    printf("ack duplicato\n");
+                    printf("execute list ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
@@ -149,6 +149,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
             great_alarm = 0;
             printf("il client non è in ascolto execut get\n");
             stop_all_timers(win_buf_snd, W);
+            stop_timeout_timer(timeout_timer_id);
             return byte_readed;
         }
     }

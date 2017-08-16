@@ -25,7 +25,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto close connection con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -47,7 +47,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
-                printf("ignorato close connect pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato close connection pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
@@ -79,7 +79,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
+            printf("pacchetto ricevuto wait for fin_list con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
@@ -91,7 +91,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    printf("ack duplicato\n");
+                    printf("wait for fin ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
@@ -193,13 +193,13 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d payload %s\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
+            printf("pacchetto ricevuto rcv_list2 con ack %d seq %d command %d payload %s\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    printf("ack duplicato\n");
+                    printf("rcv_list2 ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
@@ -217,7 +217,7 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                     }
                 }
                 else{
-                    printf("errore\n");
+                    printf("errore rcv_list2\n");
                     rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
@@ -260,7 +260,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             } else {
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto wait for list_dim con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
@@ -302,7 +302,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 list=NULL;
                 return *byte_written;
             } else {
-                printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto wait list dim con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);

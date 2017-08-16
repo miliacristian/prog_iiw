@@ -38,7 +38,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    printf("ack duplicato\n");
+                    printf("wait for fin ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
@@ -85,7 +85,7 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    printf("ack duplicato\n");
+                    printf("rcv put file ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
