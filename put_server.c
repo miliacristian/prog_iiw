@@ -42,7 +42,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
-            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq ||seq_is_in_window(*window_base_rcv, W,temp_buff.seq))) {
+            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
