@@ -25,17 +25,20 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto close put send file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA){
+                        printf("errore close put ack file in finestra\n");
                         rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly,dimension, byte_readed);
                     }
                     else {
+                        printf("\"errore close put ack_msg in finestra\n");
                         rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                     }
-                } else {
+                }
+                else {
                     printf("ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -48,7 +51,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 rcv_msg_re_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             } else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto close put send file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -81,7 +84,7 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto send_put_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
@@ -105,7 +108,7 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
                 rcv_msg_re_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, loss_prob);
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             } else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack,
+                printf("ignorato pacchetto send_put_file con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d", *window_base_snd, *window_base_rcv);
@@ -146,7 +149,7 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto wait for put start con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
@@ -173,7 +176,7 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
                 return *byte_readed;
             }
             else {
-                printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto wait for put start con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);

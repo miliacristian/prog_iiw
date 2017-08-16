@@ -14,7 +14,7 @@
 #include "put_server.h"
 int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in cli_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob,int *seq_to_send){
     printf("wait for fin\n");
-    start_timeout_timer(timeout_timer_id,TIMEOUT);//chiusura temporizzata
+    start_timeout_timer(timeout_timer_id,TIMEOUT-3000);//chiusura temporizzata
     errno=0;
     while(1){
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo messaggio di fin,
@@ -25,7 +25,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
+            printf("pacchetto ricevuto wait for fin con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN){
                 stop_timeout_timer(timeout_timer_id);
                 stop_all_timers(win_buf_snd, W);
@@ -79,7 +79,7 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
@@ -103,12 +103,13 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
                     }
                 }
                 else{
+                    printf("errore rcv put file\n");
                     rcv_msg_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
             else {
-                printf("ignorato pacchetto wait dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
