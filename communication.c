@@ -7,8 +7,6 @@
 #include "Client.h"
 #include "communication.h"
 
-//commit
-
 struct itimerspec sett_timer_cli;
 struct itimerspec sett_timer_server;
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
