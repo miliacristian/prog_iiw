@@ -32,6 +32,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("close connect get ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -91,6 +92,7 @@ int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("wait for fin get ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -102,7 +104,7 @@ int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
             else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
+                printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -141,6 +143,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("rcv_get_file ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -161,7 +164,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
             else {
                 printf("ignorato pacchetto rcv get file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
+                printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -203,6 +206,7 @@ int wait_for_get_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("wait get_dim ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -237,7 +241,7 @@ int wait_for_get_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  
             else {
                 printf("ignorato pacchetto wait get dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
-                printf("winbase snd %d winbase rcv %d",*window_base_snd,*window_base_rcv);
+                printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }

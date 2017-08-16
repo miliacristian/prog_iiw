@@ -55,6 +55,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     }
                 }
                 else {
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("send_list ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -114,6 +115,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 } else {
+                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("execute list ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
