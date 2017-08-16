@@ -220,7 +220,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
         unlock_sem(&(mtx_prefork->sem));
         reply_to_syn_and_execute_command(request);
         done_jobs++;
-        if(done_jobs>10){
+        if(done_jobs>4){
             printf("pid %d\n ha fatto molto lavoro!\n",getpid());
             exit(EXIT_SUCCESS);
         }
@@ -353,7 +353,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
 
     create_pool(1);//da cambiare
-    create_thread_pool_handler(mtx_prefork);//da decommentare
+    //create_thread_pool_handler(mtx_prefork);//da decommentare
 
     while(1) {
         len=sizeof(cliaddr);

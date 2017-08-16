@@ -31,7 +31,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     return;
 
 }
-void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
+void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
     //ricevi parte di lista e invia ack
     struct temp_buffer ack_buff;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
@@ -45,13 +45,14 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
                 if (dim - *byte_written >=MAXPKTSIZE - 9) {
-                    copy_buf1_in_buf2(list,temp_buff.payload,MAXPKTSIZE - 9);//scrivo in list la parte di lista
+                    copy_buf1_in_buf2(*list,temp_buff.payload,MAXPKTSIZE - 9);//scrivo in list la parte di lista
                     *byte_written += MAXPKTSIZE - 9;
-                    list+=MAXPKTSIZE-9;
+                    *list+=MAXPKTSIZE-9;
                 } else {
-                    copy_buf1_in_buf2(list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
+                    copy_buf1_in_buf2(*list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
+                    printf("\n last pkt list %s\n", *list);
                     *byte_written += dim - *byte_written;
-                    list+=dim-*byte_written;
+                    *list+=dim-*byte_written;
                 }
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
@@ -69,21 +70,23 @@ void rcv_list_send_ack_in_window(int sockfd,char*list, struct sockaddr_in *serv_
     return;
 }
 
-void send_list_in_window_serv(int sockfd,char*list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
+void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     if ((dim - (*byte_sent)) < (MAXPKTSIZE - 9)) {//byte mancanti da inviare
-
-        copy_buf1_in_buf2(temp_buff.payload,list,dim - (*byte_sent));
+        printf("listaaa %s\n",*list);
+        copy_buf1_in_buf2(temp_buff.payload,*list,dim - (*byte_sent));
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, dim - (*byte_sent));
         *byte_sent += (dim - (*byte_sent));
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, (dim - (*byte_sent)));
-        list+=dim - (*byte_sent);
+        printf("payload %s\n",temp_buff.payload);
+        printf("parte di lista dentro finestra %s\n",win_buf_snd[*seq_to_send].payload);
+        *list+=dim - (*byte_sent);
     } else {
-        copy_buf1_in_buf2(temp_buff.payload,list,(MAXPKTSIZE - 9));
+        copy_buf1_in_buf2(temp_buff.payload,*list,(MAXPKTSIZE - 9));
         *byte_sent += MAXPKTSIZE - 9;
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, MAXPKTSIZE - 9);
-        list+=MAXPKTSIZE-9;
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, MAXPKTSIZE - 9);
+        *list+=MAXPKTSIZE-9;
     }
     win_buf_snd[*seq_to_send].command = DATA;
     if (flip_coin(loss_prob)) {

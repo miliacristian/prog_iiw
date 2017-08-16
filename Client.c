@@ -321,7 +321,6 @@ int main(int argc, char *argv[]) {
     //non fare mai la free su filename e command(servono ad ogni richiesta)
     int path_len, fd;
     pid_t pid;
-
     if (argc != 2) {
         handle_error_with_exit("usage <directory>\n");
     }
@@ -333,7 +332,7 @@ int main(int argc, char *argv[]) {
     if (fd == -1) {
         handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
     }
-    line = malloc(sizeof(char) * MAXLINE);
+    line = malloc(sizeof(char)*MAXLINE);
     if(line==NULL){
         handle_error_with_exit("error in malloc\n");
     }

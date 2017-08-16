@@ -28,7 +28,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
-            send_list_in_window_serv(sockfd,list, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
+            send_list_in_window_serv(sockfd,&list, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -75,6 +75,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (great_alarm == 1) {
             great_alarm = 0;
             printf("il client non è in ascolto send file\n");
+            stop_timeout_timer(timeout_timer_id);
             stop_all_timers(win_buf_snd, W);
             return *byte_readed;
         }
@@ -88,6 +89,7 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
     char dim[11];
     rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     dimension=count_char_dir(dir_server);
+    //printf("dimensione %d\n", dimension);
     if(dimension!=0){
         sprintf(dim, "%d", dimension);
         send_message_in_window_serv(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim, DIMENSION, seq_to_send, loss_prob, W, pkt_fly);

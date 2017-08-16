@@ -184,7 +184,7 @@ char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrim
 int count_char_dir(char*path){
     DIR *d;
     struct dirent *dir;
-    int lenght=1;
+    int lenght=0;
     if(path==NULL){
         handle_error_with_exit("path is NULL\n");
     }
@@ -196,8 +196,11 @@ int count_char_dir(char*path){
     {
         if (dir->d_type != DT_DIR) {
             lenght += strlen(dir->d_name);
-            lenght++;// newline o terminatore stringa
+            lenght++;// newline
         }
+    }
+    if(lenght!=0){
+        lenght+=1;//per il terminatore di stringa
     }
     closedir(d);//chiudendo la directory una volta riaperta ripunta al primo file della directory
     return lenght;
