@@ -15,7 +15,7 @@
 
 struct addr *addr = NULL;
 struct itimerspec sett_timer_cli;//timer e reset timer globali
-int great_alarm = 0;//se diventa 1 è scattato il timer grande
+int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
 timer_t timeout_timer_id; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
@@ -42,7 +42,7 @@ void timeout_handler(int sig, siginfo_t *si, void *uc){
     (void)si;
     (void)uc;
     printf("great timeout expired\n");
-    great_alarm=1;
+    great_alarm_client=1;
     return;
 }
 
@@ -190,7 +190,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
             if (temp_buff.command == SYN_ACK) {
                 stop_timeout_timer(timeout_timer_id);
                 printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
-                great_alarm = 0;
+                great_alarm_client = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server
             }
             else {
@@ -202,7 +202,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         }
         rtx++;
     }
-    great_alarm = 0;
+    great_alarm_client = 0;
     handle_error_with_exit("il server non è in ascolto\n");
     return main_servaddr;
 }

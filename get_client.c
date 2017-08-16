@@ -55,9 +55,9 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return close connection 2\n");
@@ -109,9 +109,9 @@ int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return wait_for_fin 2\n");
@@ -168,9 +168,9 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return rcv file 2\n");
@@ -245,9 +245,9 @@ int wait_for_get_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return wait for dimension 3\n");

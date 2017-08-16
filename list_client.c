@@ -55,9 +55,9 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return close connection\n");
@@ -109,9 +109,9 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return wait_for_fin\n");
@@ -168,9 +168,9 @@ int rcv_list(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_b
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return rcv list\n");
@@ -215,7 +215,6 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                                           window_base_rcv, pkt_fly, W, byte_written, loss_prob);
                         return *byte_written;
                     }
-
                 }
                 else{
                     rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
@@ -232,9 +231,9 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
         else if(errno!=EINTR){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             printf("return rcv list\n");
@@ -308,9 +307,9 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             return *byte_written;

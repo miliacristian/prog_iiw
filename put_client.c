@@ -56,8 +56,8 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
         } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
-            great_alarm = 0;
+        if (great_alarm_client == 1) {
+            great_alarm_client = 0;
             printf("il server non è in ascolto close_put_send_file\n");
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
@@ -115,8 +115,8 @@ int send_put_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, int *
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
-            great_alarm = 0;
+        if (great_alarm_client == 1) {
+            great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
@@ -182,9 +182,9 @@ int wait_for_put_start(int sockfd, struct sockaddr_in serv_addr, socklen_t  len,
         else if(errno!=EINTR && errno!=0){
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
+        if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm = 0;
+            great_alarm_client = 0;
             stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id);
             return *byte_readed;
