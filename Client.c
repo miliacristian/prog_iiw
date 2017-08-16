@@ -328,12 +328,10 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_client(argv[1]);
-    strcpy(localname, "");
-    strcpy(localname, getenv("HOME"));
-    strcat(localname, "/parameter.txt");
+    strcpy(localname,"./parameter.txt");
     fd = open(localname, O_RDONLY);
     if (fd == -1) {
-        handle_error_with_exit("error in read parameters into file\n");
+        handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
     }
     line = malloc(sizeof(char) * MAXLINE);
     if(line==NULL){

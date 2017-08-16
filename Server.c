@@ -77,6 +77,7 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
 
 void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda il messaggio di syn
     //e rispondi al client con syn_ack
+    printf("reply to syn_and_exec command\n");
     int sockfd;
     struct sockaddr_in serv_addr;
     socklen_t len=sizeof(request.addr);
@@ -85,7 +86,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     struct window_rcv_buf win_buf_rcv[2*W];
     struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
-
+    printf("finestre create\n");
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);
@@ -293,8 +294,6 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_serv(argv[1]);
     strcpy(localname,"./parameter.txt");
-    //strcpy(localname,getenv("HOME"));
-    //strcat(localname,"/parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
@@ -354,7 +353,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
 
     create_pool(1);//da cambiare
-    //create_thread_pool_handler(mtx_prefork);//da decommentare
+    create_thread_pool_handler(mtx_prefork);//da decommentare
 
     while(1) {
         len=sizeof(cliaddr);
