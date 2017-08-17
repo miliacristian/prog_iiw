@@ -67,6 +67,8 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 printf("ignorato pacchetto send_list con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
+                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -142,6 +144,8 @@ int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *se
             } else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
+                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         } else if (errno != EINTR) {

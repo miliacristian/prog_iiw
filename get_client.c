@@ -50,6 +50,8 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
             else {
                 printf("ignorato close connect pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
+                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -105,6 +107,7 @@ int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -165,6 +168,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
                 printf("ignorato pacchetto rcv get file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -242,6 +246,7 @@ int wait_for_get_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t  
                 printf("ignorato pacchetto wait get dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }

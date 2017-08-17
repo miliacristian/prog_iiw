@@ -50,7 +50,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         (void) sig;
         (void) si;
         (void) uc;
-        struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
+        struct window_snd_buf *win_buffer = si->si_value.sival_ptr;//recupero i dati dal segnale
         struct temp_buffer temp_buf;
         copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere
         temp_buf.ack = NOT_AN_ACK;

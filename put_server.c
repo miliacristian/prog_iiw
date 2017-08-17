@@ -51,6 +51,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -106,6 +107,7 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
                 }
                 else{
                     printf("errore rcv put file\n");
+                    handle_error_with_exit("");
                     rcv_msg_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -113,6 +115,8 @@ int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct tem
             else {
                 printf("ignorato pacchetto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
+                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }

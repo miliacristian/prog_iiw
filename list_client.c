@@ -50,6 +50,8 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             else {
                 printf("ignorato close connection pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
+                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -105,6 +107,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d payload %s\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.payload);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -221,6 +224,7 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                 }
                 else{
                     printf("errore rcv_list2\n");
+                    handle_error_with_exit("");
                     rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
@@ -229,6 +233,7 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                 printf("ignorato pacchetto rcv list2 con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -309,6 +314,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 printf("ignorato pacchetto wait list dim con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id, TIMEOUT);
             }
         } else if (errno != EINTR) {

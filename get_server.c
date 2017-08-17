@@ -22,6 +22,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
 
 int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob) {
     printf("send_file\n");
+    int ack_dup=0;
     int value = 0,*byte_sent = &value;
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     while (1) {
@@ -35,14 +36,14 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             else{
                 stop_timeout_timer(timeout_timer_id);
             }
-            printf("pacchetto ricevuto send_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf("pacchetto ricevuto send_file con ack %d seq %d command %d win_base_snd %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,*window_base_snd);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
-                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim, byte_readed);
+                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim,byte_readed);
+                        printf("byte readed %d ack dup %d\n",*byte_readed,ack_dup);
                         if (*byte_readed == dim) {
-                            close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob,
-                                                byte_readed);
+                            close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob,byte_readed);
                             printf("close sendfile\n");
                             return *byte_readed;
                         }
@@ -53,6 +54,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 }
                 else {
                     stop_timer(win_buf_snd[temp_buff.ack].time_id);
+                    ack_dup++;
                     printf("send_file ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
@@ -65,6 +67,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                        temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         }
@@ -142,6 +145,7 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
+                handle_error_with_exit("");
                 start_timeout_timer(timeout_timer_id,TIMEOUT);
             }
         } else if (errno != EINTR && errno!=0) {
