@@ -224,6 +224,7 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                 }
                 else{
                     printf("errore rcv_list2\n");
+                    printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                     handle_error_with_exit("");
                     rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }

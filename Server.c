@@ -16,7 +16,7 @@
 //variabili globali
 struct addr *addr = NULL;
 struct itimerspec sett_timer_server;//timer e reset timer globali
-int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm=0;//dopo le fork tutti i figli sanno quali sono gli id
+int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm_serv=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
 timer_t timeout_timer_id;
 char*dir_server;
@@ -43,8 +43,7 @@ void timeout_handler(int sig, siginfo_t *si, void *uc){
     (void)si;
     (void)uc;
     printf("tempo scaduto\n");
-    great_alarm=1;
-    return;
+    great_alarm_serv=1;
 }
 void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è associata una struct che contiene i dati da ritrasmettere
         (void) sig;
@@ -83,10 +82,19 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     socklen_t len=sizeof(request.addr);
     int seq_to_send =0,window_base_snd=0,window_base_rcv=0,W=param_serv.window, pkt_fly=0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct window_rcv_buf win_buf_rcv[2*W];
-    struct window_snd_buf win_buf_snd[2 * W];
+    //struct window_rcv_buf win_buf_rcv[2*W];
+    //struct window_snd_buf win_buf_snd[2 * W];
+    struct window_rcv_buf*win_buf_rcv;
+    struct window_snd_buf*win_buf_snd;
+    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
+    if(win_buf_rcv==NULL){
+        handle_error_with_exit("error in malloc win buf rcv\n");
+    }
+    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
+    if(win_buf_snd==NULL){
+        handle_error_with_exit("error in malloc win buf snd\n");
+    }
     struct addr temp_addr;
-    printf("finestre create\n");
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);
@@ -117,14 +125,13 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         stop_timeout_timer(timeout_timer_id);
         printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
         printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
-        great_alarm=0;
+        great_alarm_serv=0;
         if(temp_buff.command==LIST){
             execute_list(sockfd,request.addr,len,&seq_to_send,&window_base_snd,&window_base_rcv,W,&pkt_fly,temp_buff,win_buf_rcv,win_buf_snd);
             printf("comando list finito\n");
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
-            return;
         }
         else if(temp_buff.command==PUT){
             execute_put(sockfd,&seq_to_send,temp_buff,&window_base_rcv,&window_base_snd,&pkt_fly,win_buf_rcv,win_buf_snd,request.addr,len,W);
@@ -132,7 +139,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
-            return;
         }
         else if(temp_buff.command==GET){
             execute_get(sockfd, request.addr, len, &seq_to_send,&window_base_snd,&window_base_rcv,W, &pkt_fly,temp_buff, win_buf_rcv, win_buf_snd);
@@ -140,7 +146,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
-            return;
         }
         else if(temp_buff.command==SYN_ACK || temp_buff.command==SYN){
             printf("pacchetto di connessione ricevuto e ignorato\n");
@@ -150,17 +155,20 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             if(close(sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
-            return;
         }
     }
     else if(errno!=EINTR){
         handle_error_with_exit("error in send_syn_ack recvfrom\n");
     }
-    if(great_alarm==1){
-        great_alarm=0;
+    if(great_alarm_serv==1){
+        great_alarm_serv=0;
         printf("il client non è in ascolto\n");
         return ;
     }
+    free(win_buf_rcv);
+    free(win_buf_snd);
+    win_buf_rcv=NULL;
+    win_buf_snd=NULL;
     return;
 }
 

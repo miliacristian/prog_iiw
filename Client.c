@@ -65,10 +65,20 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct window_rcv_buf win_buf_rcv[2 * W];
-    struct window_snd_buf win_buf_snd[2 * W];
+    //struct window_rcv_buf win_buf_rcv[2 * W];
+    //struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
     struct sigaction sa;
+    struct window_rcv_buf*win_buf_rcv;
+    struct window_snd_buf*win_buf_snd;
+    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
+    if(win_buf_rcv==NULL){
+        handle_error_with_exit("error in malloc win buf rcv\n");
+    }
+    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
+    if(win_buf_snd==NULL){
+        handle_error_with_exit("error in malloc win buf snd\n");
+    }
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
@@ -94,16 +104,30 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         handle_error_with_exit("error in sigaction\n");
     }
     wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
+    free(win_buf_rcv);
+    free(win_buf_snd);
+    win_buf_rcv=NULL;
+    win_buf_snd=NULL;
     return byte_written;
 }
 
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct window_rcv_buf win_buf_rcv[2 * W];
-    struct window_snd_buf win_buf_snd[2 * W];
+    //struct window_rcv_buf win_buf_rcv[2 * W];
+    //struct window_snd_buf win_buf_snd[2 * W];
     struct addr temp_addr;
     struct sigaction sa;
+    struct window_rcv_buf*win_buf_rcv;
+    struct window_snd_buf*win_buf_snd;
+    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
+    if(win_buf_rcv==NULL){
+        handle_error_with_exit("error in malloc win buf rcv\n");
+    }
+    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
+    if(win_buf_snd==NULL){
+        handle_error_with_exit("error in malloc win buf snd\n");
+    }
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
@@ -129,14 +153,28 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
         handle_error_with_exit("error in sigaction\n");
     }
     wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
+    free(win_buf_rcv);
+    free(win_buf_snd);
+    win_buf_rcv=NULL;
+    win_buf_snd=NULL;
     return byte_written;
 }
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
     int byte_readed = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct window_rcv_buf win_buf_rcv[2 * W];
-    struct window_snd_buf win_buf_snd[2 * W];
+    //struct window_rcv_buf win_buf_rcv[2 * W];
+    //struct window_snd_buf win_buf_snd[2 * W];
+    struct window_rcv_buf*win_buf_rcv;
+    struct window_snd_buf*win_buf_snd;
+    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
+    if(win_buf_rcv==NULL){
+        handle_error_with_exit("error in malloc win buf rcv\n");
+    }
+    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
+    if(win_buf_snd==NULL){
+        handle_error_with_exit("error in malloc win buf snd\n");
+    }
     struct addr temp_addr;
     struct sigaction sa;
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
@@ -164,6 +202,10 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
         handle_error_with_exit("error in sigaction\n");
     }
     wait_for_put_start(sockfd, serv_addr, len, filename, &byte_readed , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd,dimension);
+    free(win_buf_rcv);
+    free(win_buf_snd);
+    win_buf_rcv=NULL;
+    win_buf_snd=NULL;
     return byte_readed;
 }
 
@@ -302,7 +344,7 @@ void *thread_job(void *arg) {
     //waitpid dei processi del client
     pid_t pid;
     while (1) {
-        while ((pid = waitpid(-1, NULL, 0)) > 0) {
+        while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
             printf("pool handler libera risorse del processo %d\n", pid);
         }
     }

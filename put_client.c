@@ -16,6 +16,7 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("function close_put_send_file\n");
     start_timeout_timer(timeout_timer_id,TIMEOUT);
+    stoppa_timer(win_buf_snd,W);//forza lo stop dei segnali pendenti
     send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff,win_buf_snd, "FIN", FIN,seq_to_send, loss_prob,W,pkt_fly);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del client,
@@ -38,11 +39,13 @@ int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA){
                         printf("errore close put ack file in finestra\n");
+                        printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                         handle_error_with_exit("");
                         rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly,dimension, byte_readed);
                     }
                     else {
                         printf("\"errore close put ack_msg in finestra\n");
+                        printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                         handle_error_with_exit("");
                         rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                     }

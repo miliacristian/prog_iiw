@@ -268,7 +268,7 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
     return;
 }
 
-//chiamata per riscontrare un ack perso
+/*//chiamata per riscontrare un ack perso
 void rcv_msg_re_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
     //già memorizzato in finestra
     temp_buff.ack=temp_buff.seq;
@@ -285,7 +285,7 @@ void rcv_msg_re_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,sock
         printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
     }
     return;
-}
+}*/
 void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
     //già memorizzato in finestra
     temp_buff.ack=temp_buff.seq;
@@ -367,7 +367,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
 }
 
 //chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
-void rcv_msg_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
+/*void rcv_msg_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
     struct temp_buffer ack_buff;
     win_buf_rcv[temp_buff.seq].command=temp_buff.command;
     strcpy(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload);
@@ -393,7 +393,7 @@ void rcv_msg_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen
         printf("pacchetto con ack %d, seq %d command %d perso\n",ack_buff.ack, ack_buff.seq,ack_buff.command);
     }
     return;
-}
+}*/
 //chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
 void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
     struct temp_buffer ack_buff;

@@ -74,8 +74,8 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
-            great_alarm = 0;
+        if (great_alarm_serv == 1) {
+            great_alarm_serv = 0;
             printf("il client non è in ascolto send file\n");
             stop_timeout_timer(timeout_timer_id);
             stop_all_timers(win_buf_snd, W);
@@ -151,8 +151,8 @@ int execute_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq
         } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm == 1) {
-            great_alarm = 0;
+        if (great_alarm_serv == 1) {
+            great_alarm_serv = 0;
             printf("il client non è in ascolto execut get\n");
             stop_timeout_timer(timeout_timer_id);
             stop_all_timers(win_buf_snd, W);
