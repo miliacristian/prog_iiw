@@ -13,6 +13,7 @@
 #include "put_client.h"
 #include "put_server.h"
 int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in cli_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
+    //in questo stato posso ricevere ack start in finesta,fin,parti di file già ricevute(fuori finestra)
     printf("wait for fin\n");
     start_timeout_timer(timeout_timer_id,TIMEOUT-3000);//chiusura temporizzata
     errno=0;
@@ -68,6 +69,7 @@ int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf
     }
 }
 int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
+    //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     start_timeout_timer(timeout_timer_id,TIMEOUT);
     send_message_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
     printf("messaggio start inviato\n");
