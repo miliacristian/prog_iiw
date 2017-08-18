@@ -86,11 +86,14 @@ void set_timer(struct itimerspec *its, int msec) {
     its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
     return;
 }
+
 void stoppa_timer(struct window_snd_buf* win_buf_snd, int W){
     struct itimerspec its;
     set_timer(&its,0);
     for (int i = 0; i <( 2*W); i++){
-        timer_settime(win_buf_snd[i].time_id,0,&its,NULL);
+        if(timer_settime(win_buf_snd[i].time_id,0,&its,NULL)==-1){
+            handle_error_with_exit("error in stoppa timer\n");
+        }
     }
     printf("tutti i timer sono stoppati\n");
 }
