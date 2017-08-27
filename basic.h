@@ -67,7 +67,7 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     char payload[MAXPKTSIZE-9];
     timer_t time_id;
     char command;
-    int time_start;//usato per timer adattativo
+    struct timeval time;//usato per timer adattativo
     int seq_numb;
 };
 

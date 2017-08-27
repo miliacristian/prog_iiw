@@ -24,6 +24,7 @@ void block_signal(int signal){
         handle_error_with_exit("error in pthread_sigmask\n");
     }
 }
+
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
     (void)arg;
     block_signal(SIGRTMIN+1);
@@ -289,8 +290,6 @@ void*attach_shm(int shmid){
     }
     return mtx;
 }
-
-
 
 char* generate_full_pathname(char* filename, char* dir_server){//ricordarsi di fare la free di path nella funzione chiamante
     char* path;

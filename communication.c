@@ -268,24 +268,6 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
     return;
 }
 
-/*//chiamata per riscontrare un ack perso
-void rcv_msg_re_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
-    //già memorizzato in finestra
-    temp_buff.ack=temp_buff.seq;
-    temp_buff.seq=NOT_A_PKT;
-    strcpy(temp_buff.payload,"ACK");
-    temp_buff.command=DATA;
-    if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
-        }
-        printf("pacchetto inviato con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
-    }
-    else{
-        printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
-    }
-    return;
-}*/
 void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob){
     //già memorizzato in finestra
     temp_buff.ack=temp_buff.seq;
@@ -366,34 +348,6 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     return;
 }
 
-//chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
-/*void rcv_msg_send_ack_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
-    struct temp_buffer ack_buff;
-    win_buf_rcv[temp_buff.seq].command=temp_buff.command;
-    strcpy(win_buf_rcv[temp_buff.seq].payload,temp_buff.payload);
-    win_buf_rcv[temp_buff.seq].received=1;
-    ack_buff.ack=temp_buff.seq;
-    ack_buff.seq=NOT_A_PKT;
-    strcpy(ack_buff.payload,"ACK");
-    ack_buff.command=DATA;
-    if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
-        // scorro la finestra fino al primo ancora non ricevuto
-        while (win_buf_rcv[*window_base_rcv].received == 1) {
-            win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
-            *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
-        }
-    }
-    if(flip_coin(loss_prob)) {
-        if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
-        }
-        printf("pacchetto inviato con ack %d seq %d command %d\n", ack_buff.ack, ack_buff.seq,ack_buff.command);
-    }
-    else{
-        printf("pacchetto con ack %d, seq %d command %d perso\n",ack_buff.ack, ack_buff.seq,ack_buff.command);
-    }
-    return;
-}*/
 //chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
 void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
     struct temp_buffer ack_buff;
