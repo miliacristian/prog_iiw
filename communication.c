@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include "basic.h"
 #include "io.h"
 #include "lock_fcntl.h"
@@ -12,7 +13,6 @@ struct itimerspec sett_timer_server;
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
-    stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
@@ -98,7 +98,10 @@ void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_ad
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
+        handle_error_with_exit("error in get_time_of_day\n");
+    }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -120,12 +123,60 @@ void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockl
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
+    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
+        handle_error_with_exit("error in get_time_of_day\n");
+    }
+    *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
+    (*pkt_fly)++;
+    return;
+}
+void send_message_in_window_serv_realtime(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly) {
+    temp_buff.command = command;
+    temp_buff.ack = NOT_AN_ACK;
+    temp_buff.seq = *seq_to_send;
+    strcpy(temp_buff.payload, message);
+    strcpy(win_buf_snd[*seq_to_send].payload, temp_buff.payload);
+    win_buf_snd[*seq_to_send].command = command;
+    if (flip_coin(loss_prob)) {
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) cli_addr, len) ==
+            -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("pacchetto inviato con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+    } else {
+        printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+    }
     start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
 }
 void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,char*message,char command,int *seq_to_send,double loss_prob,int W,int *pkt_fly){
+    temp_buff.command=command;
+    temp_buff.ack=NOT_AN_ACK;
+    temp_buff.seq=*seq_to_send;
+    strcpy(temp_buff.payload,message);
+    strcpy(win_buf_snd[*seq_to_send].payload,temp_buff.payload);
+    win_buf_snd[*seq_to_send].command=command;
+    if(flip_coin(loss_prob)) {
+        if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
+            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+        }
+        printf("pacchetto inviato con ack %d seq %d command %d \n", temp_buff.ack, temp_buff.seq,temp_buff.command);
+    }
+    else{
+        printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
+    }
+    //start_timer(win_buf_snd[*seq_to_send].time_id,&sett_timer_cli);
+    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
+        handle_error_with_exit("error in get_time_of_day\n");
+    }
+    *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
+    (*pkt_fly)++;
+    return;
+}
+void send_message_in_window_cli_realtime(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,char*message,char command,int *seq_to_send,double loss_prob,int W,int *pkt_fly){
     temp_buff.command=command;
     temp_buff.ack=NOT_AN_ACK;
     temp_buff.seq=*seq_to_send;
@@ -178,7 +229,10 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     else{
         printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
     }
-    start_timer(win_buf_snd[*seq_to_send].time_id,&sett_timer_cli);
+    //start_timer(win_buf_snd[*seq_to_send].time_id,&sett_timer_cli);
+    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
+        handle_error_with_exit("error in get_time_of_day\n");
+    }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -212,7 +266,10 @@ void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr,
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
+        handle_error_with_exit("error in get_time_of_day\n");
+    }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -378,6 +435,17 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
 }
 
 void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
+    win_buf_snd[temp_buff.ack].acked = 1;
+    if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
+        while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
+            //avanzo la finestra
+            win_buf_snd[*window_base_snd].acked = 0;//resetta quando scorri finestra
+            *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
+            (*pkt_fly)--;
+        }
+    }
+}
+void rcv_ack_in_window_realtime(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
     stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
@@ -393,7 +461,6 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
 void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                                  int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {
     //tempbuff.command deve essere uguale a data
-    stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati

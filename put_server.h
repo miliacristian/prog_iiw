@@ -31,4 +31,4 @@
 #define PROG_IIW_PUT_SERVER_H
 
 #endif //PROG_IIW_PUT_SERVER_H
-int execute_put(int sockfd,int *seq_to_send,struct temp_buffer temp_buff,int *window_base_rcv,int *window_base_snd,int *pkt_fly,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct sockaddr_in cli_addr,socklen_t len,int W);
+int execute_put(struct shm_sel_repeat *shm,struct temp_buffer temp_buff);

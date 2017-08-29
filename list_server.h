@@ -27,4 +27,4 @@
 #include <wchar.h>
 #include <signal.h>
 #include "basic.h"
-int execute_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd,int *window_base_rcv, int W,int *pkt_fly,struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, struct window_snd_buf *win_buf_snd);
+int execute_list(struct shm_sel_repeat *shm,struct temp_buffer temp_buff);

@@ -13,10 +13,10 @@
 #include "put_client.h"
 
 
-struct addr *addr = NULL;
-struct itimerspec sett_timer_cli;//timer e reset timer globali
+struct addr *addr = NULL;//da togliere
+struct itimerspec sett_timer_cli;//timer e reset timer globali,da togliere
 int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
-timer_t timeout_timer_id; //id  del timer di timeout;
+timer_t timeout_timer_id_client; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
 
@@ -37,11 +37,11 @@ void add_slash_to_dir_client(char*argument){
     return;
 }
 
-void timeout_handler(int sig, siginfo_t *si, void *uc){
+void timeout_handler_client(int sig, siginfo_t *si, void *uc){
     (void)sig;
     (void)si;
     (void)uc;
-    printf("great timeout expired\n");
+    printf("%d tid\n",pthread_self());
     great_alarm_client=1;
     return;
 }
@@ -96,7 +96,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
 
     sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    //sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
@@ -145,7 +145,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
 
     sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
+    //sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
@@ -161,52 +161,59 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
 }
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
-    int byte_readed = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
-    struct temp_buffer temp_buff;//pacchetto da inviare
-    //struct window_rcv_buf win_buf_rcv[2 * W];
-    //struct window_snd_buf win_buf_snd[2 * W];
-    struct window_rcv_buf*win_buf_rcv;
-    struct window_snd_buf*win_buf_snd;
-    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
-    if(win_buf_rcv==NULL){
+    int byte_readed=0;
+    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    if(shm==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    initialize_mtx(&(shm->mtx));
+    shm->byte_written=0;
+    shm->byte_sent=0;
+    shm->list=NULL;
+    shm->pkt_fly=0;
+    shm->byte_readed=0;
+    shm->window_base_rcv=0;
+    shm->window_base_snd=0;
+    shm->win_buf_snd=0;
+    shm->seq_to_send=0;
+    shm->seq_to_scan=0;
+    shm->param.window=param_client.window;
+    shm->param.loss_prob=param_client.loss_prob;
+    shm->param.timer_ms=param_client.timer_ms;
+    shm->addr.sockfd=sockfd;
+    shm->addr.dest_addr=serv_addr;
+    shm->dimension=dimension;
+    shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-9));
+    shm->addr.len=sizeof(serv_addr);
+    shm->head=NULL;
+    shm->tail=NULL;
+    if(shm->filename==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    strcpy(shm->filename,filename);
+    shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
+    if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
     }
-    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
-    if(win_buf_snd==NULL){
+    shm->win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*param_client.window));
+    if(shm->win_buf_snd==NULL){
         handle_error_with_exit("error in malloc win buf snd\n");
     }
-    struct addr temp_addr;
-    struct sigaction sa;
-    memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
-    memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
+    memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
+    memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
-    for (int i = 0; i < 2 * W; i++) {
-        win_buf_snd[i].seq_numb = i;
+    for (int i = 0; i < 2 * param_client.window; i++) {
+        shm->win_buf_snd[i].seq_numb = i;
     }
-//
-    socklen_t len = sizeof(serv_addr);
-
-    make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
-
-    temp_addr.sockfd = sockfd;
-    temp_addr.dest_addr = serv_addr;
-    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
-
-    sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
-    if (sigemptyset(&sa.sa_mask) == -1) {
-        handle_error_with_exit("error in sig_empty_set\n");
-    }
-    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
-        handle_error_with_exit("error in sigaction\n");
-    }
-    wait_for_put_start(sockfd, serv_addr, len, filename, &byte_readed , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd,dimension);
-    free(win_buf_rcv);
-    free(win_buf_snd);
-    win_buf_rcv=NULL;
-    win_buf_snd=NULL;
-    return byte_readed;
+    put_client(shm);
+    byte_readed=shm->byte_readed;
+    free(shm->win_buf_rcv);
+    free(shm->win_buf_snd);
+    shm->win_buf_rcv=NULL;
+    shm->win_buf_snd=NULL;
+    free(shm);
+    shm=NULL;
+    return byte_readed;//fare in modo che byte_readed  venga cambiato dal thread receiver
 }
 
 struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servaddr) {//client manda messaggio syn
@@ -215,7 +222,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     socklen_t len = sizeof(main_servaddr);
     struct temp_buffer temp_buff;
     sa.sa_flags =SA_SIGINFO;
-    sa.sa_sigaction = timeout_handler;
+    sa.sa_sigaction = timeout_handler_client;
     char rtx = 0;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
@@ -227,10 +234,10 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     while (rtx < 500000 ) {//parametro da cambiare
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id, 300);//parametro da cambiare
+        start_timeout_timer(timeout_timer_id_client, 3000);//parametro da cambiare
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
-                stop_timeout_timer(timeout_timer_id);
+                stop_timeout_timer(timeout_timer_id_client);
                 printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
                 great_alarm_client = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server
@@ -255,7 +262,7 @@ void client_list_job() {
     int sockfd;
     printf("client list job\n");
     create_thread_signal_handler();
-    make_timeout_timer(&timeout_timer_id);
+    make_timeout_timer(&timeout_timer_id_client);
 
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
@@ -285,7 +292,7 @@ void client_get_job(char *filename) {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     create_thread_signal_handler();
-    make_timeout_timer(&timeout_timer_id);
+    make_timeout_timer(&timeout_timer_id_client);
 
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
@@ -314,15 +321,13 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
     printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    make_timeout_timer(&timeout_timer_id);
-    create_thread_signal_handler();
+    make_timeout_timer(&timeout_timer_id_client);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
         handle_error_with_exit("error in inet_pton");
     }
-
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
     }
@@ -343,6 +348,7 @@ void *thread_job(void *arg) {
     (void) arg;
     //waitpid dei processi del client
     pid_t pid;
+    block_signal(SIGRTMIN+1);
     while (1) {
         while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
             printf("pool handler libera risorse del processo %d\n", pid);

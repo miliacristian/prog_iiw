@@ -11,20 +11,6 @@
 #include "get_server.h"
 #include "communication.h"
 
-
-void block_signal(int signal){
-    sigset_t set;
-    if(sigemptyset(&set)==-1){
-        handle_error_with_exit("error in sigemptyset\n");
-    }
-    if(sigaddset(&set,signal)==-1){//aggiungi segnale al sigset
-        handle_error_with_exit("error in sigaddset\n");
-    }
-    if(pthread_sigmask(SIG_BLOCK,&set,NULL)!=0){//blocca i segnali presenti nel sig_set
-        handle_error_with_exit("error in pthread_sigmask\n");
-    }
-}
-
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
     (void)arg;
     block_signal(SIGRTMIN+1);
@@ -41,6 +27,72 @@ pthread_t create_thread_signal_handler(){
     block_signal(SIGRTMIN);
     return tid;
 
+}
+void block_signal(int signal){
+    sigset_t set;
+    if(sigemptyset(&set)==-1){
+        handle_error_with_exit("error in sigemptyset\n");
+    }
+    if(sigaddset(&set,signal)==-1){//aggiungi segnale al sigset
+        handle_error_with_exit("error in sigaddset\n");
+    }
+    if(pthread_sigmask(SIG_BLOCK,&set,NULL)!=0){//blocca i segnali presenti nel sig_set
+        handle_error_with_exit("error in pthread_sigmask\n");
+    }
+    return;
+}
+void initialize_sem(sem_t*mtx){
+    if(sem_init(mtx,1,1)==-1){
+        handle_error_with_exit("error in sem_init\n");
+    }
+    return;
+}
+void initialize_mtx(pthread_mutex_t *mtx){
+    if(pthread_mutex_init(mtx,NULL)!=0){
+        handle_error_with_exit("error in initialize mtx\n");
+    }
+    return;
+}
+void destroy_mtx(pthread_mutex_t *mtx){
+    if(pthread_mutex_destroy(mtx)!=0){
+        handle_error_with_exit("error in destroy mtx\n");
+    }
+    return;
+}
+void lock_mtx(pthread_mutex_t *mtx){
+    if(pthread_mutex_lock(mtx)!=0){
+        handle_error_with_exit("error in pthread_mutex_lock\n");
+    }
+    return;
+}
+void unlock_mtx(pthread_mutex_t *mtx){
+    if(pthread_mutex_unlock(mtx)!=0){
+        handle_error_with_exit("error in pthread_mutex_unlock\n");
+    }
+    return;
+}
+void initialize_cond(pthread_cond_t*cond){
+    if(pthread_cond_init(cond,NULL)!=0){
+        handle_error_with_exit("error in initialize cond\n");
+    }
+}
+void destroy_cond(pthread_cond_t*cond){
+    if(pthread_cond_destroy(cond)!=0){
+        handle_error_with_exit("error in destroy cond\n");
+    }
+    return;
+}
+void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){
+    if(pthread_cond_wait(cond,mtx)!=0){
+        handle_error_with_exit("error in wait on a condition\n");
+    }
+    return;
+}
+void unlock_thread_on_a_condition(pthread_cond_t*cond){
+    if(pthread_cond_signal(cond)!=0){
+        handle_error_with_exit("error in unlock_thread_on_a_condition\n");
+    }
+    return;
 }
 char check_if_dir_exist(char*dir_path){
     DIR *dir;

@@ -26,6 +26,7 @@
 #include <zconf.h>
 #include <wchar.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
@@ -75,8 +76,37 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 struct addr{
     int sockfd;
     struct sockaddr_in dest_addr;
+    socklen_t len;
 };
 
+struct select_param{
+    int window;
+    double loss_prob;
+    int timer_ms;
+};
+struct shm_sel_repeat{//variabili inutilizzate da togliere
+    struct timeval time;//
+    struct addr addr;
+    int pkt_fly;//
+    pthread_mutex_t mtx;//
+    struct window_snd_buf *win_buf_snd;//
+    struct window_rcv_buf *win_buf_rcv;//
+    int dimension;
+    char*filename;
+    int window_base_rcv;//
+    int window_base_snd;//
+    int seq_to_send;//prossima posizione libera per mandare pacchetto
+    int seq_to_scan;//prossima posizione da scansione(per vedere se è arrivato ack)
+    //vuoto seqtosend=seqtoscan pieno (seqtosend+1)%2W=seqtoscan
+    int byte_readed;
+    int byte_written;
+    int byte_sent;
+    char*list;
+    struct select_param param;
+    int fd;
+    struct Node* head;
+    struct Node *tail;
+};
 struct mtx_prefork{
     sem_t sem;
     int free_process;
@@ -85,11 +115,9 @@ struct msgbuf{
     long mtype;
     struct sockaddr_in addr;
 };
-
-struct select_param{
-    int window;
-    double loss_prob;
-    int timer_ms;
+struct shm_snd {
+    struct shm_sel_repeat *shm;
+    pthread_t tid;
 };
 #endif
 
@@ -116,3 +144,12 @@ pthread_t create_thread_signal_handler();
 char* generate_multi_copy(char*path_to_filename,char*filename);
 int count_word_in_buf(char*buf);
 void block_signal(int signal);
+void initialize_sem(sem_t*mtx);
+void initialize_mtx(pthread_mutex_t *mtx);
+void destroy_mtx(pthread_mutex_t *mtx);
+void lock_mtx(pthread_mutex_t *mtx);
+void unlock_mtx(pthread_mutex_t *mtx);
+void initialize_cond(pthread_cond_t*cond);
+void destroy_cond(pthread_cond_t*cond);
+void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
+void unlock_thread_on_a_condition(pthread_cond_t*cond);
