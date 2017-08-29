@@ -14,7 +14,6 @@
 
 int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed) {//manda fin non in finestra senza sequenza e ack e chiudi
     stop_timeout_timer(timeout_timer_id_serv);
-    stop_all_timers(win_buf_snd, W);
     send_message(sockfd, &cli_addr, len, temp_buff, "FIN", FIN, loss_prob);
     printf("close get send_file\n");
     return *byte_readed;
@@ -53,7 +52,6 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     }
                 }
                 else {
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     ack_dup++;
                     printf("send_file ack duplicato\n");
                 }
@@ -78,7 +76,6 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             great_alarm_serv = 0;
             printf("il client non è in ascolto send file\n");
             stop_timeout_timer(timeout_timer_id_serv);
-            stop_all_timers(win_buf_snd, W);
             return *byte_readed;
         }
     }

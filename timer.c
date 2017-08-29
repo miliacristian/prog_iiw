@@ -60,7 +60,7 @@ void start_timeout_timer(timer_t timer_id, int msec){
     return;
 }
 
-void make_timers(struct window_snd_buf *win_buf, int W) {
+/*void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;
     memset(&te,0,sizeof(struct sigevent));
     int sigNo = SIGRTMIN;
@@ -75,7 +75,7 @@ void make_timers(struct window_snd_buf *win_buf, int W) {
     }
     printf("timer creati\n");
     return;
-}
+}*/
 
 void set_timer(struct itimerspec *its, int msec) {
     int msec2 = msec%1000;
@@ -86,21 +86,10 @@ void set_timer(struct itimerspec *its, int msec) {
     its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
     return;
 }
-
-void stoppa_timer(struct window_snd_buf* win_buf_snd, int W){
-    struct itimerspec its;
-    set_timer(&its,0);
-    for (int i = 0; i <( 2*W); i++){
-        if(timer_settime(win_buf_snd[i].time_id,0,&its,NULL)==-1){
-            handle_error_with_exit("error in stoppa timer\n");
-        }
-    }
-    printf("tutti i timer sono stoppati\n");
-}
-void stop_all_timers(struct window_snd_buf* win_buf_snd, int W){
+/*void stop_all_timers(struct window_snd_buf* win_buf_snd, int W){
     for (int i = 0; i <( 2*W); i++){
         timer_delete(win_buf_snd[i].time_id);
     }
     printf("tutti i timer sono stoppati\n");
     return;
-}
+}*/

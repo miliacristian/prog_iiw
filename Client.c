@@ -57,7 +57,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        start_timer((*win_buffer).time_id, &sett_timer_cli);
+        //start_timer((*win_buffer).time_id, &sett_timer_cli);
     return;
 }
 
@@ -88,7 +88,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 //
     socklen_t len = sizeof(serv_addr);
 
-    make_timers(win_buf_snd, W);//crea 2w timer
+    //make_timers(win_buf_snd, W);//crea 2w timer
     set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
 
     temp_addr.sockfd = sockfd;
@@ -137,7 +137,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
 //
     socklen_t len = sizeof(serv_addr);
 
-    make_timers(win_buf_snd, W);//crea 2w timer
+    //make_timers(win_buf_snd, W);//crea 2w timer
     set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
 
     temp_addr.sockfd = sockfd;

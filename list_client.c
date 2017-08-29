@@ -32,14 +32,12 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
                     rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 }
                 else{
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id_client,TIMEOUT);
             }
             else if (temp_buff.command==FIN_ACK) {
                 stop_timeout_timer(timeout_timer_id_client);
-                stop_all_timers(win_buf_snd, W);
                 printf("return close connection\n");
                 return *byte_written;
             }
@@ -61,7 +59,6 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
         if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
-            stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id_client);
             printf("return close connection\n");
             return *byte_written;
@@ -85,7 +82,6 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             printf("pacchetto ricevuto wait for fin_list con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN) {
                 stop_timeout_timer(timeout_timer_id_client);
-                stop_all_timers(win_buf_snd, W);
                 printf("fin ricevuto\n");
                 return *byte_written;
             }
@@ -94,7 +90,6 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("wait for fin ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id_client,TIMEOUT);
@@ -117,7 +112,6 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
         if (great_alarm_client==1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
-            stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id_client);
             printf("return wait_for_fin\n");
             return *byte_written;
@@ -204,7 +198,6 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                     rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("rcv_list2 ack duplicato\n");
                 }
                 start_timeout_timer(timeout_timer_id_client,TIMEOUT);
@@ -244,7 +237,6 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
         if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
-            stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id_client);
             printf("return rcv list\n");
             return *byte_written;
@@ -275,7 +267,6 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 } else {
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
                     printf("ack duplicato non fare nulla\n");
                 }
                 start_timeout_timer(timeout_timer_id_client, TIMEOUT);
@@ -324,7 +315,6 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
         if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
-            stop_all_timers(win_buf_snd, W);
             stop_timeout_timer(timeout_timer_id_client);
             return *byte_written;
         }
