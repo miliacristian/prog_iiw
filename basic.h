@@ -57,16 +57,15 @@ struct temp_buffer{
     char payload[MAXPKTSIZE-9];// dati pacchetto
 };
 struct window_rcv_buf{
-    int received;
+    char received;
     char command;
     char payload[MAXPKTSIZE-9];
 };
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 // se diventa pesante come memoria è meglio allocata nell'heap?
-    int acked;
+    char acked;
     char payload[MAXPKTSIZE-9];
-    timer_t time_id;
     char command;
     struct timeval time;//usato per timer adattativo
     int seq_numb;

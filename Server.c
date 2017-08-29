@@ -56,7 +56,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è assoc
         temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
         temp_buf.command=win_buffer->command;
         resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        start_timer((*win_buffer).time_id, &sett_timer_server);
+        //start_timer((*win_buffer).time_id, &sett_timer_server);
     return;
 }
 
@@ -123,13 +123,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].seq_numb = i;
     }
-    //make_timers(shm->win_buf_snd,shm->param.window);//crea 2w timer
-    //set_timer(&sett_timer_server, param_serv.timer_ms);//inizializza struct necessaria per scegliere il timer
-
-    //temp_addr.sockfd = shm->addr.sockfd;
-    //temp_addr.dest_addr = request.addr;
-    //addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
-
     send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
     start_timeout_timer(timeout_timer_id_serv, 3000);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra

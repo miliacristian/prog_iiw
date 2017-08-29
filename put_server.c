@@ -136,8 +136,8 @@ int rcv_put_file2(struct shm_snd *shm_snd){
     printf("messaggio start inviato\n");
     errno=0;
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//bloccati finquando non ricevi file
-            // o altri messaggi
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
+            //bloccante o non bloccante??
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -150,7 +150,6 @@ int rcv_put_file2(struct shm_snd *shm_snd){
                     rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly);
                 }
                 else{
-                    //stop_timer(shm_snd->shm->win_buf_snd[temp_buff.ack].time_id);
                     printf("rcv put file ack duplicato\n");
                 }
                 //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
@@ -162,7 +161,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             else if(seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)){
                 if(temp_buff.command==DATA){
                     rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written);
-                    if(shm_snd->shm->byte_written==shm_snd->shm->dimension){
+                    if((shm_snd->shm->byte_written)==(shm_snd->shm->dimension)){
                         wait_for_fin_put2(shm_snd);
                         printf("return rcv file\n");
                         return shm_snd->shm->byte_written;
@@ -184,7 +183,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
                 //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
             }
         }
-        else if(errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK){
+        else if(errno != EINTR && errno != 0){//aggiungere altri controlli
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {

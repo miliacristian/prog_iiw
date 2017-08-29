@@ -388,6 +388,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
                     }
                     *byte_written += dim - *byte_written;
                 }
+                printf("byte written %d\n",*byte_written);
                 win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
                 *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
         }
@@ -435,18 +436,6 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
 }
 
 void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
-    win_buf_snd[temp_buff.ack].acked = 1;
-    if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
-        while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
-            //avanzo la finestra
-            win_buf_snd[*window_base_snd].acked = 0;//resetta quando scorri finestra
-            *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
-            (*pkt_fly)--;
-        }
-    }
-}
-void rcv_ack_in_window_realtime(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
-    stop_timer(win_buf_snd[temp_buff.ack].time_id);
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati

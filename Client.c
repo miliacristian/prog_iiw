@@ -167,6 +167,7 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
         handle_error_with_exit("error in malloc\n");
     }
     initialize_mtx(&(shm->mtx));
+    shm->fd=-1;
     shm->byte_written=0;
     shm->byte_sent=0;
     shm->list=NULL;
