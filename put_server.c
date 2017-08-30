@@ -131,6 +131,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
 int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
+    int ack_sent=0,msg_not_in_window=0,pkt_rcv=0;
     //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
     send_message_in_window_serv(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);
     printf("messaggio start inviato\n");
@@ -138,6 +139,8 @@ int rcv_put_file2(struct shm_snd *shm_snd){
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
             //bloccante o non bloccante??
+            pkt_rcv++;
+            printf("pkt_rcv %d\n",pkt_rcv);
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -156,11 +159,15 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             }
             else if (!seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->param.loss_prob);
+                msg_not_in_window++;
+                printf("msg_not_in_window %d\n",msg_not_in_window);
                 //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
             }
             else if(seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)){
                 if(temp_buff.command==DATA){
                     rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written);
+                    ack_sent++;
+                    printf("ack sent %d\n",ack_sent);
                     if((shm_snd->shm->byte_written)==(shm_snd->shm->dimension)){
                         wait_for_fin_put2(shm_snd);
                         printf("return rcv file\n");

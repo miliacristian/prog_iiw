@@ -62,12 +62,16 @@ void start_timeout_timer(timer_t timer_id, int msec){
 int  calculate_time_left(struct timeval tv){
     //ritorna il numero di millisecondi(tv-getttimeofday)
     struct timeval time_current;
-    int time_left_ms;
+    int time_ms_cur;
+    int time_ms_timeval;
+    int time_ms_left;
     if(gettimeofday(&time_current,NULL)!=0){
         handle_error_with_exit("error in gettimeofday\n");
     }
-    //...
-    return time_left_ms;
+    time_ms_cur=(time_current.tv_usec/1000)+(time_current.tv_sec*1000);
+    time_ms_timeval=(tv.tv_usec/1000)+(tv.tv_sec*1000);
+    time_ms_left=time_ms_timeval-time_ms_cur;
+    return time_ms_left;
 }
 /*void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;

@@ -32,7 +32,7 @@
 #define MAXFILENAME 255
 #define MAXPKTSIZE 1468//no packet fragmentation //1468
 #define MAXLINE 1024
-#define SERVER_PORT 5194
+#define SERVER_PORT 5195
 #define ERROR 5
 #define START 4
 #define DIMENSION 6

@@ -15,7 +15,7 @@
 pthread_cond_t start_rcv;
 pthread_cond_t all_acked;
 pthread_cond_t buf_not_full;
-pthread_cond_t buf_not_empty;
+pthread_cond_t list_not_empty;
 int close_put_send_file2(struct shm_snd *shm_snd){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("close_put_send_file\n");
@@ -84,11 +84,14 @@ int close_put_send_file2(struct shm_snd *shm_snd){
 }
 int send_put_file2(struct shm_snd *shm_snd) {
     struct temp_buffer temp_buff;
+    int pkt_sent=0;
     printf("send_put_file\n");
     //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
     while (1) {
         //lock_mtx(&shm_snd->shm->mtx);
         if (((shm_snd->shm->pkt_fly) < (shm_snd->shm->param.window)) && ((shm_snd->shm->byte_sent) < (shm_snd->shm->dimension))) {
+            pkt_sent++;
+            printf("pkt sent %d\n",pkt_sent);
             send_data_in_window_cli(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension);
         }
         if((shm_snd->shm->pkt_fly)==(shm_snd->shm->param.window)){
@@ -234,7 +237,7 @@ void *put_client_job(void*arg){
 void *put_client_rtx_job(void*arg){
     printf("thread rcv creato\n");
     block_signal(SIGRTMIN+1);//il thread receiver non viene bloccato dal segnale di timeout
-    struct shm_sel_repeat *shm=arg;
+    /*struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
     int timer_ms_left;
@@ -243,7 +246,7 @@ void *put_client_rtx_job(void*arg){
     for(;;) {
         while (1) {
             if(deleteHead(&shm->head,node)==-1){
-                wait_on_a_condition(&buf_not_empty,&shm->mtx);
+                wait_on_a_condition(&list_not_empty,&shm->mtx);
             }
             else{
                 if(shm->win_buf_snd[node->seq].acked==1){
@@ -285,7 +288,8 @@ void *put_client_rtx_job(void*arg){
                 unlock_mtx(&(shm->mtx));
             }
         }
-    }
+    }*/
+    while(1){}
     return NULL;
 }
 /*int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send,int dimension) {//manda fin non in finestra senza sequenza e ack e chiudi
