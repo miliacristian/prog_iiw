@@ -59,7 +59,10 @@ void start_timeout_timer(timer_t timer_id, int msec){
     printf("timer avviato\n");
     return;
 }
-
+int calculate_time_left(struct timeval tv){
+    //ritorna il numero di millisecondi(tv-getttime
+    return 0;
+}
 /*void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;
     memset(&te,0,sizeof(struct sigevent));

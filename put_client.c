@@ -11,6 +11,7 @@
 #include "get_server.h"
 #include "communication.h"
 #include "put_client.h"
+#include "list.h"
 pthread_cond_t start_rcv;
 pthread_cond_t all_acked;
 pthread_cond_t buf_not_full;
@@ -233,15 +234,58 @@ void *put_client_job(void*arg){
 void *put_client_rtx_job(void*arg){
     printf("thread rcv creato\n");
     block_signal(SIGRTMIN+1);//il thread receiver non viene bloccato dal segnale di timeout
-    while(1){}
-
-    /*struct shm_sel_repeat *shm=arg;
+    struct shm_sel_repeat *shm=arg;
+    struct temp_buffer temp_buff;
+    struct Node*node=NULL;
+    int timer_ms_left;
+    char acked;
     lock_mtx(&(shm->mtx));
-    printf("lock acquired put client rcv\n");
-    if(shm->seq_to_send==shm->seq_to_scan){
-        printf("buffer vuoto\n");
-        wait_on_a_condition(&buf_not_empty,&(shm->mtx));
-    }*/
+    for(;;) {
+        while (1) {
+            if(deleteHead(&shm->head,node)==-1){
+                wait_on_a_condition(&buf_not_empty,&shm->mtx);
+            }
+            else{
+                if(shm->win_buf_snd[node->seq].acked==1){
+                    continue;
+                }
+                else{
+                    break;
+                }
+            }
+        }
+        unlock_mtx(&(shm->mtx));
+        timer_ms_left=calculate_time_left(node->tv);
+        if(timer_ms_left<=0){
+            lock_mtx(&(shm->mtx));
+            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+            temp_buff.ack = NOT_AN_ACK;
+            temp_buff.seq = node->seq;
+            temp_buff.command=shm->win_buf_snd[node->seq].command;
+            resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+            InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
+            unlock_mtx(&(shm->mtx));
+        }
+        else{
+            usleep(timer_ms_left*1000);//verifica che il numero non va in overflow su __useconds_t
+            lock_mtx(&(shm->mtx));
+            acked=shm->win_buf_snd[node->seq].acked;
+            unlock_mtx(&(shm->mtx));
+            if(acked==1){
+                continue;
+            }
+            else{
+                lock_mtx(&(shm->mtx));
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
+        }
+    }
     return NULL;
 }
 /*int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send,int dimension) {//manda fin non in finestra senza sequenza e ack e chiudi
