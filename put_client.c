@@ -237,7 +237,7 @@ void *put_client_job(void*arg){
 void *put_client_rtx_job(void*arg){
     printf("thread rcv creato\n");
     block_signal(SIGRTMIN+1);//il thread receiver non viene bloccato dal segnale di timeout
-    /*struct shm_sel_repeat *shm=arg;
+    struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
     int timer_ms_left;
@@ -260,12 +260,12 @@ void *put_client_rtx_job(void*arg){
         unlock_mtx(&(shm->mtx));
         timer_ms_left=calculate_time_left(node->tv);
         if(timer_ms_left<=0){
-            lock_mtx(&(shm->mtx));
-            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
             temp_buff.ack = NOT_AN_ACK;
             temp_buff.seq = node->seq;
+            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
             temp_buff.command=shm->win_buf_snd[node->seq].command;
             resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+            lock_mtx(&(shm->mtx));
             InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
             unlock_mtx(&(shm->mtx));
         }
@@ -278,17 +278,17 @@ void *put_client_rtx_job(void*arg){
                 continue;
             }
             else{
-                lock_mtx(&(shm->mtx));
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                lock_mtx(&(shm->mtx));
                 InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }
-    }*/
+    }
     while(1){}
     return NULL;
 }
