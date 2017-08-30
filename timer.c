@@ -59,9 +59,15 @@ void start_timeout_timer(timer_t timer_id, int msec){
     printf("timer avviato\n");
     return;
 }
-int calculate_time_left(struct timeval tv){
-    //ritorna il numero di millisecondi(tv-getttime
-    return 0;
+int  calculate_time_left(struct timeval tv){
+    //ritorna il numero di millisecondi(tv-getttimeofday)
+    struct timeval time_current;
+    int time_left_ms;
+    if(gettimeofday(&time_current,NULL)!=0){
+        handle_error_with_exit("error in gettimeofday\n");
+    }
+    //...
+    return time_left_ms;
 }
 /*void make_timers(struct window_snd_buf *win_buf, int W) {
     struct sigevent te;
