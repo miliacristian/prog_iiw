@@ -23,6 +23,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
     struct temp_buffer temp_buff;
     //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
     send_message_in_window_cli(shm_snd->shm->addr.sockfd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd, "FIN", FIN,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);
+    unlock_thread_on_a_condition(&list_not_empty);
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),MSG_DONTWAIT, (struct sockaddr *) &(shm_snd->shm->addr.dest_addr), &shm_snd->shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
@@ -91,9 +92,8 @@ int send_put_file2(struct shm_snd *shm_snd) {
     while (1) {
         //lock_mtx(&shm_snd->shm->mtx);
         if (((shm_snd->shm->pkt_fly) < (shm_snd->shm->param.window)) && ((shm_snd->shm->byte_sent) < (shm_snd->shm->dimension))) {
-            pkt_sent++;
-            printf("pkt sent %d\n",pkt_sent);
             send_data_in_window_cli(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension);
+            unlock_thread_on_a_condition(&list_not_empty);
         }
         //unlock_mtx(&shm_snd->shm->mtx);
         while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
@@ -166,7 +166,7 @@ void *put_client_job(void*arg){
     //lock_mtx(&shm_snd->shm->mtx);
     printf("lock acquired put client snd\n");
     send_message_in_window_cli(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);//mand
-    //unlock_thread_on_a_condition(&buf_not_empty);
+    unlock_thread_on_a_condition(&list_not_empty);
     //unlock_mtx(&shm_snd->shm->mtx);
     //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
     while (1) {
@@ -234,7 +234,7 @@ void *put_client_rtx_job(void*arg){
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
     int timer_ms_left;
-    char acked;
+    char to_rtx;
     lock_mtx(&(shm->mtx));
     for(;;) {
         while (1) {
@@ -265,9 +265,9 @@ void *put_client_rtx_job(void*arg){
         else{
             usleep(timer_ms_left*1000);//verifica che il numero non va in overflow su __useconds_t
             lock_mtx(&(shm->mtx));
-            acked=shm->win_buf_snd[node->seq].acked;
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
-            if(acked==1){
+            if(!to_rtx){
                 continue;
             }
             else{
