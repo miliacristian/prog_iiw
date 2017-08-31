@@ -71,7 +71,6 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     socklen_t len = sizeof(serv_addr);
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
-    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
     wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -104,13 +103,8 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
         win_buf_snd[i].seq_numb = i;
     }*/
     socklen_t len = sizeof(serv_addr);
-
-    //make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
-
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
-    addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
     wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -220,9 +214,6 @@ void client_list_job() {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     printf("client list job\n");
-    create_thread_signal_handler();
-    make_timeout_timer(&timeout_timer_id_client);
-
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -250,9 +241,6 @@ void client_get_job(char *filename) {
     printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    create_thread_signal_handler();
-    make_timeout_timer(&timeout_timer_id_client);
-
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -280,7 +268,6 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
     printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    make_timeout_timer(&timeout_timer_id_client);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);

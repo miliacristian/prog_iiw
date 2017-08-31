@@ -26,7 +26,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
-            send_data_in_window_serv(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
+            //send_data_in_window(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
         }
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -39,7 +39,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
-                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim,byte_readed);
+                        //rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim,byte_readed);
                         printf("byte readed %d ack dup %d\n",*byte_readed,ack_dup);
                         if (*byte_readed == dim) {
                             close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob,byte_readed);
@@ -48,7 +48,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                         }
                     }
                     else{
-                        rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                        //rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                     }
                 }
                 else {

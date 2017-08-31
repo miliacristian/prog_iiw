@@ -13,6 +13,53 @@
 #include "communication.h"
 #include "list.h"
 
+
+
+void start_timer(timer_t timer_id, struct itimerspec *its){
+    if (timer_settime(timer_id, 0, its, NULL) == -1) {//avvio timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
+
+void stop_timer(timer_t timer_id){
+    struct itimerspec its;
+    set_timer(&its, 0);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+}
+void stop_timeout_timer(timer_t timer_id){
+    struct itimerspec its;
+    set_timer(&its, 0);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//arresto timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+    printf("timer stoppato\n");
+}
+
+void make_timeout_timer(timer_t* timer_id){
+    struct sigevent te;
+    int sigNo = SIGRTMIN+1;
+    te.sigev_notify = SIGEV_SIGNAL;//quando scade il timer manda il segnale specificato
+    te.sigev_signo = sigNo;
+    //te.sigev_value.sival_int=0;
+    if (timer_create(CLOCK_REALTIME, &te,timer_id) == -1) {//inizializza nella struct il timer i-esimo
+        handle_error_with_exit("error in timer_create\n");
+    }
+    //printf("timer id is 0x%lx\n",(long)*ptr);
+    return;
+
+}
+
+void start_timeout_timer(timer_t timer_id, int msec){
+    struct itimerspec its;
+    set_timer(&its, msec);
+    if (timer_settime(timer_id, 0, &its, NULL) == -1) {//avvio timer
+        handle_error_with_exit("error in timer_settime\n");
+    }
+    printf("timer avviato\n");
+    return;
+}
 int  calculate_time_left(struct Node node){
     //ritorna il numero di millisecondi(tv-getttimeofday)
     struct timeval time_current;
@@ -27,4 +74,14 @@ int  calculate_time_left(struct Node node){
     time_ms_timeval=(node.tv.tv_usec/1000)+(node.tv.tv_sec*1000);
     time_ms_left=(int)time_ms_timeval-time_ms_cur;
     return time_ms_left;
+}
+
+void set_timer(struct itimerspec *its, int msec) {
+    int msec2 = msec%1000;
+    int sec =(msec-msec2)/1000;
+    its->it_interval.tv_sec = 0;
+    its->it_interval.tv_nsec = 0;
+    its->it_value.tv_sec = sec;
+    its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
+    return;
 }
