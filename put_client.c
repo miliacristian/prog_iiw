@@ -241,7 +241,7 @@ void *put_client_rtx_job(void*arg){
                 wait_on_a_condition(&list_not_empty,&shm->mtx);
             }
             else{
-                if(shm->win_buf_snd[node->seq].acked==1){
+                if(!to_resend()){
                     continue;
                 }
                 else{

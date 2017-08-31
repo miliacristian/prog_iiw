@@ -10,6 +10,7 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
+#include "list.h"
 
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
     (void)arg;
@@ -17,6 +18,16 @@ void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi ge
     while(1){
         pause();
     }
+}
+
+char to_resend(struct shm_sel_repeat *shm, struct Node node){
+    if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_usec == node.tv.tv_usec ){
+        if(shm->win_buf_snd[node.seq].acked){
+            return 0;
+        }
+        return 1;
+    }
+    return 0;
 }
 
 pthread_t create_thread_signal_handler(){
