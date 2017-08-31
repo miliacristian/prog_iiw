@@ -420,7 +420,7 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
 }
 
 void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
-                                 int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {
+                                 int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {
     //tempbuff.command deve essere uguale a data
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
