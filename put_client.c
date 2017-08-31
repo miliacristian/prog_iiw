@@ -237,7 +237,6 @@ void *put_client_rtx_job(void*arg){
                 }
             }
         }
-        printf("deleteHead\n");
         unlock_mtx(&(shm->mtx));
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
