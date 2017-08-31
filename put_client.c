@@ -217,7 +217,7 @@ void *put_client_rtx_job(void*arg){
     struct Node*node=NULL;
     long timer_ns_left;
     char to_rtx;
-    struct timespec sleep_time;
+    struct timespec sleep_time,temp_time;
     node = alloca(sizeof(struct Node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
@@ -230,9 +230,11 @@ void *put_client_rtx_job(void*arg){
             }
             else{
                 if(!to_resend(shm, *node)){
+                    printf("pkt non da ritrasmettere\n");
                     continue;
                 }
                 else{
+                    printf("pkt da ritrasmettere\n");
                     break;
                 }
             }
@@ -247,16 +249,20 @@ void *put_client_rtx_job(void*arg){
             temp_buff.command=shm->win_buf_snd[node->seq].command;
             resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
             lock_mtx(&(shm->mtx));
-            InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
+            if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                handle_error_with_exit("error in get_time\n");
+            }
+            InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
             unlock_mtx(&(shm->mtx));
         }
         else{
             sleep_struct(&sleep_time, timer_ns_left);
-            nanosleep(&sleep_time , NULL);//verifica che il numero non va in overflow su __useconds_t
+            nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
+                printf("no rtx dopo sleep\n");
                 continue;
             }
             else{
@@ -267,7 +273,10 @@ void *put_client_rtx_job(void*arg){
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 lock_mtx(&(shm->mtx));
-                InsertOrdered(node->seq,shm->param.timer_ms,&shm->head,&shm->tail);
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

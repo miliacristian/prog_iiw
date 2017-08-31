@@ -13,12 +13,11 @@ void initialize_timeval(struct timespec *tv,int timer_ms){
     return;
 }
 //Creates a new Node and returns pointer to it.
-struct Node* GetNewNode(int seq,int timer_ms) {
+struct Node* GetNewNode(int seq,struct timespec timespec,int timer_ms) {
     struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
     newNode->seq = seq;
-    if(clock_gettime(CLOCK_MONOTONIC,&(newNode->tv))!=0){
-        handle_error_with_exit("error in get_time\n");
-    }
+    newNode->tv.tv_sec=timespec.tv_sec;
+    newNode->tv.tv_nsec=timespec.tv_nsec;
     newNode->timer_ms=timer_ms;
     newNode->prev = NULL;
     newNode->next = NULL;
@@ -82,29 +81,29 @@ char first_is_smaller(struct Node node1, struct Node node2){
     }
 }
 
-void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail){
+void InsertOrdered(int seq,struct timespec timespec,int timer_ms, struct Node** head, struct Node** tail){
     struct Node* temp = *tail;
     struct Node* nextNode = NULL;
-    struct Node* newNode = GetNewNode(seq,timer_ms);
+    struct Node* newNode = GetNewNode(seq,timespec,timer_ms);
     printf("aggiungo alla lista\n");
     if(*head == NULL) {
         *head = newNode;
         *tail = newNode;
-        Print(*head);
+        //Print(*head);
         return;
     }
     if(first_is_smaller((**tail),*newNode)){
         (*tail)->next = newNode;
         newNode->prev = *tail;
         *tail = newNode;
-        Print(*head);
+        //Print(*head);
     }else{
         while(!first_is_smaller(*temp,*newNode)){
             if(temp->prev != NULL){
                 temp = temp->prev;
             }else{
                 InsertAtHead(newNode, head, tail);
-                Print(*head);
+                //Print(*head);
                 return;
             }
         }
@@ -113,7 +112,7 @@ void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail)
         newNode->next = temp->next;
         temp->next = newNode;
         newNode->prev = temp;
-        Print(*head);
+        //Print(*head);
     }
     return;
 }
@@ -124,7 +123,6 @@ void Print(struct Node* head) {
         printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
         temp = temp->next;
     }
-    printf("\n");
 }
 
 void ReversePrint(struct Node* head) {

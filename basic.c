@@ -21,7 +21,7 @@
 
 char to_resend(struct shm_sel_repeat *shm, struct Node node){
     if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
-        if(shm->win_buf_snd[node.seq].acked){
+        if(shm->win_buf_snd[node.seq].acked==1){
             return 0;
         }
         return 1;
