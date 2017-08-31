@@ -67,7 +67,7 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     char acked;
     char payload[MAXPKTSIZE-9];
     char command;
-    struct timeval time;//usato per timer adattativo
+    struct timespec time;//usato per timer adattativo
     //int seq_numb;
 };
 
@@ -121,7 +121,7 @@ struct shm_snd {
 
 struct Node  {
     int seq;
-    struct timeval tv;
+    struct timespec tv;
     int timer_ms;
     struct Node* next;
     struct Node* prev;

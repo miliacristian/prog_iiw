@@ -173,7 +173,6 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     //GESTIRE SEGNALI DI RITRASMISSIONE
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
-    make_timeout_timer(&timeout_timer_id_serv);
     if(close(main_sockfd)==-1){//chiudi il socket del padre
         handle_error_with_exit("error in close socket fd\n");
     }

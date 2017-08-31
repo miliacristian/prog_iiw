@@ -13,7 +13,7 @@
 
 
 int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed) {//manda fin non in finestra senza sequenza e ack e chiudi
-    stop_timeout_timer(timeout_timer_id_serv);
+    alarm(0);
     send_message(sockfd, &cli_addr, len, temp_buff, "FIN", FIN, loss_prob);
     printf("close get send_file\n");
     return *byte_readed;
@@ -23,7 +23,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     printf("send_file\n");
     int ack_dup=0;
     int value = 0,*byte_sent = &value;
-    start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
+    alarm(TIMEOUT);
     while (1) {
         if (*pkt_fly < W && (*byte_sent) < dim) {
             //send_data_in_window(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim);
@@ -33,7 +33,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 continue;//ignora pacchetto
             }
             else{
-                stop_timeout_timer(timeout_timer_id_serv);
+                alarm(0);
             }
             printf("pacchetto ricevuto send_file con ack %d seq %d command %d win_base_snd %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,*window_base_snd);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
@@ -55,18 +55,18 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     ack_dup++;
                     printf("send_file ack duplicato\n");
                 }
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
+                alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
-                start_timeout_timer(timeout_timer_id_serv, TIMEOUT);
+                alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_file con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                 handle_error_with_exit("");
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
+                alarm(TIMEOUT);
             }
         }
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
@@ -75,7 +75,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (great_alarm_serv == 1) {
             great_alarm_serv = 0;
             printf("il client non è in ascolto send file\n");
-            stop_timeout_timer(timeout_timer_id_serv);
+            alarm(0);
             return *byte_readed;
         }
     }

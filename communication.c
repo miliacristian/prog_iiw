@@ -7,7 +7,7 @@
 #include "Server.h"
 #include "Client.h"
 #include "communication.h"
-#include "list.h"
+#include "dynamic_list.h"
 
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {//ack di un messaggio contenente
@@ -100,8 +100,8 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     lock_mtx(&(shm->mtx));
-    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
-        handle_error_with_exit("error in get_time_of_day\n");
+    if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
+        handle_error_with_exit("error in get_time\n");
     }
     InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_mtx(&(shm->mtx));
@@ -128,8 +128,8 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     lock_mtx(&(shm->mtx));
-    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
-        handle_error_with_exit("error in get_time_of_day\n");
+    if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
+        handle_error_with_exit("error in get_time\n");
     }
     InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_mtx(&(shm->mtx));
@@ -238,8 +238,8 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     lock_mtx(&(shm->mtx));
-    if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
-        handle_error_with_exit("error in get_time_of_day\n");
+    if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
+        handle_error_with_exit("error in get_time\n");
     }
     InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_mtx(&(shm->mtx));

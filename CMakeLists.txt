@@ -23,6 +23,6 @@ set(SOURCE_FILES
         parser.h
         tester.c
         Server.c
-        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h communication.c communication.h list_client.c list_server.c list_server.h list_client.h put_client.c put_server.c put_server.h put_client.h list.h list.c)
+        timer.c timer.h get_client.c get_server.c Client.h Server.h get_client.h get_server.h communication.c communication.h list_client.c list_server.c list_server.h list_client.h put_client.c put_server.c put_server.h put_client.h dynamic_list.h dynamic_list.c)
 
 add_executable(prog_iiw ${SOURCE_FILES})

@@ -1,13 +1,13 @@
-#include "list.h"
+#include "dynamic_list.h"
 
-void initialize_timeval(struct timeval *tv,int timer_ms){
+void initialize_timeval(struct timespec *tv,int timer_ms){
     long temp;
-    temp=tv->tv_usec+(timer_ms*1000);
-    if(temp>=1000000){
-        tv->tv_usec=temp%1000000;
-        tv->tv_sec+=(temp-tv->tv_usec)/1000000;
+    temp=tv->tv_nsec+(timer_ms*1000000);
+    if(temp>=1000000000){
+        tv->tv_nsec=temp%1000000000;
+        tv->tv_sec+=(temp-tv->tv_nsec)/1000000000;
     }else{
-        tv->tv_usec = temp;
+        tv->tv_nsec = temp;
     }
     //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
     return;
@@ -16,7 +16,7 @@ void initialize_timeval(struct timeval *tv,int timer_ms){
 struct Node* GetNewNode(int seq,int timer_ms) {
     struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
     newNode->seq = seq;
-    if(gettimeofday(&(newNode->tv),NULL)!=0){
+    if(clock_gettime(CLOCK_MONOTONIC,&(newNode->tv))!=0){
         handle_error_with_exit("error in get_time\n");
     }
     newNode->timer_ms=timer_ms;
@@ -62,7 +62,7 @@ char first_is_smaller(struct Node node1, struct Node node2){
         return 0;
     }
     else if(node1.tv.tv_sec==node2.tv.tv_sec){
-        if(node1.tv.tv_usec>=node2.tv.tv_usec){
+        if(node1.tv.tv_nsec>=node2.tv.tv_nsec){
             return 0;
         }
         else {
@@ -107,7 +107,7 @@ void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail)
 void Print(struct Node* head) {
     struct Node* temp = head;
     while(temp != NULL) {
-        printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_usec);
+        printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
         temp = temp->next;
     }
     printf("\n");

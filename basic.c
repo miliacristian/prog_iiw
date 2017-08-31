@@ -11,16 +11,16 @@
 #include "get_server.h"
 #include "communication.h"
 
-void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
+/*void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
     (void)arg;
     block_signal(SIGRTMIN+1);
     while(1){
         pause();
     }
-}
+}*/
 
 char to_resend(struct shm_sel_repeat *shm, struct Node node){
-    if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_usec == node.tv.tv_usec ){
+    if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
         if(shm->win_buf_snd[node.seq].acked){
             return 0;
         }
@@ -29,15 +29,14 @@ char to_resend(struct shm_sel_repeat *shm, struct Node node){
     return 0;
 }
 
-pthread_t create_thread_signal_handler(){
+/*pthread_t create_thread_signal_handler(){
     pthread_t tid;
     if(pthread_create(&tid,NULL,try_to_sleep,NULL)!=0){
         handle_error_with_exit("error in pthread_create\n");
     }
     block_signal(SIGRTMIN);
     return tid;
-
-}
+}*/
 void block_signal(int signal){
     sigset_t set;
     if(sigemptyset(&set)==-1){

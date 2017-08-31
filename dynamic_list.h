@@ -41,4 +41,4 @@ void InsertAtHead(struct Node* newNode, struct Node** head,struct Node** tail);
 void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail);
 void Print(struct Node* head);
 void ReversePrint(struct Node* head);
-void initialize_timeval(struct timeval *tv,int timer_ms);
+void initialize_timeval(struct timespec *tv,int timer_ms);

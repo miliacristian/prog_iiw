@@ -11,7 +11,7 @@
 #include "get_server.h"
 #include "communication.h"
 #include "put_client.h"
-#include "list.h"
+#include "dynamic_list.h"
 
 
 int close_put_send_file2(struct shm_snd *shm_snd){
@@ -214,8 +214,9 @@ void *put_client_rtx_job(void*arg){
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
-    int timer_ms_left;
+    long timer_ns_left;
     char to_rtx;
+    struct timespec sleep_time;
     lock_mtx(&(shm->mtx));
     for(;;) {
         while (1) {
@@ -232,8 +233,8 @@ void *put_client_rtx_job(void*arg){
             }
         }
         unlock_mtx(&(shm->mtx));
-        timer_ms_left=calculate_time_left(*node);
-        if(timer_ms_left<=0){
+        timer_ns_left=calculate_time_left(*node);
+        if(timer_ns_left<=0){
             temp_buff.ack = NOT_AN_ACK;
             temp_buff.seq = node->seq;
             copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
@@ -244,7 +245,8 @@ void *put_client_rtx_job(void*arg){
             unlock_mtx(&(shm->mtx));
         }
         else{
-            usleep(timer_ms_left*1000);//verifica che il numero non va in overflow su __useconds_t
+            sleep_struct(&sleep_time, timer_ns_left);
+            nanosleep(&sleep_time , NULL);//verifica che il numero non va in overflow su __useconds_t
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));

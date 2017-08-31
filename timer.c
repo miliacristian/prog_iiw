@@ -11,7 +11,7 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
-#include "list.h"
+#include "dynamic_list.h"
 
 
 
@@ -60,20 +60,26 @@ void start_timeout_timer(timer_t timer_id, int msec){
     printf("timer avviato\n");
     return;
 }
-int  calculate_time_left(struct Node node){
+long  calculate_time_left(struct Node node){
     //ritorna il numero di millisecondi(tv-getttimeofday)
-    struct timeval time_current;
-    long time_ms_cur;
-    long time_ms_timeval;
-    int time_ms_left;
-    if(gettimeofday(&time_current,NULL)!=0){
+    struct timespec time_current;
+    long time_ns_cur;
+    long time_ns_timespec;
+    long time_ns_left;
+    if(clock_gettime(CLOCK_MONOTONIC,&time_current)!=0){
         handle_error_with_exit("error in gettimeofday\n");
     }
     initialize_timeval(&(node.tv), node.timer_ms);
-    time_ms_cur=(time_current.tv_usec/1000)+(time_current.tv_sec*1000);
-    time_ms_timeval=(node.tv.tv_usec/1000)+(node.tv.tv_sec*1000);
-    time_ms_left=(int)time_ms_timeval-time_ms_cur;
-    return time_ms_left;
+    time_ns_cur=(time_current.tv_nsec)+(time_current.tv_sec*1000000000);
+    time_ns_timespec=(node.tv.tv_nsec)+(node.tv.tv_sec*1000000000);
+    time_ns_left= time_ns_timespec-time_ns_cur;
+    return time_ns_left;
+}
+
+void sleep_struct(struct timespec* sleep_time, long timer_ns_left){
+    sleep_time->tv_nsec = timer_ns_left % 1000000000;
+    sleep_time->tv_sec = (timer_ns_left - (sleep_time->tv_nsec))/100000000;
+    return;
 }
 
 void set_timer(struct itimerspec *its, int msec) {
