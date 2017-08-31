@@ -94,16 +94,8 @@ int send_put_file2(struct shm_snd *shm_snd) {
             printf("pkt sent %d\n",pkt_sent);
             send_data_in_window_cli(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension);
         }
-        if((shm_snd->shm->pkt_fly)==(shm_snd->shm->param.window)){
-            printf("seq to send %d pkt fly %d W %d sent %d dim %d\n",shm_snd->shm->seq_to_send,shm_snd->shm->pkt_fly,shm_snd->shm->param.window,shm_snd->shm->byte_sent,shm_snd->shm->dimension);
-            printf("impossibile inviare\n");
-        }
-        if((shm_snd->shm->byte_sent) == (shm_snd->shm->dimension)){
-            printf("ricevuto %d mandato tutto \n",shm_snd->shm->byte_readed);
-            handle_error_with_exit("");
-        }
         //unlock_mtx(&shm_snd->shm->mtx);
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
+        while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 handle_error_with_exit("error rcv pkt connession\n");
                 continue;//ignora pacchetto
@@ -427,7 +419,7 @@ void put_client(struct shm_sel_repeat *shm){
     struct shm_snd shm_snd;
     //initialize_cond(&start_rcv);
     //initialize_cond(&all_acked);
-    //initialize_cond(&buf_not_empty);
+    initialize_cond(&list_not_empty);
     //initialize_cond(&buf_not_full);
     if(pthread_create(&tid_rcv,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");

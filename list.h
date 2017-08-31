@@ -40,9 +40,6 @@ struct Node  {
 };
 #endif
 
-//struct Node* head; // global variable - pointer to head node.
-//struct Node* tail;
-
 //Creates a new Node and returns pointer to it.
 struct Node* GetNewNode(int seq,int timer_ms);
 int deleteHead(struct Node** head, struct Node* oldHead);
