@@ -10,8 +10,9 @@
 #include "list.h"
 
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
-                            int *window_base_snd, int *pkt_fly, int dim, int *byte_readed) {//ack di un messaggio contenente
+                            int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
+    lock_mtx(&(shm->mtx));
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
@@ -27,6 +28,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             }
         }
     }
+    unlock_mtx(&(shm->mtx));
     return;
 
 }
@@ -334,7 +336,7 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
     return;
 }
 
-void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written) {
+void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written, struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
     int written=0;
     win_buf_rcv[temp_buff.seq].command = temp_buff.command;
@@ -407,7 +409,8 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
     return;
 }
 
-void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly) {
+void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly, struct shm_sel_repeat *shm) {
+    lock_mtx(&(shm->mtx));
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
@@ -417,11 +420,13 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
             (*pkt_fly)--;
         }
     }
+    unlock_mtx(&(shm->mtx));
 }
 
 void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                                  int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {
     //tempbuff.command deve essere uguale a data
+    lock_mtx(&(shm->mtx));
     win_buf_snd[temp_buff.ack].acked = 1;
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
@@ -437,6 +442,7 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             }
         }
     }
+    unlock_mtx(&(shm->mtx));
     return;
 }
 
