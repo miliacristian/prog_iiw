@@ -11,6 +11,7 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
+#include "list.h"
 
 
 
@@ -59,7 +60,7 @@ void start_timeout_timer(timer_t timer_id, int msec){
     printf("timer avviato\n");
     return;
 }
-int  calculate_time_left(struct timeval tv){
+int  calculate_time_left(struct Node node){
     //ritorna il numero di millisecondi(tv-getttimeofday)
     struct timeval time_current;
     long time_ms_cur;
@@ -68,27 +69,12 @@ int  calculate_time_left(struct timeval tv){
     if(gettimeofday(&time_current,NULL)!=0){
         handle_error_with_exit("error in gettimeofday\n");
     }
+    initialize_timeval(&(node.tv), node.timer_ms);
     time_ms_cur=(time_current.tv_usec/1000)+(time_current.tv_sec*1000);
-    time_ms_timeval=(tv.tv_usec/1000)+(tv.tv_sec*1000);
+    time_ms_timeval=(node.tv.tv_usec/1000)+(node.tv.tv_sec*1000);
     time_ms_left=(int)time_ms_timeval-time_ms_cur;
     return time_ms_left;
 }
-/*void make_timers(struct window_snd_buf *win_buf, int W) {
-    struct sigevent te;
-    memset(&te,0,sizeof(struct sigevent));
-    int sigNo = SIGRTMIN;
-    te.sigev_notify = SIGEV_SIGNAL;//quando scade il timer manda il segnale specificato
-    te.sigev_signo = sigNo;//manda il segnale sigrtmin
-    for (int i = 0; i < 2 * W; i++) {
-        te.sigev_value.sival_ptr = &(win_buf[i]);//associo ad ogni timer l'indirizzo della struct i-esima
-        if (timer_create(CLOCK_REALTIME, &te,&(win_buf[i].time_id)) == -1) {//inizializza nella struct il timer i-esimo
-            handle_error_with_exit("error in timer_create\n");
-        }
-        //printf("timer id is 0x%lx\n",(long)*ptr);
-    }
-    printf("timer creati\n");
-    return;
-}*/
 
 void set_timer(struct itimerspec *its, int msec) {
     int msec2 = msec%1000;
@@ -99,10 +85,3 @@ void set_timer(struct itimerspec *its, int msec) {
     its->it_value.tv_nsec = msec2 * 1000000;//conversione nanosecondi millisecondi
     return;
 }
-/*void stop_all_timers(struct window_snd_buf* win_buf_snd, int W){
-    for (int i = 0; i <( 2*W); i++){
-        timer_delete(win_buf_snd[i].time_id);
-    }
-    printf("tutti i timer sono stoppati\n");
-    return;
-}*/

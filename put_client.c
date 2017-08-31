@@ -12,6 +12,7 @@
 #include "communication.h"
 #include "put_client.h"
 #include "list.h"
+
 pthread_cond_t start_rcv;
 pthread_cond_t all_acked;
 pthread_cond_t buf_not_full;
@@ -241,7 +242,7 @@ void *put_client_rtx_job(void*arg){
                 wait_on_a_condition(&list_not_empty,&shm->mtx);
             }
             else{
-                if(!to_resend()){
+                if(!to_resend(shm, *node)){
                     continue;
                 }
                 else{
@@ -250,7 +251,7 @@ void *put_client_rtx_job(void*arg){
             }
         }
         unlock_mtx(&(shm->mtx));
-        timer_ms_left=calculate_time_left(node->tv);
+        timer_ms_left=calculate_time_left(*node);
         if(timer_ms_left<=0){
             temp_buff.ack = NOT_AN_ACK;
             temp_buff.seq = node->seq;
