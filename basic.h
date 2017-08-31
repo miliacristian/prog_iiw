@@ -95,8 +95,7 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     int window_base_rcv;//
     int window_base_snd;//
     int seq_to_send;//prossima posizione libera per mandare pacchetto
-    int seq_to_scan;//prossima posizione da scansione(per vedere se è arrivato ack)
-    //vuoto seqtosend=seqtoscan pieno (seqtosend+1)%2W=seqtoscan
+    pthread_cond_t list_not_empty;
     int byte_readed;
     int byte_written;
     int byte_sent;

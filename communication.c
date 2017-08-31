@@ -70,7 +70,7 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     return;
 }
 
-void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
+void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim,struct shm_sel_repeat *shm) {
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
@@ -98,16 +98,18 @@ void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_ad
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    lock_mtx(&(shm->mtx));
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
+    insertOdrdered();
+    unlock_mtx(&(shm->mtx));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
 }
 
-void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly) {
+void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly, struct shm_sel_repeat *shm) {
     temp_buff.command = command;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
@@ -132,7 +134,7 @@ void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockl
     return;
 }
 
-void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,char*message,char command,int *seq_to_send,double loss_prob,int W,int *pkt_fly){
+void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,char*message,char command,int *seq_to_send,double loss_prob,int W,int *pkt_fly, struct shm_sel_repeat *shm){
     temp_buff.command=command;
     temp_buff.ack=NOT_AN_ACK;
     temp_buff.seq=*seq_to_send;
@@ -156,7 +158,7 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     (*pkt_fly)++;
     return;
 }
-void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim){
+void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,int *seq_to_send,double loss_prob,int W,int *pkt_fly,int *byte_sent,int dim, struct shm_sel_repeat *shm){
     ssize_t readed=0;
     temp_buff.command=DATA;
     temp_buff.ack=NOT_AN_ACK;
@@ -195,7 +197,7 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     (*pkt_fly)++;
     return;
 }
-void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim) {
+void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int *seq_to_send, double loss_prob, int W, int *pkt_fly, int *byte_sent, int dim, struct shm_sel_repeat *shm) {
     int readed=0;
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;

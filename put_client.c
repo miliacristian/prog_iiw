@@ -13,17 +13,13 @@
 #include "put_client.h"
 #include "list.h"
 
-pthread_cond_t start_rcv;
-pthread_cond_t all_acked;
-pthread_cond_t buf_not_full;
-pthread_cond_t list_not_empty;
 int close_put_send_file2(struct shm_snd *shm_snd){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("close_put_send_file\n");
     struct temp_buffer temp_buff;
     //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
-    send_message_in_window_cli(shm_snd->shm->addr.sockfd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd, "FIN", FIN,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);
-    unlock_thread_on_a_condition(&list_not_empty);
+    send_message_in_window_cli(shm_snd->shm->addr.sockfd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd, "FIN", FIN,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
+    unlock_thread_on_a_condition(&(shm_snd->shm->list_not_empty));
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),MSG_DONTWAIT, (struct sockaddr *) &(shm_snd->shm->addr.dest_addr), &shm_snd->shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
@@ -92,8 +88,8 @@ int send_put_file2(struct shm_snd *shm_snd) {
     while (1) {
         //lock_mtx(&shm_snd->shm->mtx);
         if (((shm_snd->shm->pkt_fly) < (shm_snd->shm->param.window)) && ((shm_snd->shm->byte_sent) < (shm_snd->shm->dimension))) {
-            send_data_in_window_cli(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension);
-            unlock_thread_on_a_condition(&list_not_empty);
+            send_data_in_window_cli(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension, shm_snd->shm);
+            unlock_thread_on_a_condition(&(shm_snd->shm->list_not_empty));
         }
         //unlock_mtx(&shm_snd->shm->mtx);
         while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
@@ -165,8 +161,7 @@ void *put_client_job(void*arg){
     //invia messaggio put
     //lock_mtx(&shm_snd->shm->mtx);
     printf("lock acquired put client snd\n");
-    send_message_in_window_cli(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);//mand
-    unlock_thread_on_a_condition(&list_not_empty);
+    send_message_in_window_cli(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand
     //unlock_mtx(&shm_snd->shm->mtx);
     //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
     while (1) {
@@ -229,7 +224,7 @@ void *put_client_job(void*arg){
 }
 void *put_client_rtx_job(void*arg){
     printf("thread rcv creato\n");
-    block_signal(SIGRTMIN+1);//il thread receiver non viene bloccato dal segnale di timeout
+    block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
@@ -239,7 +234,7 @@ void *put_client_rtx_job(void*arg){
     for(;;) {
         while (1) {
             if(deleteHead(&shm->head,node)==-1){
-                wait_on_a_condition(&list_not_empty,&shm->mtx);
+                wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
             }
             else{
                 if(!to_resend(shm, *node)){
@@ -416,27 +411,24 @@ void *put_client_rtx_job(void*arg){
 }*/
 void put_client(struct shm_sel_repeat *shm){
     //initialize_cond();inizializza tutte le cond
-    pthread_t tid_snd,tid_rcv;
+    pthread_t tid_snd,tid_rtx;
     struct shm_snd shm_snd;
-    //initialize_cond(&start_rcv);
-    //initialize_cond(&all_acked);
-    initialize_cond(&list_not_empty);
-    //initialize_cond(&buf_not_full);
-    if(pthread_create(&tid_rcv,NULL,put_client_rtx_job,shm)!=0){
+    initialize_cond(&(shm->list_not_empty));
+    if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
-    printf("%d tid_rcv\n",tid_rcv);
-    shm_snd.tid=tid_rcv;
+    printf("%d tid_rcv\n",tid_rtx);
+    shm_snd.tid=tid_rtx;
     shm_snd.shm=shm;
     if(pthread_create(&tid_snd,NULL,put_client_job,&shm_snd)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);
-    block_signal(SIGRTMIN+1);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
-    if(pthread_join(tid_rcv,NULL)!=0){
+    if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
     //ricorda di distruggere cond e rilasciare mtx
