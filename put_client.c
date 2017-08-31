@@ -34,6 +34,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
                 printf("close put send file\n");
+                pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_readed;//fine connesione
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -217,6 +218,7 @@ void *put_client_rtx_job(void*arg){
     long timer_ns_left;
     char to_rtx;
     struct timespec sleep_time;
+    node = alloca(sizeof(struct Node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
@@ -224,6 +226,7 @@ void *put_client_rtx_job(void*arg){
             if(deleteHead(&shm->head,node)==-1){
                 printf("before wait on cond\n");
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
+                printf("after wait on cond\n");
             }
             else{
                 if(!to_resend(shm, *node)){
@@ -234,6 +237,7 @@ void *put_client_rtx_job(void*arg){
                 }
             }
         }
+        printf("deleteHead\n");
         unlock_mtx(&(shm->mtx));
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){

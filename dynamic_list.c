@@ -25,22 +25,27 @@ struct Node* GetNewNode(int seq,int timer_ms) {
     return newNode;
 }
 int deleteHead(struct Node** head, struct Node* oldHead){
-    printf("deleteHead\n");
+    //initializza oldhead con il primo nodo della lista
     if(*head == NULL){
         fprintf(stderr, "empty list\n");
         return -1;
     }
+    if (oldHead == NULL) {
+        handle_error_with_exit("oldHead NULL\n");
+    }
+    oldHead->timer_ms = (*head)->timer_ms;
     oldHead->tv =(*head)->tv;
     oldHead->seq =(*head)->seq;
     oldHead->next = (*head)->next;
     oldHead->prev = (*head)->prev;
     if ((*head)-> next == NULL){
-        *head = NULL;
         free(*head);
+        *head = NULL;
+
     }else{
+        free(*head);
         *head = oldHead->next;
         (*head)-> prev = NULL;
-        free(*head);
     }
     return 0;
 }
@@ -80,21 +85,25 @@ void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail)
     struct Node* temp = *tail;
     struct Node* nextNode = NULL;
     struct Node* newNode = GetNewNode(seq,timer_ms);
+    printf("aggiungo alla lista\n");
     if(*head == NULL) {
         *head = newNode;
         *tail = newNode;
+        Print(*head);
         return;
     }
     if(first_is_smaller((**tail),*newNode)){
         (*tail)->next = newNode;
         newNode->prev = *tail;
         *tail = newNode;
+        Print(*head);
     }else{
         while(!first_is_smaller(*temp,*newNode)){
             if(temp->prev != NULL){
                 temp = temp->prev;
             }else{
                 InsertAtHead(newNode, head, tail);
+                Print(*head);
                 return;
             }
         }
@@ -103,7 +112,9 @@ void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail)
         newNode->next = temp->next;
         temp->next = newNode;
         newNode->prev = temp;
+        Print(*head);
     }
+    return;
 }
 
 void Print(struct Node* head) {

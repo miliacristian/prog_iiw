@@ -185,7 +185,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     }
     errno=0;
     while (rtx < 500000 ) {//parametro da cambiare
-        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
+        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), 0);  //mando syn al processo server principale  //da cambiare loss prob
         printf("mi metto in ricezione del syn_ack\n");
         alarm(2);
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
