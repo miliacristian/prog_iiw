@@ -83,7 +83,6 @@ int close_put_send_file2(struct shm_snd *shm_snd){
 }
 int send_put_file2(struct shm_snd *shm_snd) {
     struct temp_buffer temp_buff;
-    int pkt_sent=0;
     printf("send_put_file\n");
     alarm(TIMEOUT);
     while (1) {
@@ -211,13 +210,13 @@ void *put_client_job(void*arg){
 }
 void *put_client_rtx_job(void*arg){
     printf("thread rtx creato\n");
-    block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct Node*node=NULL;
     long timer_ns_left;
     char to_rtx;
-    struct timespec sleep_time,temp_time;
+    struct timespec sleep_time;
+    block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct Node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
@@ -416,7 +415,6 @@ void put_client(struct shm_sel_repeat *shm){
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     struct shm_snd shm_snd;
-    initialize_cond(&(shm->list_not_empty));
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }

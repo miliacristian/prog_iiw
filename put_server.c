@@ -12,6 +12,8 @@
 #include "communication.h"
 #include "put_client.h"
 #include "put_server.h"
+#include "dynamic_list.h"
+
 int wait_for_fin_put2(struct shm_snd *shm_snd){
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
@@ -31,6 +33,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 alarm(0);
                 send_message(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,"FIN_ACK",FIN_ACK,shm_snd->shm->param.loss_prob);
                 printf("return wait_for_fin\n");
+                pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_written;
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -264,8 +267,75 @@ int rcv_put_file2(struct shm_snd *shm_snd){
 }*/
 void*put_server_rtx_job(void*arg){
     struct shm_sel_repeat *shm=arg;
-    block_signal(SIGALRM);
-    while(1){}
+    struct temp_buffer temp_buff;
+    struct Node*node=NULL;
+    long timer_ns_left;
+    char to_rtx;
+    struct timespec sleep_time;
+    block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
+    node = alloca(sizeof(struct Node));
+    lock_mtx(&(shm->mtx));
+    printf("lock preso\n");
+    for(;;) {
+        while (1) {
+            if(deleteHead(&shm->head,node)==-1){
+                printf("before wait on cond\n");
+                wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
+                printf("after wait on cond\n");
+            }
+            else{
+                if(!to_resend(shm, *node)){
+                    printf("pkt non da ritrasmettere\n");
+                    continue;
+                }
+                else{
+                    printf("pkt da ritrasmettere\n");
+                    break;
+                }
+            }
+        }
+        unlock_mtx(&(shm->mtx));
+        timer_ns_left=calculate_time_left(*node);
+        if(timer_ns_left<=0){
+            printf("rtx immediata\n");
+            temp_buff.ack = NOT_AN_ACK;
+            temp_buff.seq = node->seq;
+            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+            temp_buff.command=shm->win_buf_snd[node->seq].command;
+            resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+            lock_mtx(&(shm->mtx));
+            if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                handle_error_with_exit("error in get_time\n");
+            }
+            InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+            unlock_mtx(&(shm->mtx));
+        }
+        else{
+            sleep_struct(&sleep_time, timer_ns_left);
+            nanosleep(&sleep_time , NULL);
+            lock_mtx(&(shm->mtx));
+            to_rtx = to_resend(shm, *node);
+            unlock_mtx(&(shm->mtx));
+            if(!to_rtx){
+                printf("no rtx dopo sleep\n");
+                continue;
+            }
+            else{
+                printf("rtx dopo sleep\n");
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                lock_mtx(&(shm->mtx));
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
+        }
+    }
     return NULL;
 }
 void*put_server_job(void*arg){

@@ -62,6 +62,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         handle_error_with_exit("error in malloc\n");
     }
     initialize_mtx(&(shm->mtx));
+    initialize_cond(&(shm->list_not_empty));
     shm->fd=-1;
     shm->dimension=-1;
     shm->filename=NULL;
