@@ -44,22 +44,6 @@ void timeout_handler_serv(int sig, siginfo_t *si, void *uc){
     (void)uc;
     great_alarm_serv=1;
 }
-void timer_handler(int sig, siginfo_t *si, void *uc) {//ad ogni segnale è associata una struct che contiene i dati da ritrasmettere
-        (void) sig;
-        (void) si;
-        (void) uc;
-        struct window_snd_buf *win_buffer = si->si_value.sival_ptr;
-        struct temp_buffer temp_buf;
-        copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere,
-        // si può evitare usando la struct win_buf_snd?
-        temp_buf.ack = NOT_AN_ACK;
-        temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
-        temp_buf.command=win_buffer->command;
-        resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_serv.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        //start_timer((*win_buffer).time_id, &sett_timer_server);
-    return;
-}
-
 
 void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
     if(sem_init(&(mtx_prefork->sem),1,1)==-1){
@@ -92,7 +76,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     shm->window_base_snd=0;
     shm->win_buf_snd=0;
     shm->seq_to_send=0;
-    shm->seq_to_scan=0;
     shm->addr.len=sizeof(request.addr);
     shm->param.window=param_serv.window;//primo pacchetto della finestra->primo non riscontrato
     shm->param.timer_ms=param_serv.timer_ms;
@@ -120,9 +103,9 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if (bind(shm->addr.sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
         handle_error_with_exit("error in bind\n");
     }
-    for (int i = 0; i < 2 *(param_serv.window); i++) {
+    /*for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].seq_numb = i;
-    }
+    }*/
     send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
     start_timeout_timer(timeout_timer_id_serv, 3000);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
@@ -187,7 +170,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     struct msgbuf request;//contiene comando e indirizzi del client
     int value;
     char done_jobs=0;
-    struct sigaction sa,sa_timeout;
+    struct sigaction sa_timeout;
     //GESTIRE SEGNALI DI RITRASMISSIONE
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
@@ -199,14 +182,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     if (sigemptyset(&sa_timeout.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
-    if (sigaction(SIGRTMIN+1, &sa_timeout, NULL) == -1) {
-        handle_error_with_exit("error in sigaction\n");
-    }
-    sa.sa_sigaction =timer_handler;
-    if (sigemptyset(&sa.sa_mask) == -1) {
-        handle_error_with_exit("error in sig_empty_set\n");
-    }
-    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+    if (sigaction(SIGALRM, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
     for(;;){

@@ -45,23 +45,6 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
     great_alarm_client=1;
     return;
 }
-
-void timer_handler(int sig, siginfo_t *si, void *uc) {
-        (void) sig;
-        (void) si;
-        (void) uc;
-        struct window_snd_buf *win_buffer = si->si_value.sival_ptr;//recupero i dati dal segnale
-        struct temp_buffer temp_buf;
-        copy_buf1_in_buf2(temp_buf.payload, win_buffer->payload,MAXPKTSIZE-9);//dati del pacchetto da ritrasmettere
-        temp_buf.ack = NOT_AN_ACK;
-        temp_buf.seq = win_buffer->seq_numb;//numero di sequenza del pacchetto da ritrasmettere
-        temp_buf.command=win_buffer->command;
-        resend_message(addr->sockfd, &temp_buf, &(addr->dest_addr), sizeof(addr->dest_addr), param_client.loss_prob);//ritrasmetto il pacchetto di cui è scaduto il timer
-        //start_timer((*win_buffer).time_id, &sett_timer_cli);
-    return;
-}
-
-
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
@@ -82,27 +65,13 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
-    for (int i = 0; i < 2 * W; i++) {
+    /*for (int i = 0; i < 2 * W; i++) {
         win_buf_snd[i].seq_numb = i;
-    }
-//
+    }*/
     socklen_t len = sizeof(serv_addr);
-
-    //make_timers(win_buf_snd, W);//crea 2w timer
-    set_timer(&sett_timer_cli, param_client.timer_ms);//inizializza struct necessaria per avviare il timer
-
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
-
-    sa.sa_flags = SA_SIGINFO;
-    //sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
-    if (sigemptyset(&sa.sa_mask) == -1) {
-        handle_error_with_exit("error in sig_empty_set\n");
-    }
-    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
-        handle_error_with_exit("error in sigaction\n");
-    }
     wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -131,10 +100,9 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
-    for (int i = 0; i < 2 * W; i++) {
+    /*for (int i = 0; i < 2 * W; i++) {
         win_buf_snd[i].seq_numb = i;
-    }
-//
+    }*/
     socklen_t len = sizeof(serv_addr);
 
     //make_timers(win_buf_snd, W);//crea 2w timer
@@ -143,15 +111,6 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     temp_addr.sockfd = sockfd;
     temp_addr.dest_addr = serv_addr;
     addr = &temp_addr;//inizializzo puntatore globale necessario per signal_handler
-
-    sa.sa_flags = SA_SIGINFO;
-    //sa.sa_sigaction = timer_handler;//chiama timer_handler quando ricevi il segnale SIGRTMIN
-    if (sigemptyset(&sa.sa_mask) == -1) {
-        handle_error_with_exit("error in sig_empty_set\n");
-    }
-    if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
-        handle_error_with_exit("error in sigaction\n");
-    }
     wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -177,7 +136,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     shm->window_base_snd=0;
     shm->win_buf_snd=0;
     shm->seq_to_send=0;
-    shm->seq_to_scan=0;
     shm->param.window=param_client.window;
     shm->param.loss_prob=param_client.loss_prob;
     shm->param.timer_ms=param_client.timer_ms;
@@ -203,9 +161,9 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
     memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
     //inizializzo numeri di sequenza nell'array di struct
-    for (int i = 0; i < 2 * param_client.window; i++) {
+    /*for (int i = 0; i < 2 * param_client.window; i++) {
         shm->win_buf_snd[i].seq_numb = i;
-    }
+    }*/
     put_client(shm);
     byte_readed=shm->byte_readed;
     free(shm->win_buf_rcv);
@@ -228,7 +186,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
-    if (sigaction(SIGRTMIN+1, &sa, NULL) == -1) {
+    if (sigaction(SIGALRM, &sa, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
     }
     errno=0;
@@ -349,7 +307,7 @@ void *thread_job(void *arg) {
     (void) arg;
     //waitpid dei processi del client
     pid_t pid;
-    block_signal(SIGRTMIN+1);
+    block_signal(SIGALRM);
     while (1) {
         while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
             printf("pool handler libera risorse del processo %d\n", pid);

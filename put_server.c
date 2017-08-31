@@ -35,7 +35,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd, shm_snd->shm->param.window, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly);
+                    rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
                 }
                 else{
                     //stop_timer(shm_snd->shm->win_buf_snd[temp_buff.ack].time_id);
@@ -132,7 +132,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
     //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-    send_message_in_window_serv(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly);
+    send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     printf("messaggio start inviato\n");
     errno=0;
     while (1) {
@@ -147,7 +147,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             printf("pacchetto ricevuto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd,shm_snd->shm->param.window, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly);
+                    rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
                 }
                 else{
                     printf("rcv put file ack duplicato\n");
@@ -156,15 +156,11 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             }
             else if (!seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->param.loss_prob);
-                msg_not_in_window++;
-                printf("msg_not_in_window %d\n",msg_not_in_window);
                 //start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
             }
             else if(seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)){
                 if(temp_buff.command==DATA){
-                    rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written);
-                    ack_sent++;
-                    printf("ack sent %d\n",ack_sent);
+                    rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written, shm_snd->shm);
                     if((shm_snd->shm->byte_written)==(shm_snd->shm->dimension)){
                         wait_for_fin_put2(shm_snd);
                         printf("return rcv file\n");
@@ -268,7 +264,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
 }*/
 void*put_server_rtx_job(void*arg){
     struct shm_sel_repeat *shm=arg;
-    block_signal(SIGRTMIN+1);
+    block_signal(SIGALRM);
     while(1){}
     return NULL;
 }
@@ -291,7 +287,7 @@ void put_server(struct shm_sel_repeat *shm){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);
-    block_signal(SIGRTMIN+1);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
