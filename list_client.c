@@ -14,7 +14,7 @@
 
 int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
     printf("close connection\n");
-    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"FIN",FIN,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio di fin
+    //send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"FIN",FIN,seq_to_send,loss_prob,W,pkt_fly);//manda messaggio di fin
     start_timeout_timer(timeout_timer_id_client,TIMEOUT);
     errno=0;
     while(1){
@@ -29,7 +29,7 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
+                    //rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 }
                 else{
                     printf("ack duplicato\n");
@@ -87,7 +87,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    //rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
                     printf("wait for fin ack duplicato\n");
@@ -179,7 +179,7 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
 }*/
 int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,char**list,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
     start_timeout_timer(timeout_timer_id_client,TIMEOUT);
-    send_message_in_window_cli(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
+    //send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
     printf("messaggio start inviato\n");
     printf("rcv list\n");
     errno=0;
@@ -195,7 +195,7 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
             printf("pacchetto ricevuto rcv_list2 con ack %d seq %d command %d payload %s\n", temp_buff.ack, temp_buff.seq, temp_buff.command, temp_buff.payload);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
+                    //rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
                 }
                 else{
                     printf("rcv_list2 ack duplicato\n");
@@ -250,7 +250,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
     double loss_prob = param_client.loss_prob;
     char*list,*first;
     strcpy(temp_buff.payload, "list");
-    send_message_in_window_cli(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload,LIST, seq_to_send,loss_prob, W, pkt_fly);//manda messaggio get
+    //send_message_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_snd, temp_buff.payload,LIST, seq_to_send,loss_prob, W, pkt_fly);//manda messaggio get
     start_timeout_timer(timeout_timer_id_client, TIMEOUT);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) !=
@@ -265,7 +265,7 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                    temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
+                    //rcv_ack_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly);
                 } else {
                     printf("ack duplicato non fare nulla\n");
                 }

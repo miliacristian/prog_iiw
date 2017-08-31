@@ -13,10 +13,10 @@
 #include "put_client.h"
 
 
-struct addr *addr = NULL;//da togliere
-struct itimerspec sett_timer_cli;//timer e reset timer globali,da togliere
+//struct addr *addr = NULL;//da togliere
+//struct itimerspec sett_timer_cli;//timer e reset timer globali,da togliere
 int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
-timer_t timeout_timer_id_client; //id  del timer di timeout;
+//timer_t timeout_timer_id_client; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
 
@@ -193,10 +193,10 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     while (rtx < 500000 ) {//parametro da cambiare
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), param_client.loss_prob);  //mando syn al processo server principale
         printf("mi metto in ricezione del syn_ack\n");
-        start_timeout_timer(timeout_timer_id_client, 3000);//parametro da cambiare
+        alarm(2);
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
-                stop_timeout_timer(timeout_timer_id_client);
+                alarm(0);
                 printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
                 great_alarm_client = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server

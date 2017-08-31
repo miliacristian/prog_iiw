@@ -18,7 +18,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("close_put_send_file\n");
     struct temp_buffer temp_buff;
-    //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+    alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd, "FIN", FIN,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),MSG_DONTWAIT, (struct sockaddr *) &(shm_snd->shm->addr.dest_addr), &shm_snd->shm->addr.len) != -1) {//attendo risposta del client,
@@ -27,12 +27,12 @@ int close_put_send_file2(struct shm_snd *shm_snd){
                 continue;//ignora pacchetto
             }
             else{
-                //stop_timeout_timer(timeout_timer_id_client);
+                alarm(0);
             }
             printf("pacchetto ricevuto close put send file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.command == FIN_ACK) {
-                //stop_timeout_timer(timeout_timer_id_client);
+                alarm(0);
                 printf("close put send file\n");
                 return shm_snd->shm->byte_readed;//fine connesione
             }
@@ -54,18 +54,18 @@ int close_put_send_file2(struct shm_snd *shm_snd){
                 else {
                     printf("close put send_file ack duplicato\n");
                 }
-                //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+                alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm_snd->shm->window_base_rcv,shm_snd->shm->param.window, temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->param.loss_prob);
-                //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+                alarm(TIMEOUT);
             }
             else {
                 printf("ignorato pacchetto close put send file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+                alarm(TIMEOUT);
             }
         } else if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
@@ -73,7 +73,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
         if (great_alarm_client == 1) {
             great_alarm_client = 0;
             printf("il server non è in ascolto close_put_send_file\n");
-            //stop_timeout_timer(timeout_timer_id_client);
+            alarm(0);
             pthread_cancel(shm_snd->tid);
             printf("thread cancel close_put_snd\n");
             pthread_exit(NULL);
@@ -84,7 +84,7 @@ int send_put_file2(struct shm_snd *shm_snd) {
     struct temp_buffer temp_buff;
     int pkt_sent=0;
     printf("send_put_file\n");
-    //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+    alarm(TIMEOUT);
     while (1) {
         if (((shm_snd->shm->pkt_fly) < (shm_snd->shm->param.window)) && ((shm_snd->shm->byte_sent) < (shm_snd->shm->dimension))) {
             send_data_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension, shm_snd->shm);
@@ -95,7 +95,7 @@ int send_put_file2(struct shm_snd *shm_snd) {
                 continue;//ignora pacchetto
             }
             else{
-                //stop_timeout_timer(timeout_timer_id_client);
+                alarm(0);
             }
             printf("pacchetto ricevuto send_put_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
@@ -115,16 +115,16 @@ int send_put_file2(struct shm_snd *shm_snd) {
                 else {
                     printf("send_put_file ack duplicato\n");
                 }
-                //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+                alarm(0);
             }
             else if (!seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window, temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->param.loss_prob);
-                //start_timeout_timer(timeout_timer_id_client, TIMEOUT);
+                alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_put_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+                alarm(TIMEOUT);
             }
         }
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
@@ -133,7 +133,7 @@ int send_put_file2(struct shm_snd *shm_snd) {
         if (great_alarm_client == 1) {
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
-            //stop_timeout_timer(timeout_timer_id_client);
+            alarm(0);
             pthread_cancel(shm_snd->tid);
             printf("thread cancel send_put_file\n");
             pthread_exit(NULL);
@@ -153,13 +153,13 @@ void *put_client_job(void*arg){
     strcat(temp_buff.payload,shm_snd->shm->filename);
     //invia messaggio put
     send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand
-    //start_timeout_timer(timeout_timer_id_client,TIMEOUT);
+    alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo risposta del server
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
-                //stop_timeout_timer(timeout_timer_id_client);
+                alarm(0);
             }
             printf("pacchetto ricevuto wait for put start con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.command == START) {
@@ -185,14 +185,14 @@ void *put_client_job(void*arg){
                 else {
                     printf("wait for put ack duplicato\n");
                 }
-                //start_timeout_timer(timeout_timer_id_client, TIMEOUT);
+                alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto wait for put start con ack %d seq %d command %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                //start_timeout_timer(timeout_timer_id_client, TIMEOUT);
+                alarm(TIMEOUT);
             }
         } else if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
@@ -200,7 +200,7 @@ void *put_client_job(void*arg){
         if (great_alarm_client == 1) {
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
-            //stop_timeout_timer(timeout_timer_id_client);
+            alarm(0);
             pthread_cancel(shm_snd->tid);
             printf("thread cancel put client\n");
             pthread_exit(NULL);

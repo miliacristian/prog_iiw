@@ -14,11 +14,10 @@
 
 
 //variabili globali
-struct addr *addr = NULL;
-struct itimerspec sett_timer_server;//timer e reset timer globali
+//struct addr *addr = NULL;
 int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm_serv=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
-timer_t timeout_timer_id_serv;
+//timer_t timeout_timer_id_serv;
 char*dir_server;
 
 void add_slash_to_dir_serv(char*argument){
@@ -107,10 +106,10 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         shm->win_buf_snd[i].seq_numb = i;
     }*/
     send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
-    start_timeout_timer(timeout_timer_id_serv, 3000);
+    alarm(2);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
-        stop_timeout_timer(timeout_timer_id_serv);
+        alarm(0);
         printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
         printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
         great_alarm_serv=0;
