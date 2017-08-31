@@ -25,15 +25,16 @@ struct Node* GetNewNode(int seq,int timer_ms) {
     return newNode;
 }
 int deleteHead(struct Node** head, struct Node* oldHead){
-    oldHead->tv =(*head)->tv;
-    oldHead->seq =(*head)->seq;
-    oldHead->next = (*head)->next;
-    oldHead->prev = (*head)->prev;
+    printf("deleteHead\n");
     if(*head == NULL){
         fprintf(stderr, "empty list\n");
         return -1;
     }
-    else if ((*head)-> next == NULL){
+    oldHead->tv =(*head)->tv;
+    oldHead->seq =(*head)->seq;
+    oldHead->next = (*head)->next;
+    oldHead->prev = (*head)->prev;
+    if ((*head)-> next == NULL){
         *head = NULL;
         free(*head);
     }else{
@@ -53,6 +54,7 @@ void InsertAtHead(struct Node* newNode,struct Node** head,struct Node** tail) {
     (*head)->prev = newNode;
     newNode->next = *head;
     *head = newNode;
+    return;
 }
 
 char first_is_smaller(struct Node node1, struct Node node2){

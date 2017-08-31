@@ -209,7 +209,7 @@ void *put_client_job(void*arg){
     return NULL;
 }
 void *put_client_rtx_job(void*arg){
-    printf("thread rcv creato\n");
+    printf("thread rtx creato\n");
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
@@ -218,9 +218,11 @@ void *put_client_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     lock_mtx(&(shm->mtx));
+    printf("lock preso\n");
     for(;;) {
         while (1) {
             if(deleteHead(&shm->head,node)==-1){
+                printf("before wait on cond\n");
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
             }
             else{
@@ -235,6 +237,7 @@ void *put_client_rtx_job(void*arg){
         unlock_mtx(&(shm->mtx));
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
+            printf("rtx immediata\n");
             temp_buff.ack = NOT_AN_ACK;
             temp_buff.seq = node->seq;
             copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
@@ -254,6 +257,7 @@ void *put_client_rtx_job(void*arg){
                 continue;
             }
             else{
+                printf("rtx dopo sleep\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
@@ -265,7 +269,6 @@ void *put_client_rtx_job(void*arg){
             }
         }
     }
-    //while(1){}
     return NULL;
 }
 /*int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send,int dimension) {//manda fin non in finestra senza sequenza e ack e chiudi
@@ -405,7 +408,7 @@ void put_client(struct shm_sel_repeat *shm){
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
-    printf("%d tid_rcv\n",tid_rtx);
+    printf("%d tid_rtx\n",tid_rtx);
     shm_snd.tid=tid_rtx;
     shm_snd.shm=shm;
     if(pthread_create(&tid_snd,NULL,put_client_job,&shm_snd)!=0){
