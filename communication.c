@@ -7,6 +7,7 @@
 #include "Server.h"
 #include "Client.h"
 #include "communication.h"
+#include "list.h"
 
 struct itimerspec sett_timer_cli;
 struct itimerspec sett_timer_server;
@@ -102,8 +103,9 @@ void send_list_in_window_serv(int sockfd,char**list, struct sockaddr_in *serv_ad
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
-    insertOdrdered();
+    InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_mtx(&(shm->mtx));
+    unlock_thread_on_a_condition(&(shm->list_not_empty));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -125,10 +127,13 @@ void send_message_in_window_serv(int sockfd, struct sockaddr_in *cli_addr, sockl
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    lock_mtx(&(shm->mtx));
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
+    InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
+    unlock_mtx(&(shm->mtx));
+    unlock_thread_on_a_condition(&(shm->list_not_empty));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -150,10 +155,13 @@ void send_message_in_window_cli(int sockfd,struct sockaddr_in *serv_addr,socklen
     else{
         printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
     }
-    //start_timer(win_buf_snd[*seq_to_send].time_id,&sett_timer_cli);
+    lock_mtx(&(shm->mtx));
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
+    InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
+    unlock_mtx(&(shm->mtx));
+    unlock_thread_on_a_condition(&(shm->list_not_empty));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -189,10 +197,13 @@ void send_data_in_window_cli(int sockfd,int fd,struct sockaddr_in *serv_addr,soc
     else{
         printf("pacchetto con ack %d, seq %d command %d perso\n",temp_buff.ack, temp_buff.seq,temp_buff.command);
     }
-    //start_timer(win_buf_snd[*seq_to_send].time_id,&sett_timer_cli);
+    lock_mtx(&(shm->mtx));
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
+    InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
+    unlock_mtx(&(shm->mtx));
+    unlock_thread_on_a_condition(&(shm->list_not_empty));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -226,10 +237,13 @@ void send_data_in_window_serv(int sockfd, int fd, struct sockaddr_in *serv_addr,
     } else {
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
-    //start_timer(win_buf_snd[*seq_to_send].time_id, &sett_timer_server);
+    lock_mtx(&(shm->mtx));
     if(gettimeofday(&(win_buf_snd[*seq_to_send].time),NULL)!=0){
         handle_error_with_exit("error in get_time_of_day\n");
     }
+    InsertOrdered(*seq_to_send, shm->param.timer_ms, &(shm->head), &(shm->tail));
+    unlock_mtx(&(shm->mtx));
+    unlock_thread_on_a_condition(&(shm->list_not_empty));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
