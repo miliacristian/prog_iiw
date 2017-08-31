@@ -289,7 +289,7 @@ void *put_client_rtx_job(void*arg){
             }
         }
     }
-    while(1){}
+    //while(1){}
     return NULL;
 }
 /*int close_put_send_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,int *window_base_snd,int *pkt_fly,int*window_base_rcv,int *seq_to_send,int dimension) {//manda fin non in finestra senza sequenza e ack e chiudi

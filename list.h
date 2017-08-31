@@ -34,6 +34,7 @@
 struct Node  {
     int seq;
     struct timeval tv;
+    int timer_ms;
     struct Node* next;
     struct Node* prev;
 };

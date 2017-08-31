@@ -2,10 +2,6 @@
 
 void initialize_timeval(struct timeval *tv,int timer_ms){
     long temp;
-    if(gettimeofday(tv,NULL)!=0){
-        //handle_error_with_exit("error in get_time\n");
-    }
-    //printf("gettimeofday sec %d usec %d\n",tv->tv_sec, tv->tv_usec);
     temp=tv->tv_usec+(timer_ms*1000);
     if(temp>=1000000){
         tv->tv_usec=temp%1000000;
@@ -18,10 +14,12 @@ void initialize_timeval(struct timeval *tv,int timer_ms){
 }
 //Creates a new Node and returns pointer to it.
 struct Node* GetNewNode(int seq,int timer_ms) {
-    struct Node* newNode
-            = (struct Node*)malloc(sizeof(struct Node));
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
     newNode->seq = seq;
-    initialize_timeval(&(newNode->tv),timer_ms);
+    if(gettimeofday(&(newNode->tv),NULL)!=0){
+        handle_error_with_exit("error in get_time\n");
+    }
+    newNode->timer_ms=timer_ms;
     newNode->prev = NULL;
     newNode->next = NULL;
     return newNode;
@@ -57,12 +55,14 @@ void InsertAtHead(struct Node* newNode,struct Node** head,struct Node** tail) {
     *head = newNode;
 }
 
-char first_is_smaller(struct timeval tv,struct timeval tv2){
-    if(tv.tv_sec>tv2.tv_sec){
+char first_is_smaller(struct Node node1, struct Node node2){
+    initialize_timeval(&(node1.tv), node1.timer_ms);
+    initialize_timeval(&(node2.tv), node2.timer_ms);
+    if(node1.tv.tv_sec>node2.tv.tv_sec){
         return 0;
     }
-    else if(tv.tv_sec==tv2.tv_sec){
-        if(tv.tv_usec>=tv2.tv_usec){
+    else if(node1.tv.tv_sec==node2.tv.tv_sec){
+        if(node1.tv.tv_usec>=node2.tv.tv_usec){
             return 0;
         }
         else {
@@ -83,12 +83,12 @@ void InsertOrdered(int seq,int timer_ms, struct Node** head, struct Node** tail)
         *tail = newNode;
         return;
     }
-    if(first_is_smaller((*tail)->tv,newNode->tv)){
+    if(first_is_smaller((**tail),*newNode)){
         (*tail)->next = newNode;
         newNode->prev = *tail;
         *tail = newNode;
     }else{
-        while(!first_is_smaller(temp->tv,newNode->tv)){
+        while(!first_is_smaller(*temp,*newNode)){
             if(temp->prev != NULL){
                 temp = temp->prev;
             }else{
