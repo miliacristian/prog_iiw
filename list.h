@@ -31,13 +31,7 @@
 #ifndef PROG_IIW_LIST_H
 #define PROG_IIW_LIST_H
 
-struct Node  {
-    int seq;
-    struct timeval tv;
-    int timer_ms;
-    struct Node* next;
-    struct Node* prev;
-};
+
 #endif
 
 //Creates a new Node and returns pointer to it.

@@ -10,7 +10,6 @@
 #include "get_client.h"
 #include "get_server.h"
 #include "communication.h"
-#include "list.h"
 
 void*try_to_sleep(void*arg){//thread che invoca il timer_handler e che quindi gestisce le ritrasmissioni
     (void)arg;

@@ -106,6 +106,7 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     struct Node* head;
     struct Node *tail;
 };
+
 struct mtx_prefork{
     sem_t sem;
     int free_process;
@@ -117,6 +118,14 @@ struct msgbuf{
 struct shm_snd {
     struct shm_sel_repeat *shm;
     pthread_t tid;
+};
+
+struct Node  {
+    int seq;
+    struct timeval tv;
+    int timer_ms;
+    struct Node* next;
+    struct Node* prev;
 };
 #endif
 
@@ -152,3 +161,4 @@ void initialize_cond(pthread_cond_t*cond);
 void destroy_cond(pthread_cond_t*cond);
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
+char to_resend(struct shm_sel_repeat *shm, struct Node node);
