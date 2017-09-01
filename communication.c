@@ -109,8 +109,9 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
         handle_error_with_exit("error in get_time\n");
     }
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap,win_buf_snd[*seq_to_send].time, shm->param.timer_ms, &(shm->head), &(shm->tail));
-    unlock_mtx(&(shm->mtx));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
+    unlock_mtx(&(shm->mtx));
+
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -139,8 +140,8 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     }
     (win_buf_snd[*seq_to_send].lap)+=1;
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap, win_buf_snd[*seq_to_send].time,shm->param.timer_ms, &(shm->head), &(shm->tail));
-    unlock_mtx(&(shm->mtx));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
+    unlock_mtx(&(shm->mtx));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
@@ -182,8 +183,8 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         handle_error_with_exit("error in get_time\n");
     }
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap,win_buf_snd[*seq_to_send].time,shm->param.timer_ms, &(shm->head), &(shm->tail));
-    unlock_mtx(&(shm->mtx));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
+    unlock_mtx(&(shm->mtx));
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;
