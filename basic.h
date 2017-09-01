@@ -30,7 +30,7 @@
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
-#define MAXPKTSIZE 1468//no packet fragmentation //1468
+#define MAXPKTSIZE 15000//no packet fragmentation //1468
 #define MAXLINE 1024
 #define SERVER_PORT 5195
 #define ERROR 5

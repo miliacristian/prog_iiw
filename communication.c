@@ -308,7 +308,8 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
                         handle_error_with_exit("error in write\n");
                     }
                     *byte_written += MAXPKTSIZE - 9;
-                } else {
+                }
+                else {
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
                     if(written<dim - *byte_written){
                         handle_error_with_exit("error in write\n");

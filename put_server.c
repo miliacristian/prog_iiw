@@ -19,7 +19,11 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
     struct temp_buffer temp_buff;
     alarm(2);//chiusura temporizzata
     errno=0;
+    if(close(shm_snd->shm->fd)==-1){
+        handle_error_with_exit("error in close file\n");
+    }
     while(1){
+
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo,bloccante o non bloccante??
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -266,9 +270,9 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     payload=NULL;
     rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);//invio ack della put
     put_server(shm);
-    if(close(shm->fd)==-1){
-        handle_error_with_exit("error in close file\n");
-    }
+    //if(close(shm->fd)==-1){
+      //  handle_error_with_exit("error in close file\n");
+    //}
     printf("return execute put\n");
     return shm->byte_written;
 }
