@@ -28,7 +28,7 @@ struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms)
 int delete_head(struct node** head, struct node* old_head){
     //initializza oldhead con il primo nodo della lista
     if(*head == NULL){
-        fprintf(stderr, "empty list\n");
+        //printf(stderr, "empty list\n");
         return -1;
     }
     if (old_head == NULL) {
@@ -49,7 +49,7 @@ int delete_head(struct node** head, struct node* old_head){
         *head = old_head->next;
         (*head)-> prev = NULL;
     }
-    printf("nodo eliminato\n");
+    //printf("nodo eliminato\n");
     return 0;
 }
 
@@ -88,7 +88,7 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     struct node* temp = *tail;
     struct node* next_node = NULL;
     struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
-    printf("aggiungo alla lista %d\n", new_node->lap);
+    //printf("aggiungo alla lista %d\n", new_node->lap);
     if(*head == NULL) {
         *head = new_node;
         *tail = new_node;
