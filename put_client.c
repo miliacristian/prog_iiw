@@ -151,6 +151,9 @@ void *put_client_job(void*arg){
     sprintf(dim_string, "%d", shm_snd->shm->dimension);
     strcpy(temp_buff.payload,dim_string);
     strcat(temp_buff.payload," ");
+    //shm_snd->shm->md5[MD5_LEN]=' ';
+    strcat(temp_buff.payload,shm_snd->shm->md5_sent);
+    strcat(temp_buff.payload," ");
     strcat(temp_buff.payload,shm_snd->shm->filename);
     //invia messaggio put
     send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand

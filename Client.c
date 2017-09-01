@@ -111,6 +111,9 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
     int byte_readed=0;
+    char*path;
+    path=generate_full_pathname(filename,dir_client);
+    printf("lol\n");
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
@@ -141,6 +144,12 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
         handle_error_with_exit("error in malloc\n");
     }
     strcpy(shm->filename,filename);
+    if(!calc_file_MD5(path,shm->md5_sent)){
+        handle_error_with_exit("error in calculate md5\n");
+    }
+    free(path);
+    path=NULL;
+    printf("md5 %s\n",shm->md5_sent);
     shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
     if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");

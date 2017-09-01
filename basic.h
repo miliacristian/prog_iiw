@@ -54,7 +54,10 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN    "\x1b[36m"
 #define RESET   "\x1b[0m"
-
+#define STR_VALUE(val) #val
+#define STR(name) STR_VALUE(name)
+#define PATH_LEN 256
+#define MD5_LEN 32
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -99,6 +102,7 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     pthread_mutex_t mtx;//
     struct window_snd_buf *win_buf_snd;//
     struct window_rcv_buf *win_buf_rcv;//
+    char md5_sent[MD5_LEN + 1];//dopo l'inizializzazione contiene terminatore di stringa
     int dimension;
     char*filename;
     int window_base_rcv;//
@@ -172,3 +176,4 @@ void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend2(struct shm_sel_repeat *shm, struct node node);
+char calc_file_MD5(char *file_name, char *md5_sum);

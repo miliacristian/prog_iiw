@@ -11,6 +11,21 @@
 #include "get_server.h"
 #include "communication.h"
 
+char calc_file_MD5(char *file_name, char *md5_sum){
+#define MD5SUM_CMD_FMT "md5sum %." STR(PATH_LEN) "s 2>/dev/null"
+    char cmd[PATH_LEN + sizeof (MD5SUM_CMD_FMT)];
+    sprintf(cmd, MD5SUM_CMD_FMT, file_name);
+#undef MD5SUM_CMD_FMT
+    FILE *p = popen(cmd, "r");
+    if (p == NULL) return 0;
+    int i, ch;
+    for (i = 0; i < MD5_LEN && isxdigit(ch = fgetc(p)); i++) {
+        *md5_sum++ = ch;
+    }
+    *md5_sum = '\0';
+    pclose(p);
+    return i == MD5_LEN;
+}
 char to_resend(struct shm_sel_repeat *shm, struct node node){
     if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
         if(shm->win_buf_snd[node.seq].acked==1){
@@ -152,10 +167,12 @@ int count_word_in_buf(char*buf){
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];
     memset(num_format_string,'\0',4);
-    strcpy(temp,"(");
+    //strcpy(temp,"(");
+    strcpy(temp,"_");
     sprintf(num_format_string, "%d",copy_number);
     strcat(temp,num_format_string);
-    strcat(temp,")");
+    //strcat(temp,")");
+    strcat(temp,"_");
     return;
 }
 
@@ -350,14 +367,14 @@ void*attach_shm(int shmid){
     return mtx;
 }
 
-char* generate_full_pathname(char* filename, char* dir_server){//ricordarsi di fare la free di path nella funzione chiamante
+char* generate_full_pathname(char* filename, char* dir){//ricordarsi di fare la free di path nella funzione chiamante
     char* path;
     path=malloc(sizeof(char)*MAXPKTSIZE);
     if(path==NULL){
         handle_error_with_exit("error in malloc\n");
     }
     memset(path,'\0',MAXPKTSIZE);
-    strcpy(path,dir_server);
+    strcpy(path,dir);
     strcat(path,filename);
     return path;
 }

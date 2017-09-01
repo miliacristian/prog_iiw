@@ -16,14 +16,14 @@
 
 int wait_for_fin_put2(struct shm_snd *shm_snd){
     printf("wait for fin\n");
+    char md5[MD5_LEN + 1];
     struct temp_buffer temp_buff;
-    alarm(2);//chiusura temporizzata
-    errno=0;
     if(close(shm_snd->shm->fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
+    alarm(2);//chiusura temporizzata
+    errno=0;
     while(1){
-
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo,bloccante o non bloccante??
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -37,6 +37,16 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 alarm(0);
                 send_message(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,"FIN_ACK",FIN_ACK,shm_snd->shm->param.loss_prob);
                 printf(GREEN "FIN ricevuto\n" RESET);
+                if(!calc_file_MD5(shm_snd->shm->filename,md5)){
+                    handle_error_with_exit("error in calculate md5\n");
+                }
+                printf("md5 del file ricevuto %s\n",md5);
+                if(strcmp(shm_snd->shm->md5_sent,md5)!=0){
+                    printf(RED "file corrupted\n" RESET);
+                }
+                else{
+                    printf(GREEN "file rightly received\n" RESET);
+                }
                 pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_written;
             }
@@ -258,10 +268,19 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     strcpy(payload,temp_buff.payload);
     first=payload;
     shm->dimension=parse_integer_and_move(&payload);
-    printf("dimensione del file put %d\n",shm->dimension);
+    payload++;
+    strncpy(shm->md5_sent,payload,MD5_LEN);
+    shm->md5_sent[MD5_LEN]='\0';
+    printf("md5 %s\n",shm->md5_sent);
+    payload+=MD5_LEN;
     payload++;
     path=generate_multi_copy(dir_server,payload);
-    shm->fd= open(path, O_WRONLY | O_CREAT,0666);
+    shm->filename=malloc(sizeof(char)*MAXFILENAME);
+    if(shm->filename==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    strcpy(shm->filename,path);
+    shm->fd=open(path, O_WRONLY | O_CREAT,0666);
     if (shm->fd == -1) {
         handle_error_with_exit("error in open\n");
     }
