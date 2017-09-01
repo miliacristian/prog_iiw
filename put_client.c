@@ -241,16 +241,15 @@ void *put_client_rtx_job(void*arg){
         unlock_mtx(&(shm->mtx));
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
-            printf("rtx immediata\n");
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
-                printf("no rtx dopo sleep\n");
+                printf("no rtx immediata\n");
                 continue;
             }
             else{
-                printf("rtx dopo sleep\n");
+                printf("rtx immediata\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
