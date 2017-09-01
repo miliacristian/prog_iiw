@@ -104,7 +104,7 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
         printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     lock_mtx(&(shm->mtx));
-    win_buf_snd[*seq_to_send].lap++;
+    (win_buf_snd[*seq_to_send].lap)+=1;
     if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
         handle_error_with_exit("error in get_time\n");
     }
@@ -137,7 +137,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
         handle_error_with_exit("error in get_time\n");
     }
-    win_buf_snd[*seq_to_send].lap++;
+    (win_buf_snd[*seq_to_send].lap)+=1;
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap, win_buf_snd[*seq_to_send].time,shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_mtx(&(shm->mtx));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
@@ -177,7 +177,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         printf(BLUE"pacchetto con ack %d, seq %d command %d perso\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
     }
     lock_mtx(&(shm->mtx));
-    win_buf_snd[*seq_to_send].lap++;
+    (win_buf_snd[*seq_to_send].lap)+=1;
     if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
         handle_error_with_exit("error in get_time\n");
     }
@@ -359,7 +359,7 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
             //avanzo la finestra
-            //win_buf_snd[*window_base_snd].acked = 0;//resetta quando scorri finestra
+            win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
             win_buf_snd[*window_base_snd].time.tv_nsec=0;
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
@@ -377,7 +377,7 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
         while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
             //avanzo la finestra
-            //win_buf_snd[*window_base_snd].acked = 0;//resetta quando scorri finestra
+            win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
             win_buf_snd[*window_base_snd].time.tv_nsec=0;
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
