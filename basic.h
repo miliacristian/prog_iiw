@@ -47,6 +47,14 @@
 #define SYN 9
 #define SYN_ACK 10
 #define TIMEOUT 5
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define RESET   "\x1b[0m"
+
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -68,6 +76,7 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     char payload[MAXPKTSIZE-9];
     char command;
     struct timespec time;//usato per timer adattativo
+    int lap;
     //int seq_numb;
 };
 
@@ -123,6 +132,7 @@ struct node  {
     int seq;
     struct timespec tv;
     int timer_ms;
+    int lap;
     struct node* next;
     struct node* prev;
 };
@@ -161,3 +171,4 @@ void destroy_cond(pthread_cond_t*cond);
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
+char to_resend2(struct shm_sel_repeat *shm, struct node node);

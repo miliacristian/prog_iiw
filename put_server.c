@@ -28,11 +28,11 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto wait for fin con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto wait for fin con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq,temp_buff.command);
             if (temp_buff.command==FIN){
                 alarm(0);
                 send_message(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,"FIN_ACK",FIN_ACK,shm_snd->shm->param.loss_prob);
-                printf("return wait_for_fin\n");
+                printf(GREEN "FIN ricevuto\n" RESET);
                 pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_written;
             }
@@ -77,7 +77,6 @@ int rcv_put_file2(struct shm_snd *shm_snd){
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
-    printf("messaggio start inviato\n");
     errno=0;
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
@@ -88,7 +87,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd,shm_snd->shm->param.window, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
@@ -183,7 +182,7 @@ void*put_server_rtx_job(void*arg){
             if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                 handle_error_with_exit("error in get_time\n");
             }
-            insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+            insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
             unlock_mtx(&(shm->mtx));
         }
         else{
@@ -207,7 +206,7 @@ void*put_server_rtx_job(void*arg){
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

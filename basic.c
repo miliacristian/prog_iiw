@@ -20,6 +20,20 @@ char to_resend(struct shm_sel_repeat *shm, struct node node){
     }
     return 0;
 }
+
+char to_resend2(struct shm_sel_repeat *shm, struct node node){
+    printf("lap finestra %d lap lista %d\n",shm->win_buf_snd[node.seq].lap,node.lap);
+    if(node.lap == (shm->win_buf_snd[node.seq]).lap){
+        printf("acked %d seq %d\n", shm->win_buf_snd[node.seq].acked, node.seq);
+        if(shm->win_buf_snd[node.seq].acked==1){
+            return 0;
+        }
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
 void block_signal(int signal){
     sigset_t set;
     if(sigemptyset(&set)==-1){
@@ -95,7 +109,8 @@ char check_if_dir_exist(char*dir_path){
     return 1;
 }
 void handle_error_with_exit(char*errorString){
-    perror(errorString);
+    printf(RED "%s" RESET, errorString);
+    perror("");
     exit(EXIT_FAILURE);
 }
 void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){

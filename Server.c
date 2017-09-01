@@ -53,7 +53,6 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
 }
 
 void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda il messaggio di syn
-    printf("reply to syn_and_exec command\n");
     struct addr temp_addr;
     struct sockaddr_in serv_addr;
     struct temp_buffer temp_buff;//pacchetto da inviare
@@ -90,9 +89,11 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if(shm->win_buf_snd==NULL){
         handle_error_with_exit("error in malloc win buf snd\n");
     }
+    for (int i = 0; i < 2 *(param_serv.window); i++) {
+        shm->win_buf_snd[i].lap = -1;
+    }
     memset(shm->win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*(param_serv.window)));//inizializza a zero
     memset(shm->win_buf_snd,0,sizeof(struct window_snd_buf)*(2*(param_serv.window)));//inizializza a zero
-
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);
@@ -111,8 +112,8 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
         alarm(0);
-        printf("pacchetto ricevuto con ack %d seq %d command %d dati %s:\n",temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
-        printf("comando %s ricevuto connessione instaurata\n",temp_buff.payload);
+        printf(MAGENTA"pacchetto ricevuto con ack %d seq %d command %d dati %s:\n"RESET,temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
+        printf(GREEN"comando %s ricevuto connessione instaurata\n"RESET,temp_buff.payload);
         great_alarm_serv=0;
         if(temp_buff.command==LIST){
             execute_list(shm,temp_buff);
@@ -353,7 +354,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
             handle_error_with_exit("error in recvcommand");//scrive nella struct le info del client
             // e nel buffer il comando ricevuto dal client
         }
-        printf("messaggio ricevuto server\n");
+        printf(GREEN"richiesta ricevuta server\n"RESET);
         msgbuf.addr=cliaddr;//inizializza la struct con addr e commandBuffer
         msgbuf.mtype=1;
         if(msgsnd(msgid,&msgbuf,sizeof(struct msgbuf)-sizeof(long),0)==-1){

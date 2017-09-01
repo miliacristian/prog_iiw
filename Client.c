@@ -151,6 +151,9 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
     memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
+    for (int i = 0; i < 2 *(param_client.window); i++) {
+        shm->win_buf_snd[i].lap = -1;
+    }
     //inizializzo numeri di sequenza nell'array di struct
     /*for (int i = 0; i < 2 * param_client.window; i++) {
         shm->win_buf_snd[i].seq_numb = i;
@@ -188,7 +191,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
                 alarm(0);
-                printf("pacchetto syn_ack ricevuto,connessione instaurata\n");
+                printf(GREEN"pacchetto syn_ack ricevuto,connessione instaurata\n" RESET);
                 great_alarm_client = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server
             }

@@ -29,11 +29,11 @@ int close_put_send_file2(struct shm_snd *shm_snd){
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto close put send file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
+            printf(MAGENTA"pacchetto ricevuto close put send file con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq,
                    temp_buff.command);
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
-                printf("close put send file\n");
+                printf(GREEN"Fin_ack ricevuto\n"RESET);
                 pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_readed;//fine connesione
             }
@@ -98,7 +98,7 @@ int send_put_file2(struct shm_snd *shm_snd) {
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto send_put_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm_snd->shm->window_base_snd,shm_snd->shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
@@ -162,9 +162,9 @@ void *put_client_job(void*arg){
             } else {
                 alarm(0);
             }
-            printf("pacchetto ricevuto wait for put start con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto wait for put start con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
             if (temp_buff.command == START) {
-                printf("messaggio start ricevuto\n");
+                printf(GREEN"messaggio start ricevuto\n"RESET);
                 rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window);
                 path = generate_full_pathname(shm_snd->shm->filename, dir_client);
                 shm_snd->shm->fd= open(path, O_RDONLY);
@@ -228,7 +228,7 @@ void *put_client_rtx_job(void*arg){
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
             }
             else{
-                if(!to_resend(shm, *node)){
+                if(!to_resend2(shm, *node)){
                     printf("pkt non da ritrasmettere\n");
                     continue;
                 }
@@ -242,7 +242,10 @@ void *put_client_rtx_job(void*arg){
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend(shm, *node);
+            to_rtx = to_resend2(shm, *node);
+            if(node->lap!=shm->win_buf_snd[node->seq].lap){
+                printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
+            }
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 printf("no rtx immediata\n");
@@ -259,7 +262,7 @@ void *put_client_rtx_job(void*arg){
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }
@@ -267,8 +270,12 @@ void *put_client_rtx_job(void*arg){
             sleep_struct(&sleep_time, timer_ns_left);
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend(shm, *node);
+            to_rtx = to_resend2(shm, *node);
+            if(node->lap!=shm->win_buf_snd[node->seq].lap){
+                printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
+            }
             unlock_mtx(&(shm->mtx));
+            printf("to_rtx %d\n", to_rtx);
             if(!to_rtx){
                 printf("no rtx dopo sleep\n");
                 continue;
@@ -284,7 +291,7 @@ void *put_client_rtx_job(void*arg){
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

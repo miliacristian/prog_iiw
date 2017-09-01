@@ -13,12 +13,13 @@ void initialize_timeval(struct timespec *tv,int timer_ms){
     return;
 }
 //Creates a new Node and returns pointer to it.
-struct node* get_new_node(int seq,struct timespec timespec,int timer_ms) {
+struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms) {
     struct node* new_node = (struct node*)malloc(sizeof(struct node));
     new_node->seq = seq;
     new_node->tv.tv_sec=timespec.tv_sec;
     new_node->tv.tv_nsec=timespec.tv_nsec;
     new_node->timer_ms=timer_ms;
+    new_node->lap=lap;
     new_node->prev = NULL;
     new_node->next = NULL;
     return new_node;
@@ -82,10 +83,10 @@ char first_is_smaller(struct node node1, struct node node2){
     }
 }
 
-void insert_ordered(int seq,struct timespec timespec,int timer_ms, struct node** head, struct node** tail){
+void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struct node** head, struct node** tail){
     struct node* temp = *tail;
     struct node* next_node = NULL;
-    struct node* new_node = get_new_node(seq,timespec,timer_ms);
+    struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
     printf("aggiungo alla lista\n");
     if(*head == NULL) {
         *head = new_node;
