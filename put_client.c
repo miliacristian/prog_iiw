@@ -156,7 +156,7 @@ void *put_client_job(void*arg){
     send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand
     alarm(TIMEOUT);
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo risposta del server
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo risposta del server
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -219,7 +219,7 @@ void *put_client_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
-    node = alloca(sizeof(struct Node));
+    node = alloca(sizeof(struct node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
@@ -261,6 +261,7 @@ void *put_client_rtx_job(void*arg){
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend(shm, *node);
+            printf("to_rtx %d\n",to_rtx);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 printf("no rtx dopo sleep\n");

@@ -102,8 +102,8 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     char*list;
     struct select_param param;
     int fd;
-    struct Node* head;
-    struct Node *tail;
+    struct node* head;
+    struct node *tail;
 };
 
 struct mtx_prefork{

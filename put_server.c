@@ -53,8 +53,8 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
-                rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->param.loss_prob);
                 handle_error_with_exit("");
+                rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->param.loss_prob);
                 alarm(TIMEOUT);
             }
         }
@@ -149,7 +149,7 @@ void*put_server_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
-    node = alloca(sizeof(struct Node));
+    node = alloca(sizeof(struct node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
