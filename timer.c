@@ -60,7 +60,7 @@ void start_timeout_timer(timer_t timer_id, int msec){
     printf("timer avviato\n");
     return;
 }
-long  calculate_time_left(struct Node node){
+long  calculate_time_left(struct node node){
     //ritorna il numero di millisecondi(tv-getttimeofday)
     struct timespec time_current;
     long time_ns_cur;

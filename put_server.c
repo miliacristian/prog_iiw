@@ -72,64 +72,6 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
         }
     }
 }
-/*int  wait_for_fin_put(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in cli_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob){
-    //in questo stato posso ricevere ack start in finesta,fin,parti di file già ricevute(fuori finestra)
-    printf("wait for fin\n");
-    start_timeout_timer(timeout_timer_id_serv,TIMEOUT-3000);//chiusura temporizzata
-    errno=0;
-    while(1){
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo messaggio di fin,
-            // aspetto finquando non lo ricevo
-            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                continue;//ignora pacchetto
-            }
-            else{
-                stop_timeout_timer(timeout_timer_id_serv);
-            }
-            printf("pacchetto ricevuto wait for fin con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
-            if (temp_buff.command==FIN){
-                stop_timeout_timer(timeout_timer_id_serv);
-                stop_all_timers(win_buf_snd, W);
-                send_message(sockfd,&cli_addr,len,temp_buff,"FIN_ACK",FIN_ACK,loss_prob);
-                printf("return wait_for_fin\n");
-                return *byte_written;
-            }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
-                if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
-                }
-                else{
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
-                    printf("wait for fin ack duplicato\n");
-                }
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-            else {
-                printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.command);
-                printf("winbase snd %d winbase rcv %d\n",*window_base_snd,*window_base_rcv);
-                rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
-                //handle_error_with_exit("");
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-        }
-        else if(errno!=EINTR && errno!=0){
-            handle_error_with_exit("error in recvfrom\n");
-        }
-        if (great_alarm_serv == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm_serv = 0;
-            stop_all_timers(win_buf_snd, W);
-            stop_timeout_timer(timeout_timer_id_serv);
-            return *byte_written;
-        }
-    }
-}*/
-
 
 int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
@@ -199,76 +141,11 @@ int rcv_put_file2(struct shm_snd *shm_snd){
         }
     }
 }
-/*int rcv_put_file(int sockfd,struct sockaddr_in cli_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written){
-    //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
-    start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-    send_message_in_window_serv(sockfd,&cli_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly);
-    printf("messaggio start inviato\n");
-    errno=0;
-    while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//bloccati finquando non ricevi file
-            // o altri messaggi
-            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                continue;//ignora pacchetto
-            }
-            else{
-                stop_timeout_timer(timeout_timer_id_serv);
-            }
-            printf("pacchetto ricevuto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
-                if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
-                    rcv_ack_in_window(temp_buff,win_buf_snd,W,window_base_snd,pkt_fly);
-                }
-                else{
-                    stop_timer(win_buf_snd[temp_buff.ack].time_id);
-                    printf("rcv put file ack duplicato\n");
-                }
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-            else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,loss_prob);
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-            else if(seq_is_in_window(*window_base_rcv, W,temp_buff.seq)){
-                if(temp_buff.command==DATA){
-                    rcv_data_send_ack_in_window(sockfd,fd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
-                    if(*byte_written==dimension){
-                        wait_for_fin_put(temp_buff,win_buf_snd,sockfd,cli_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob);
-                        printf("return rcv file\n");
-                        return *byte_written;
-                    }
-                }
-                else{
-                    printf("errore rcv put file\n");
-                    printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
-                    handle_error_with_exit("");
-                    rcv_msg_send_ack_command_in_window(sockfd,&cli_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
-                }
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-            else {
-                printf("ignorato pacchetto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.command);
-                printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
-                handle_error_with_exit("");
-                start_timeout_timer(timeout_timer_id_serv,TIMEOUT);
-            }
-        }
-        else if(errno!=EINTR && errno!=0){
-            handle_error_with_exit("error in recvfrom\n");
-        }
-        if (great_alarm_serv == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm_serv = 0;
-            stop_timeout_timer(timeout_timer_id_serv);
-            return *byte_written;
-        }
-    }
-}*/
+
 void*put_server_rtx_job(void*arg){
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
-    struct Node*node=NULL;
+    struct node*node=NULL;
     long timer_ns_left;
     char to_rtx;
     struct timespec sleep_time;
@@ -278,7 +155,7 @@ void*put_server_rtx_job(void*arg){
     printf("lock preso\n");
     for(;;) {
         while (1) {
-            if(deleteHead(&shm->head,node)==-1){
+            if(delete_head(&shm->head,node)==-1){
                 printf("before wait on cond\n");
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
                 printf("after wait on cond\n");
@@ -307,7 +184,7 @@ void*put_server_rtx_job(void*arg){
             if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                 handle_error_with_exit("error in get_time\n");
             }
-            InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+            insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
             unlock_mtx(&(shm->mtx));
         }
         else{
@@ -331,7 +208,7 @@ void*put_server_rtx_job(void*arg){
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                InsertOrdered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

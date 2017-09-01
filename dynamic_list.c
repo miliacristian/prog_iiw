@@ -23,6 +23,7 @@ struct node* get_new_node(int seq,struct timespec timespec,int timer_ms) {
     new_node->next = NULL;
     return new_node;
 }
+
 int delete_head(struct node** head, struct node* old_head){
     //initializza oldhead con il primo nodo della lista
     if(*head == NULL){

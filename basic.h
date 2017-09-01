@@ -160,4 +160,4 @@ void initialize_cond(pthread_cond_t*cond);
 void destroy_cond(pthread_cond_t*cond);
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
-char to_resend(struct shm_sel_repeat *shm, struct Node node);
+char to_resend(struct shm_sel_repeat *shm, struct node node);
