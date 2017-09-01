@@ -46,7 +46,7 @@
 #define DATA 0
 #define SYN 9
 #define SYN_ACK 10
-#define TIMEOUT 5000
+#define TIMEOUT 5
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -119,12 +119,12 @@ struct shm_snd {
     pthread_t tid;
 };
 
-struct Node  {
+struct node  {
     int seq;
     struct timespec tv;
     int timer_ms;
-    struct Node* next;
-    struct Node* prev;
+    struct node* next;
+    struct node* prev;
 };
 #endif
 

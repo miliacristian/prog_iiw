@@ -35,10 +35,10 @@
 #endif
 
 //Creates a new Node and returns pointer to it.
-struct Node* GetNewNode(int seq,struct timespec timespec,int timer_ms);
-int deleteHead(struct Node** head, struct Node* oldHead);
-void InsertAtHead(struct Node* newNode, struct Node** head,struct Node** tail);
-void InsertOrdered(int seq,struct timespec timespec,int timer_ms, struct Node** head, struct Node** tail);
-void Print(struct Node* head);
-void ReversePrint(struct Node* head);
+struct node* get_new_node(int seq,struct timespec timespec,int timer_ms);
+int delete_head(struct node** head, struct node* old_head);
+void insert_at_head(struct node* new_node, struct node** head,struct node** tail);
+void insert_ordered(int seq,struct timespec timespec,int timer_ms, struct node** head, struct node** tail);
+void print(struct node* head);
+void reverse_print(struct node* head);
 void initialize_timeval(struct timespec *tv,int timer_ms);
