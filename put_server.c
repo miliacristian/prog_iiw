@@ -20,8 +20,8 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
     alarm(2);//chiusura temporizzata
     errno=0;
     while(1){
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo messaggio di fin,
-            // aspetto finquando non lo ricevo
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo messaggio di fin,
+            // aspetto finquando non lo ricevo,bloccante o non bloccante??
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -41,7 +41,6 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                     rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
                 }
                 else{
-                    alarm(0);
                     printf("wait for fin ack duplicato\n");
                 }
                 alarm(TIMEOUT);
@@ -59,7 +58,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 alarm(TIMEOUT);
             }
         }
-        else if(errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK){
+        if(errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK){
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {
@@ -128,7 +127,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
                 alarm(TIMEOUT);
             }
         }
-        else if(errno != EINTR && errno != 0){//aggiungere altri controlli
+        if(errno != EINTR && errno != 0){//aggiungere altri controlli
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {

@@ -68,7 +68,8 @@ int close_put_send_file2(struct shm_snd *shm_snd){
                 handle_error_with_exit("");
                 alarm(TIMEOUT);
             }
-        } else if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
+        }
+        if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
@@ -115,7 +116,7 @@ int send_put_file2(struct shm_snd *shm_snd) {
                 else {
                     printf("send_put_file ack duplicato\n");
                 }
-                alarm(0);
+                alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window, temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->param.loss_prob);
@@ -194,7 +195,8 @@ void *put_client_job(void*arg){
                 handle_error_with_exit("");
                 alarm(TIMEOUT);
             }
-        } else if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
+        }
+        if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
