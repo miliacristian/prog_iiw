@@ -37,7 +37,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
 void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written){
     //ricevi parte di lista e invia ack
     struct temp_buffer ack_buff;
-    if(win_buf_rcv[temp_buff.seq].received ==1) {
+    if(win_buf_rcv[temp_buff.seq].received ==0) {
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
         copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
         win_buf_rcv[temp_buff.seq].received = 1;
@@ -274,7 +274,7 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
 void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written, struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
     int written=0;
-    if(win_buf_rcv[temp_buff.seq].received ==1) {
+    if(win_buf_rcv[temp_buff.seq].received ==0) {
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
         copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
         win_buf_rcv[temp_buff.seq].received = 1;
@@ -320,7 +320,9 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
 //chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
 void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
     struct temp_buffer ack_buff;
-    if(win_buf_rcv[temp_buff.seq].received ==1) {
+    printf("rcv_msg_send_ack_command\n");
+    if(win_buf_rcv[temp_buff.seq].received ==0) {
+        printf("pacchetto non ancora ricevuto\n");
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
         strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);
         win_buf_rcv[temp_buff.seq].received = 1;
@@ -341,6 +343,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
+            printf("incremento win_base_rcv\n");
             win_buf_rcv[*window_base_rcv].received = 0;//segna pacchetto come non ricevuto
             *window_base_rcv = ((*window_base_rcv) + 1) % (2 * W);//avanza la finestra con modulo di 2W
         }

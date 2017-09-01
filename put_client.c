@@ -225,9 +225,7 @@ void *put_client_rtx_job(void*arg){
     for(;;) {
         while (1) {
             if(delete_head(&shm->head,node)==-1){
-                printf("before wait on cond\n");
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
-                printf("after wait on cond\n");
             }
             else{
                 if(!to_resend(shm, *node)){
@@ -244,24 +242,33 @@ void *put_client_rtx_job(void*arg){
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
             printf("rtx immediata\n");
-            temp_buff.ack = NOT_AN_ACK;
-            temp_buff.seq = node->seq;
-            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
-            temp_buff.command=shm->win_buf_snd[node->seq].command;
-            resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
             lock_mtx(&(shm->mtx));
-            if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
-                handle_error_with_exit("error in get_time\n");
-            }
-            insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
+            if(!to_rtx){
+                printf("no rtx dopo sleep\n");
+                continue;
+            }
+            else{
+                printf("rtx dopo sleep\n");
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                lock_mtx(&(shm->mtx));
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                insert_ordered(node->seq,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
         }
         else{
             sleep_struct(&sleep_time, timer_ns_left);
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend(shm, *node);
-            printf("to_rtx %d\n",to_rtx);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 printf("no rtx dopo sleep\n");
