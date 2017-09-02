@@ -84,14 +84,15 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if(shm->win_buf_snd==NULL){
         handle_error_with_exit("error in malloc win buf snd\n");
     }
+    memset(shm->win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*(param_serv.window)));//inizializza a zero
+    memset(shm->win_buf_snd,0,sizeof(struct window_snd_buf)*(2*(param_serv.window)));//inizializza a zero
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
+        printf("laps finestra %d\n",shm->win_buf_rcv[i].lap);
     }
-    memset(shm->win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*(param_serv.window)));//inizializza a zero
-    memset(shm->win_buf_snd,0,sizeof(struct window_snd_buf)*(2*(param_serv.window)));//inizializza a zero
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
     serv_addr.sin_port=htons(0);

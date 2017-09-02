@@ -296,6 +296,7 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     free(path);
     free(first);
     payload=NULL;
+    printf("lap finestra %d\n",shm->win_buf_rcv[0].lap);
     rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);//invio ack della put
     put_server(shm);
     //if(close(shm->fd)==-1){

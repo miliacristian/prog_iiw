@@ -343,6 +343,8 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
+            printf("temp buff lap %d\n",(temp_buff.lap-1));
+            printf("lap finestra %d\n",(win_buf_rcv[temp_buff.seq].lap));
             handle_error_with_exit("pkt vecchia finestra\n");
         }
     }
