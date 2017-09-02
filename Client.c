@@ -103,6 +103,9 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     int byte_readed=0;
     char*path;
     path=generate_full_pathname(filename,dir_client);
+    if(path==NULL){
+        handle_error_with_exit("error in generate full path\n");
+    }
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");

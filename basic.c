@@ -182,6 +182,9 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     char temp[6],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
     memset(temp,'\0',6);
     absolute_path=generate_full_pathname(filename,path_to_filename);
+    if(absolute_path==NULL){
+        handle_error_with_exit("error in generate full path\n");
+    }
     if(!check_if_file_exist(absolute_path)){
         return absolute_path;
     }
@@ -202,6 +205,9 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
         strcat(first_of_the_dot,occurence);
     }
     absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+    if(absolute_path==NULL){
+        handle_error_with_exit("error in generate full path\n");
+    }
     while(check_if_file_exist(absolute_path)){
         copy_number+=1;
         if(copy_number>=255){
@@ -212,6 +218,9 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
             strcpy(first_of_the_dot,filename);
             strcat(first_of_the_dot,temp);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+            if(absolute_path==NULL){
+                handle_error_with_exit("error in generate full path\n");
+            }
         }
         else{//esiste un punto nel filename
             generate_branches_and_number(temp, copy_number);
@@ -220,6 +229,9 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
             strcat(first_of_the_dot,temp);
             strcat(first_of_the_dot,occurence);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
+            if(absolute_path==NULL){
+                handle_error_with_exit("error in generate full path\n");
+            }
         }
     }
     free(first_of_the_dot);
@@ -370,6 +382,9 @@ void*attach_shm(int shmid){
 char* generate_full_pathname(char* filename, char* dir){//ricordarsi di fare la free di path nella funzione chiamante
     char* path;
     path=malloc(sizeof(char)*MAXPKTSIZE);
+    if(filename ==NULL || dir==NULL){
+        return NULL;
+    }
     if(path==NULL){
         handle_error_with_exit("error in malloc\n");
     }

@@ -168,6 +168,9 @@ void *put_client_job(void*arg){
                 printf(GREEN"messaggio start ricevuto\n"RESET);
                 rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window);
                 path = generate_full_pathname(shm_snd->shm->filename, dir_client);
+                if(path==NULL){
+                    handle_error_with_exit("error in generate full path\n");
+                }
                 shm_snd->shm->fd= open(path, O_RDONLY);
                 if (shm_snd->shm->fd == -1) {
                     handle_error_with_exit("error in open file\n");
