@@ -26,6 +26,20 @@ char calc_file_MD5(char *file_name, char *md5_sum){
     pclose(p);
     return i == MD5_LEN;
 }
+void check_md5(char*filename,char*md5_to_check) {
+    char md5[MD5_LEN + 1];
+    if (!calc_file_MD5(filename, md5)) {
+        handle_error_with_exit("error in calculate md5\n");
+    }
+    printf("md5 del file ricevuto %s\n", md5);
+    if (strcmp(md5_to_check, md5) != 0) {
+        printf(RED "file corrupted\n" RESET);
+    }
+    else {
+        printf(GREEN "file rightly received\n" RESET);
+    }
+    return;
+}
 char to_resend(struct shm_sel_repeat *shm, struct node node){
     if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
         if(shm->win_buf_snd[node.seq].acked==1){

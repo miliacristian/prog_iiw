@@ -60,6 +60,7 @@
 #define PATH_LEN 256
 #define MD5_LEN 32
 #define OVERHEAD 13
+#define FREE_PROCESS 1
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -181,3 +182,4 @@ void unlock_thread_on_a_condition(pthread_cond_t*cond);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend2(struct shm_sel_repeat *shm, struct node node);
 char calc_file_MD5(char *file_name, char *md5_sum);
+void check_md5(char*filename,char*md5_to_check);

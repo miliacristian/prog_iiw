@@ -16,7 +16,6 @@
 
 int wait_for_fin_put2(struct shm_snd *shm_snd){
     printf("wait for fin\n");
-    char md5[MD5_LEN + 1];
     struct temp_buffer temp_buff;
     if(close(shm_snd->shm->fd)==-1){
         handle_error_with_exit("error in close file\n");
@@ -37,16 +36,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 alarm(0);
                 send_message(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,"FIN_ACK",FIN_ACK,shm_snd->shm->param.loss_prob);
                 printf(GREEN "FIN ricevuto\n" RESET);
-                if(!calc_file_MD5(shm_snd->shm->filename,md5)){
-                    handle_error_with_exit("error in calculate md5\n");
-                }
-                printf("md5 del file ricevuto %s\n",md5);
-                if(strcmp(shm_snd->shm->md5_sent,md5)!=0){
-                    printf(RED "file corrupted\n" RESET);
-                }
-                else{
-                    printf(GREEN "file rightly received\n" RESET);
-                }
+                check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);
                 pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_written;
             }
@@ -79,6 +69,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_serv = 0;
             alarm(0);
+            check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);
             pthread_cancel(shm_snd->tid);
             printf("thread cancel put client\n");
             pthread_exit(NULL);
@@ -110,7 +101,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             else{
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap...\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command/*,temp_buff.lap*/);
+            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd,shm_snd->shm->param.window, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
@@ -164,6 +155,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
 }
 
 void*put_server_rtx_job(void*arg){
+    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -172,22 +164,19 @@ void*put_server_rtx_job(void*arg){
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
-    lock_mtx(&(shm->mtx));
-    printf("lock preso\n");
     for(;;) {
+        lock_mtx(&(shm->mtx));
         while (1) {
             if(delete_head(&shm->head,node)==-1){
-                printf("before wait on cond\n");
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
-                printf("after wait on cond\n");
             }
             else{
-                if(!to_resend(shm, *node)){
-                    printf("pkt non da ritrasmettere\n");
+                if(!to_resend2(shm, *node)){
+                    //printf("pkt non da ritrasmettere\n");
                     continue;
                 }
                 else{
-                    printf("pkt da ritrasmettere\n");
+                    //printf("pkt da ritrasmettere\n");
                     break;
                 }
             }
@@ -195,33 +184,43 @@ void*put_server_rtx_job(void*arg){
         unlock_mtx(&(shm->mtx));
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
-            printf("rtx immediata\n");
-            temp_buff.ack = NOT_AN_ACK;
-            temp_buff.seq = node->seq;
-            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
-            temp_buff.command=shm->win_buf_snd[node->seq].command;
-            resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
             lock_mtx(&(shm->mtx));
-            if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
-                handle_error_with_exit("error in get_time\n");
-            }
-            insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+            to_rtx = to_resend2(shm, *node);
             unlock_mtx(&(shm->mtx));
+            if(!to_rtx){
+                //printf("no rtx immediata\n");
+                continue;
+            }
+            else{
+                //printf("rtx immediata\n");
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                temp_buff.lap=node->lap;
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                lock_mtx(&(shm->mtx));
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
         }
         else{
             sleep_struct(&sleep_time, timer_ns_left);
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend(shm, *node);
+            to_rtx = to_resend2(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
-                printf("no rtx dopo sleep\n");
                 continue;
             }
             else{
-                printf("rtx dopo sleep\n");
+                //printf("rtx dopo sleep\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
+                temp_buff.lap=node->lap;
                 copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);

@@ -108,7 +108,6 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap,win_buf_snd[*seq_to_send].time, shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
     unlock_mtx(&(shm->mtx));
-
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
     return;

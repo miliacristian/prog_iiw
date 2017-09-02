@@ -223,9 +223,8 @@ void *put_client_rtx_job(void*arg){
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
-    lock_mtx(&(shm->mtx));
-    printf("lock preso\n");
     for(;;) {
+        lock_mtx(&(shm->mtx));
         while (1) {
             if(delete_head(&shm->head,node)==-1){
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
@@ -246,9 +245,6 @@ void *put_client_rtx_job(void*arg){
         if(timer_ns_left<=0){
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
-            if(node->lap!=shm->win_buf_snd[node->seq].lap){
-                //printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
-            }
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 //printf("no rtx immediata\n");
@@ -275,13 +271,8 @@ void *put_client_rtx_job(void*arg){
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
-            if(node->lap!=shm->win_buf_snd[node->seq].lap){
-                //printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
-            }
             unlock_mtx(&(shm->mtx));
-            //printf("to_rtx %d\n", to_rtx);
             if(!to_rtx){
-                //printf("no rtx dopo sleep\n");
                 continue;
             }
             else{

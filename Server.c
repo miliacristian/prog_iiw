@@ -340,8 +340,8 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in bind\n");
     }
 
-    create_pool(1);//da cambiare
-    //create_thread_pool_handler(mtx_prefork);//da decommentare
+    create_pool(FREE_PROCESS);//da cambiare
+    create_thread_pool_handler(mtx_prefork);//da decommentare
     while(1) {
         len=sizeof(cliaddr);
         if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {
