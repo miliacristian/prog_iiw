@@ -57,13 +57,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
-    //inizializzo numeri di sequenza nell'array di struct
-    /*for (int i = 0; i < 2 * W; i++) {
-        win_buf_snd[i].seq_numb = i;
-    }*/
     socklen_t len = sizeof(serv_addr);
-    //temp_addr.sockfd = sockfd;
-    //temp_addr.dest_addr = serv_addr;
     wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -75,7 +69,6 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    //struct addr temp_addr;
     struct window_rcv_buf*win_buf_rcv;
     struct window_snd_buf*win_buf_snd;
     win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
@@ -89,8 +82,6 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
     socklen_t len = sizeof(serv_addr);
-    //temp_addr.sockfd = sockfd;
-    //temp_addr.dest_addr = serv_addr;
     wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);

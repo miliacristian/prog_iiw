@@ -171,7 +171,7 @@ void*put_server_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
-    /*node = alloca(sizeof(struct node));
+    node = alloca(sizeof(struct node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
@@ -233,7 +233,7 @@ void*put_server_rtx_job(void*arg){
                 unlock_mtx(&(shm->mtx));
             }
         }
-    }*/
+    }
     return NULL;
 }
 void*put_server_job(void*arg){

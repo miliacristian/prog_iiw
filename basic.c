@@ -167,11 +167,9 @@ int count_word_in_buf(char*buf){
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];
     memset(num_format_string,'\0',4);
-    //strcpy(temp,"(");
     strcpy(temp,"_");
     sprintf(num_format_string, "%d",copy_number);
     strcat(temp,num_format_string);
-    //strcat(temp,")");
     strcat(temp,"_");
     return;
 }
