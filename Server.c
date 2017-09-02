@@ -87,6 +87,9 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
+    for (int i = 0; i < 2 *(param_serv.window); i++) {
+        shm->win_buf_rcv[i].lap = -1;
+    }
     memset(shm->win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*(param_serv.window)));//inizializza a zero
     memset(shm->win_buf_snd,0,sizeof(struct window_snd_buf)*(2*(param_serv.window)));//inizializza a zero
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
