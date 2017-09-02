@@ -22,8 +22,8 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
             (*pkt_fly)--;
-            if (dim - *byte_readed >= MAXPKTSIZE - 9) {
-                *byte_readed += MAXPKTSIZE - 9;
+            if (dim - *byte_readed >= MAXPKTSIZE - OVERHEAD) {
+                *byte_readed += MAXPKTSIZE - OVERHEAD;
             }
             else {
                 *byte_readed += dim - *byte_readed;
@@ -39,7 +39,7 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     struct temp_buffer ack_buff;
     if(win_buf_rcv[temp_buff.seq].received ==0) {
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
+        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
         win_buf_rcv[temp_buff.seq].received = 1;
     }
     ack_buff.ack = temp_buff.seq;
@@ -58,10 +58,10 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-                if (dim - *byte_written >=MAXPKTSIZE - 9) {
-                    copy_buf1_in_buf2(*list,temp_buff.payload,MAXPKTSIZE - 9);//scrivo in list la parte di lista
-                    *byte_written += MAXPKTSIZE - 9;
-                    *list+=MAXPKTSIZE-9;
+                if (dim - *byte_written >=MAXPKTSIZE - OVERHEAD) {
+                    copy_buf1_in_buf2(*list,temp_buff.payload,MAXPKTSIZE - OVERHEAD);//scrivo in list la parte di lista
+                    *byte_written += MAXPKTSIZE - OVERHEAD;
+                    *list+=MAXPKTSIZE-OVERHEAD;
                 } else {
                     copy_buf1_in_buf2(*list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
                     *byte_written += dim - *byte_written;
@@ -78,7 +78,7 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
-    if ((dim - (*byte_sent)) < (MAXPKTSIZE - 9)) {//byte mancanti da inviare
+    if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         printf("listaaa %s\n",*list);
         copy_buf1_in_buf2(temp_buff.payload,*list,dim - (*byte_sent));
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, dim - (*byte_sent));
@@ -87,10 +87,10 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
         printf("parte di lista dentro finestra %s\n",win_buf_snd[*seq_to_send].payload);
         *list+=dim - (*byte_sent);
     } else {
-        copy_buf1_in_buf2(temp_buff.payload,*list,(MAXPKTSIZE - 9));
-        *byte_sent += MAXPKTSIZE - 9;
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, MAXPKTSIZE - 9);
-        *list+=MAXPKTSIZE-9;
+        copy_buf1_in_buf2(temp_buff.payload,*list,(MAXPKTSIZE - OVERHEAD));
+        *byte_sent += MAXPKTSIZE - OVERHEAD;
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, MAXPKTSIZE - OVERHEAD);
+        *list+=MAXPKTSIZE-OVERHEAD;
     }
     win_buf_snd[*seq_to_send].command = DATA;
     win_buf_snd[*seq_to_send].acked = 0;
@@ -153,7 +153,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     win_buf_snd[*seq_to_send].acked = 0;
-    if ((dim - (*byte_sent)) < (MAXPKTSIZE - 9)) {//byte mancanti da inviare
+    if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         readed=readn(fd, temp_buff.payload, (size_t) (dim - (*byte_sent)));
         if(readed<dim-(*byte_sent)){
             handle_error_with_exit("error in read 2\n");
@@ -161,12 +161,12 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         *byte_sent += (dim - (*byte_sent));
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, (dim - (*byte_sent)));
     } else {
-        readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - 9));
-        if(readed<MAXPKTSIZE-9){
+        readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
+        if(readed<MAXPKTSIZE-OVERHEAD){
             handle_error_with_exit("error in read 3\n");
         }
-        *byte_sent += MAXPKTSIZE - 9;
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, MAXPKTSIZE - 9);
+        *byte_sent += MAXPKTSIZE - OVERHEAD;
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
     }
     win_buf_snd[*seq_to_send].command = DATA;
     if (flip_coin(loss_prob)) {
@@ -277,12 +277,12 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
     return;
 }
 
-void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written, struct shm_sel_repeat *shm) {
+void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written) {
     struct temp_buffer ack_buff;
     int written=0;
     if(win_buf_rcv[temp_buff.seq].received ==0) {
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - 9);
+        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
         win_buf_rcv[temp_buff.seq].received = 1;
     }
     ack_buff.ack = temp_buff.seq;
@@ -302,12 +302,12 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-                if (dim - *byte_written >=MAXPKTSIZE - 9) {
-                    written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - 9);
-                    if(written<MAXPKTSIZE-9){
+                if (dim - *byte_written >=MAXPKTSIZE - OVERHEAD) {
+                    written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - OVERHEAD);
+                    if(written<MAXPKTSIZE-OVERHEAD){
                         handle_error_with_exit("error in write\n");
                     }
-                    *byte_written += MAXPKTSIZE - 9;
+                    *byte_written += MAXPKTSIZE - OVERHEAD;
                 }
                 else {
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
@@ -384,8 +384,8 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
             (*pkt_fly)--;
-            if (dim - *byte_readed >= MAXPKTSIZE - 9) {
-                *byte_readed += MAXPKTSIZE - 9;
+            if (dim - *byte_readed >= MAXPKTSIZE - OVERHEAD) {
+                *byte_readed += MAXPKTSIZE - OVERHEAD;
             }
             else {
                 *byte_readed += dim - *byte_readed;

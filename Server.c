@@ -12,12 +12,8 @@
 #include "communication.h"
 #include "put_server.h"
 
-
-//variabili globali
-//struct addr *addr = NULL;
 int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm_serv=0;//dopo le fork tutti i figli sanno quali sono gli id
 struct select_param param_serv;
-//timer_t timeout_timer_id_serv;
 char*dir_server;
 
 void add_slash_to_dir_serv(char*argument){
@@ -53,7 +49,6 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
 }
 
 void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda il messaggio di syn
-    struct addr temp_addr;
     struct sockaddr_in serv_addr;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
@@ -104,9 +99,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if (bind(shm->addr.sockfd, (struct sockaddr *)&(serv_addr), sizeof(serv_addr)) < 0) {//bind con una porta scelta automataticam. dal SO
         handle_error_with_exit("error in bind\n");
     }
-    /*for (int i = 0; i < 2 *(param_serv.window); i++) {
-        shm->win_buf_snd[i].seq_numb = i;
-    }*/
     send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
     alarm(2);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra

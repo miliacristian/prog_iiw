@@ -13,10 +13,8 @@
 #include "put_client.h"
 
 
-//struct addr *addr = NULL;//da togliere
-//struct itimerspec sett_timer_cli;//timer e reset timer globali,da togliere
+
 int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
-//timer_t timeout_timer_id_client; //id  del timer di timeout;
 struct select_param param_client;
 char *dir_client;
 
@@ -48,8 +46,7 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct addr temp_addr;
-    struct sigaction sa;
+    //struct addr temp_addr;
     struct window_rcv_buf*win_buf_rcv;
     struct window_snd_buf*win_buf_snd;
     win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
@@ -67,8 +64,8 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         win_buf_snd[i].seq_numb = i;
     }*/
     socklen_t len = sizeof(serv_addr);
-    temp_addr.sockfd = sockfd;
-    temp_addr.dest_addr = serv_addr;
+    //temp_addr.sockfd = sockfd;
+    //temp_addr.dest_addr = serv_addr;
     wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -80,8 +77,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
-    struct addr temp_addr;
-    struct sigaction sa;
+    //struct addr temp_addr;
     struct window_rcv_buf*win_buf_rcv;
     struct window_snd_buf*win_buf_snd;
     win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
@@ -94,13 +90,9 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     }
     memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
     memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
-    //inizializzo numeri di sequenza nell'array di struct
-    /*for (int i = 0; i < 2 * W; i++) {
-        win_buf_snd[i].seq_numb = i;
-    }*/
     socklen_t len = sizeof(serv_addr);
-    temp_addr.sockfd = sockfd;
-    temp_addr.dest_addr = serv_addr;
+    //temp_addr.sockfd = sockfd;
+    //temp_addr.dest_addr = serv_addr;
     wait_for_list_dimension(sockfd, serv_addr, len,&byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
     free(win_buf_rcv);
     free(win_buf_snd);
@@ -113,7 +105,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     int byte_readed=0;
     char*path;
     path=generate_full_pathname(filename,dir_client);
-    printf("lol\n");
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
@@ -136,7 +127,7 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=dimension;
-    shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-9));
+    shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
     shm->addr.len=sizeof(serv_addr);
     shm->head=NULL;
     shm->tail=NULL;
@@ -163,10 +154,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
-    //inizializzo numeri di sequenza nell'array di struct
-    /*for (int i = 0; i < 2 * param_client.window; i++) {
-        shm->win_buf_snd[i].seq_numb = i;
-    }*/
     put_client(shm);
     byte_readed=shm->byte_readed;
     free(shm->win_buf_rcv);

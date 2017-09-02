@@ -89,9 +89,18 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
 int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
+    int buff_size=BUFF_RCV_SIZE;
+    socklen_t  size_sock=sizeof(socklen_t),get_size;
     alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     errno=0;
+    if(setsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
+        handle_error_with_exit("error in setsockopt\n");
+    }
+    if(getsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
+        handle_error_with_exit("error in setsockopt\n");
+    }
+    printf("buffer size %d\n",get_size);
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
             //bloccante o non bloccante??
@@ -117,7 +126,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             }
             else if(seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window,temp_buff.seq)){
                 if(temp_buff.command==DATA){
-                    rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written, shm_snd->shm);
+                    rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written);
                     if((shm_snd->shm->byte_written)==(shm_snd->shm->dimension)){
                         wait_for_fin_put2(shm_snd);
                         printf("return rcv file\n");
@@ -189,7 +198,7 @@ void*put_server_rtx_job(void*arg){
             printf("rtx immediata\n");
             temp_buff.ack = NOT_AN_ACK;
             temp_buff.seq = node->seq;
-            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+            copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
             temp_buff.command=shm->win_buf_snd[node->seq].command;
             resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
             lock_mtx(&(shm->mtx));
@@ -213,7 +222,7 @@ void*put_server_rtx_job(void*arg){
                 printf("rtx dopo sleep\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-9);
+                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 lock_mtx(&(shm->mtx));
@@ -261,7 +270,7 @@ void put_server(struct shm_sel_repeat *shm){
 int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char*path,*first,*payload;
-    payload=malloc(sizeof(char)*(MAXPKTSIZE-9));
+    payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
     if(payload==NULL){
         handle_error_with_exit("error in payload\n");
     }

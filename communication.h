@@ -40,7 +40,7 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
 //void rcv_msg_re_send_ack_in_windo(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,double loss_prob);
 void send_message(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, char *data,
              char command, double loss_prob);
-void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written, struct shm_sel_repeat *shm);
+void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, socklen_t len, struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv, int *window_base_rcv, double loss_prob, int W, int dim, int *byte_written);
 //void rcv_msg_send_ack_in_windo(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W);
 void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly, struct shm_sel_repeat *shm);
 void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,

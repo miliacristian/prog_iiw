@@ -32,6 +32,7 @@
 #define MAXFILENAME 255
 #define MAXPKTSIZE 1468//1468==no packet fragmentation //1468
 #define MAXLINE 1024
+#define BUFF_RCV_SIZE (1468*2)//(208*1024)//208*1024 max buff_size_without root
 #define SERVER_PORT 5195
 #define ERROR 5
 #define START 4
@@ -58,6 +59,7 @@
 #define STR(name) STR_VALUE(name)
 #define PATH_LEN 256
 #define MD5_LEN 32
+#define OVERHEAD (sizeof(int)*3+sizeof(char))
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -65,18 +67,20 @@ struct temp_buffer{
     int seq;
     int ack;
     char command;
-    char payload[MAXPKTSIZE-9];// dati pacchetto
+    int lap;
+    char payload[MAXPKTSIZE-OVERHEAD];// dati pacchetto
 };
 struct window_rcv_buf{
     char received;
+    char payload[MAXPKTSIZE-OVERHEAD];
     char command;
-    char payload[MAXPKTSIZE-9];
+    int lap;
 };
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 // se diventa pesante come memoria è meglio allocata nell'heap?
     char acked;
-    char payload[MAXPKTSIZE-9];
+    char payload[MAXPKTSIZE-OVERHEAD];
     char command;
     struct timespec time;//usato per timer adattativo
     int lap;
