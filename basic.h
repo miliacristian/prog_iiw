@@ -61,6 +61,7 @@
 #define MD5_LEN 32
 #define OVERHEAD 13
 #define FREE_PROCESS 1
+#define MAX_PROC_JOB 4
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt

@@ -167,7 +167,6 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     int value;
     char done_jobs=0;
     struct sigaction sa_timeout;
-    //GESTIRE SEGNALI DI RITRASMISSIONE
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
     if(close(main_sockfd)==-1){//chiudi il socket del padre
@@ -182,8 +181,8 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     }
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
-        printf("mtx prefork\n");
-        if(mtx_prefork->free_process>=5){
+        printf("pid %d in attesa della richiesta\n",getpid());
+        if(mtx_prefork->free_process>=FREE_PROCESS){
             printf("suicidio del pid %d\n",getpid());
             unlock_sem(&(mtx_prefork->sem));
             exit(EXIT_SUCCESS);
@@ -206,7 +205,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
         unlock_sem(&(mtx_prefork->sem));
         reply_to_syn_and_execute_command(request);
         done_jobs++;
-        if(done_jobs>4){
+        if(done_jobs>MAX_PROC_JOB){
             printf("pid %d\n ha fatto molto lavoro!\n",getpid());
             exit(EXIT_SUCCESS);
         }
@@ -233,11 +232,11 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
     struct mtx_prefork*mtx_prefork=arg;
     int left_process;
     pid_t pid;
-    block_signal(SIGRTMIN+1);
+    block_signal(SIGALRM);
     for(;;){
         lock_sem(&(mtx_prefork->sem));
-        if(mtx_prefork->free_process<5){
-            left_process=5-mtx_prefork->free_process;
+        if(mtx_prefork->free_process<FREE_PROCESS){
+            left_process=FREE_PROCESS-mtx_prefork->free_process;
             printf("thread crea %d processi\n",left_process);
             unlock_sem(&(mtx_prefork->sem));
             create_pool(left_process);//se il thread è molto veloce nell'esecuzione
@@ -253,7 +252,6 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
     }
     return NULL;
 }
-
 
 void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che crea il gestore(thread) della riserva
     // di processi
