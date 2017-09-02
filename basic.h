@@ -59,7 +59,7 @@
 #define STR(name) STR_VALUE(name)
 #define PATH_LEN 256
 #define MD5_LEN 32
-#define OVERHEAD (sizeof(int)*3+sizeof(char))
+#define OVERHEAD 13//(sizeof(int)*3+sizeof(char))
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt

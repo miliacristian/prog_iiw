@@ -91,7 +91,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     }
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
-        printf("laps finestra %d\n",shm->win_buf_rcv[i].lap);
     }
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
     serv_addr.sin_family=AF_INET;
@@ -262,8 +261,7 @@ void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che cr
     if(pthread_create(&tid,NULL,pool_handler_job,mtxPrefork)!=0){
         handle_error_with_exit("error in create_pool_handler\n");
     }
-    block_signal(SIGRTMIN+1);
-    block_signal(SIGRTMIN);
+    block_signal(SIGALRM);
     return;
 }
 
@@ -286,7 +284,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     strcpy(localname,"./parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
-        handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
+        handle_error_with_exit("parameter.txt in ./ not found\n");
     }
     line=malloc(sizeof(char)*MAXLINE);
     if(line==NULL){

@@ -79,12 +79,9 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
-        printf("listaaa %s\n",*list);
         copy_buf1_in_buf2(temp_buff.payload,*list,dim - (*byte_sent));
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, dim - (*byte_sent));
         *byte_sent += (dim - (*byte_sent));
-        printf("payload %s\n",temp_buff.payload);
-        printf("parte di lista dentro finestra %s\n",win_buf_snd[*seq_to_send].payload);
         *list+=dim - (*byte_sent);
     } else {
         copy_buf1_in_buf2(temp_buff.payload,*list,(MAXPKTSIZE - OVERHEAD));

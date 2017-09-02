@@ -12,12 +12,9 @@
 #include "communication.h"
 #include "put_client.h"
 
-
-
 int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
 struct select_param param_client;
 char *dir_client;
-
 
 void add_slash_to_dir_client(char*argument){
     if ((argument[strlen(argument) - 1]) != '/') {
@@ -43,6 +40,7 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
     great_alarm_client=1;
     return;
 }
+
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
     struct temp_buffer temp_buff;//pacchetto da inviare
@@ -170,12 +168,12 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
 
 struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servaddr) {//client manda messaggio syn
 // e server risponde con ack cosi il client sa chi contattare per mandare i messaggi di comando
+    char rtx = 0;
     struct sigaction sa;
     socklen_t len = sizeof(main_servaddr);
     struct temp_buffer temp_buff;
     sa.sa_flags =SA_SIGINFO;
     sa.sa_sigaction = timeout_handler_client;
-    char rtx = 0;
     if (sigemptyset(&sa.sa_mask) == -1) {
         handle_error_with_exit("error in sig_empty_set\n");
     }
@@ -323,7 +321,7 @@ int main(int argc, char *argv[]) {
     strcpy(localname,"./parameter.txt");
     fd = open(localname, O_RDONLY);
     if (fd == -1) {
-        handle_error_with_exit("file parameter in /home/username/parameter.txt not found\n");
+        handle_error_with_exit("parameter.txt in ./ not found\n");
     }
     line = malloc(sizeof(char)*MAXLINE);
     if(line==NULL){

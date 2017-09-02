@@ -151,7 +151,6 @@ void *put_client_job(void*arg){
     sprintf(dim_string, "%d", shm_snd->shm->dimension);
     strcpy(temp_buff.payload,dim_string);
     strcat(temp_buff.payload," ");
-    //shm_snd->shm->md5[MD5_LEN]=' ';
     strcat(temp_buff.payload,shm_snd->shm->md5_sent);
     strcat(temp_buff.payload," ");
     strcat(temp_buff.payload,shm_snd->shm->filename);
@@ -222,7 +221,7 @@ void *put_client_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
-    node = alloca(sizeof(struct node));
+    /*node = alloca(sizeof(struct node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
@@ -300,7 +299,7 @@ void *put_client_rtx_job(void*arg){
                 unlock_mtx(&(shm->mtx));
             }
         }
-    }
+    }*/
     return NULL;
 }
 void put_client(struct shm_sel_repeat *shm){
