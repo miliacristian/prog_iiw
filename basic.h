@@ -59,7 +59,7 @@
 #define STR(name) STR_VALUE(name)
 #define PATH_LEN 256
 #define MD5_LEN 32
-#define OVERHEAD 13//(sizeof(int)*3+sizeof(char))
+#define OVERHEAD 9
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
@@ -67,14 +67,14 @@ struct temp_buffer{
     int seq;
     int ack;
     char command;
-    int lap;
+    //int lap;
     char payload[MAXPKTSIZE-OVERHEAD];// dati pacchetto
 };
 struct window_rcv_buf{
     char received;
-    char payload[MAXPKTSIZE-OVERHEAD];
     char command;
     int lap;
+    char payload[MAXPKTSIZE-OVERHEAD];
 };
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare

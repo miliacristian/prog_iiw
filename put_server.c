@@ -89,7 +89,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
 int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
-    int buff_size=BUFF_RCV_SIZE;
+    //int buff_size=BUFF_RCV_SIZE;
     //socklen_t  size_sock=sizeof(socklen_t),get_size;
     alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
@@ -110,7 +110,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
             else{
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap...\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command/*,temp_buff.lap*/);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd,shm_snd->shm->param.window, temp_buff.ack)){
                     rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
@@ -171,7 +171,7 @@ void*put_server_rtx_job(void*arg){
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
-    node = alloca(sizeof(struct node));
+    /*node = alloca(sizeof(struct node));
     lock_mtx(&(shm->mtx));
     printf("lock preso\n");
     for(;;) {
@@ -233,7 +233,7 @@ void*put_server_rtx_job(void*arg){
                 unlock_mtx(&(shm->mtx));
             }
         }
-    }
+    }*/
     return NULL;
 }
 void*put_server_job(void*arg){

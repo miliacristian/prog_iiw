@@ -46,7 +46,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
                         rcv_ack_file_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly,shm_snd->shm->dimension,&shm_snd->shm->byte_readed, shm_snd->shm);
                     }
                     else {
-                        printf("\"errore close put ack_msg in finestra\n");
+                        printf("errore close put ack_msg in finestra\n");
                         printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                         handle_error_with_exit("");
                         rcv_ack_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly, shm_snd->shm);
@@ -92,7 +92,6 @@ int send_put_file2(struct shm_snd *shm_snd) {
         }
         while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
-                handle_error_with_exit("error rcv pkt connession\n");
                 continue;//ignora pacchetto
             }
             else{

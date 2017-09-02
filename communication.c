@@ -127,7 +127,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
         handle_error_with_exit("error in get_time\n");
     }
     (win_buf_snd[*seq_to_send].lap)+=1;
-    temp_buff.lap=win_buf_snd[*seq_to_send].lap;
+    //temp_buff.lap=win_buf_snd[*seq_to_send].lap;
     insert_ordered(*seq_to_send,win_buf_snd[*seq_to_send].lap, win_buf_snd[*seq_to_send].time,shm->param.timer_ms, &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
     unlock_mtx(&(shm->mtx));
@@ -158,7 +158,8 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         }
         *byte_sent += (dim - (*byte_sent));
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, (dim - (*byte_sent)));
-    } else {
+    }
+    else {
         readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
         if(readed<(MAXPKTSIZE-OVERHEAD)){
             handle_error_with_exit("error in read 3\n");
@@ -169,7 +170,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     win_buf_snd[*seq_to_send].command = DATA;
     lock_mtx(&(shm->mtx));
     (win_buf_snd[*seq_to_send].lap)+=1;
-    temp_buff.lap=(win_buf_snd[*seq_to_send].lap);
+    //temp_buff.lap=(win_buf_snd[*seq_to_send].lap);
     if(clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time))!=0){
         handle_error_with_exit("error in get_time\n");
     }
@@ -180,9 +181,9 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf(CYAN"pacchetto inviato con ack %d seq %d command %d \n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap...\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command/*,temp_buff.lap*/);
     } else {
-        printf(BLUE"pacchetto con ack %d, seq %d command %d perso\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(BLUE"pacchetto con ack %d, seq %d command %d lap...perso\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command/*,temp_buff.lap*/);
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
@@ -280,8 +281,8 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     struct temp_buffer ack_buff;
     int written=0;
     if(win_buf_rcv[temp_buff.seq].received ==0) {
-        if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
-            win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
+        if (1/*(win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)*/) {
+            //win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
             copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
             win_buf_rcv[temp_buff.seq].received = 1;
@@ -333,14 +334,14 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
 void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_rcv_buf *win_buf_rcv,int *window_base_rcv,double loss_prob,int W){
     struct temp_buffer ack_buff;
     if(win_buf_rcv[temp_buff.seq].received ==0) {
-        if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
-            win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
+        if (1/*(win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)*/) {
+            //win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
             strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
-            printf("temp buff lap %d\n",(temp_buff.lap-1));
+            //printf("temp buff lap %d\n",(temp_buff.lap-1));
             printf("lap finestra %d\n",(win_buf_rcv[temp_buff.seq].lap));
             handle_error_with_exit("pkt vecchia finestra\n");
         }
