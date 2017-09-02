@@ -37,9 +37,9 @@ char to_resend(struct shm_sel_repeat *shm, struct node node){
 }
 
 char to_resend2(struct shm_sel_repeat *shm, struct node node){
-    printf("lap finestra %d lap lista %d\n",shm->win_buf_snd[node.seq].lap,node.lap);
+    //printf("lap finestra %d lap lista %d\n",shm->win_buf_snd[node.seq].lap,node.lap);
     if(node.lap == (shm->win_buf_snd[node.seq]).lap){
-        printf("acked %d seq %d\n", shm->win_buf_snd[node.seq].acked, node.seq);
+        //printf("acked %d seq %d\n", shm->win_buf_snd[node.seq].acked, node.seq);
         if((shm->win_buf_snd[node.seq].acked)!= 0){
             return 0;
         }

@@ -401,9 +401,11 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             (*pkt_fly)--;
             if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
                 *byte_readed += (MAXPKTSIZE - OVERHEAD);
+                printf("byte readed %d\n",*byte_readed);
             }
             else {
                 *byte_readed += dim - *byte_readed;
+                printf("byte readed %d\n",*byte_readed);
             }
         }
     }

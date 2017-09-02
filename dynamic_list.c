@@ -28,7 +28,7 @@ struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms)
 int delete_head(struct node** head, struct node* old_head){
     //initializza oldhead con il primo nodo della lista
     if(*head == NULL){
-        //printf(stderr, "empty list\n");
+        printf("empty list\n");
         return -1;
     }
     if (old_head == NULL) {

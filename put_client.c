@@ -232,11 +232,11 @@ void *put_client_rtx_job(void*arg){
             }
             else{
                 if(!to_resend2(shm, *node)){
-                    printf("pkt non da ritrasmettere\n");
+                    //printf("pkt non da ritrasmettere\n");
                     continue;
                 }
                 else{
-                    printf("pkt da ritrasmettere\n");
+                    //printf("pkt da ritrasmettere\n");
                     break;
                 }
             }
@@ -247,15 +247,15 @@ void *put_client_rtx_job(void*arg){
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
             if(node->lap!=shm->win_buf_snd[node->seq].lap){
-                printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
+                //printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
             }
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
-                printf("no rtx immediata\n");
+                //printf("no rtx immediata\n");
                 continue;
             }
             else{
-                printf("rtx immediata\n");
+                //printf("rtx immediata\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
@@ -276,16 +276,16 @@ void *put_client_rtx_job(void*arg){
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
             if(node->lap!=shm->win_buf_snd[node->seq].lap){
-                printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
+                //printf("wrong lap finestra %d lista %d\n", shm->win_buf_snd[node->seq].lap, node->lap);
             }
             unlock_mtx(&(shm->mtx));
-            printf("to_rtx %d\n", to_rtx);
+            //printf("to_rtx %d\n", to_rtx);
             if(!to_rtx){
-                printf("no rtx dopo sleep\n");
+                //printf("no rtx dopo sleep\n");
                 continue;
             }
             else{
-                printf("rtx dopo sleep\n");
+                //printf("rtx dopo sleep\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
