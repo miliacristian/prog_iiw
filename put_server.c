@@ -90,17 +90,17 @@ int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
     int buff_size=BUFF_RCV_SIZE;
-    socklen_t  size_sock=sizeof(socklen_t),get_size;
+    //socklen_t  size_sock=sizeof(socklen_t),get_size;
     alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     errno=0;
-    if(setsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
+    /*if(setsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
         handle_error_with_exit("error in setsockopt\n");
     }
     if(getsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
         handle_error_with_exit("error in setsockopt\n");
     }
-    printf("buffer size %d\n",get_size);
+    printf("buffer size %d\n",get_size);*/
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer),0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
             //bloccante o non bloccante??

@@ -22,8 +22,8 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
             (*pkt_fly)--;
-            if (dim - *byte_readed >= MAXPKTSIZE - OVERHEAD) {
-                *byte_readed += MAXPKTSIZE - OVERHEAD;
+            if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                *byte_readed +=( MAXPKTSIZE - OVERHEAD);
             }
             else {
                 *byte_readed += dim - *byte_readed;
@@ -39,7 +39,7 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     struct temp_buffer ack_buff;
     if(win_buf_rcv[temp_buff.seq].received ==0) {
         win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
+        copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
         win_buf_rcv[temp_buff.seq].received = 1;
     }
     ack_buff.ack = temp_buff.seq;
@@ -58,10 +58,10 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-                if (dim - *byte_written >=MAXPKTSIZE - OVERHEAD) {
-                    copy_buf1_in_buf2(*list,temp_buff.payload,MAXPKTSIZE - OVERHEAD);//scrivo in list la parte di lista
-                    *byte_written += MAXPKTSIZE - OVERHEAD;
-                    *list+=MAXPKTSIZE-OVERHEAD;
+                if (dim - *byte_written >=(MAXPKTSIZE - OVERHEAD)) {
+                    copy_buf1_in_buf2(*list,temp_buff.payload,(MAXPKTSIZE - OVERHEAD));//scrivo in list la parte di lista
+                    *byte_written += (MAXPKTSIZE - OVERHEAD);
+                    *list+=(MAXPKTSIZE-OVERHEAD);
                 } else {
                     copy_buf1_in_buf2(*list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
                     *byte_written += dim - *byte_written;
@@ -85,9 +85,9 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
         *list+=dim - (*byte_sent);
     } else {
         copy_buf1_in_buf2(temp_buff.payload,*list,(MAXPKTSIZE - OVERHEAD));
-        *byte_sent += MAXPKTSIZE - OVERHEAD;
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list, MAXPKTSIZE - OVERHEAD);
-        *list+=MAXPKTSIZE-OVERHEAD;
+        *byte_sent += (MAXPKTSIZE - OVERHEAD);
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,*list,( MAXPKTSIZE - OVERHEAD));
+        *list+=(MAXPKTSIZE-OVERHEAD);
     }
     win_buf_snd[*seq_to_send].command = DATA;
     win_buf_snd[*seq_to_send].acked = 0;
@@ -160,11 +160,11 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, (dim - (*byte_sent)));
     } else {
         readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
-        if(readed<MAXPKTSIZE-OVERHEAD){
+        if(readed<(MAXPKTSIZE-OVERHEAD)){
             handle_error_with_exit("error in read 3\n");
         }
-        *byte_sent += MAXPKTSIZE - OVERHEAD;
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
+        *byte_sent +=( MAXPKTSIZE - OVERHEAD);
+        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
     }
     win_buf_snd[*seq_to_send].command = DATA;
     lock_mtx(&(shm->mtx));
@@ -283,7 +283,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
         if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
+            copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
@@ -307,12 +307,12 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     if (temp_buff.seq == *window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
-                if (dim - *byte_written >=MAXPKTSIZE - OVERHEAD) {
-                    written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,MAXPKTSIZE - OVERHEAD);
-                    if(written<MAXPKTSIZE-OVERHEAD){
+                if (dim - *byte_written >=(MAXPKTSIZE - OVERHEAD)) {
+                    written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload,(MAXPKTSIZE - OVERHEAD));
+                    if(written<(MAXPKTSIZE-OVERHEAD)){
                         handle_error_with_exit("error in write\n");
                     }
-                    *byte_written += MAXPKTSIZE - OVERHEAD;
+                    *byte_written += (MAXPKTSIZE - OVERHEAD);
                 }
                 else {
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
@@ -336,7 +336,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
         if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);
+            strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
@@ -345,6 +345,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
             handle_error_with_exit("pkt vecchia finestra\n");
         }
     }
+    //se non appartiene alla finestra corrente termina il programma
     ack_buff.ack=temp_buff.seq;
     ack_buff.seq=NOT_A_PKT;
     strcpy(ack_buff.payload,"ACK");
@@ -397,8 +398,8 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
             win_buf_snd[*window_base_snd].time.tv_sec=0;
             *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
             (*pkt_fly)--;
-            if (dim - *byte_readed >= MAXPKTSIZE - OVERHEAD) {
-                *byte_readed += MAXPKTSIZE - OVERHEAD;
+            if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                *byte_readed += (MAXPKTSIZE - OVERHEAD);
             }
             else {
                 *byte_readed += dim - *byte_readed;

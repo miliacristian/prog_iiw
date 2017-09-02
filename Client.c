@@ -193,7 +193,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server
             }
             else {
-                printf("pacchetto con comando diverso da syn_ack ignorato");
+                printf("pacchetto con comando diverso da syn_ack ignorato\n");
             }
         }
         if(errno!=EINTR && errno!=0){
@@ -206,7 +206,6 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     return main_servaddr;
 }
 
-
 void client_list_job() {
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
@@ -215,9 +214,8 @@ void client_list_job() {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        handle_error_with_exit("error in inet_pton");
+        handle_error_with_exit("error in inet_pton\n");
     }
-
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
     }
@@ -242,7 +240,7 @@ void client_get_job(char *filename) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        handle_error_with_exit("error in inet_pton");
+        handle_error_with_exit("error in inet_pton\n");
     }
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
@@ -269,7 +267,7 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        handle_error_with_exit("error in inet_pton");
+        handle_error_with_exit("error in inet_pton\n");
     }
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {//inizializza socket del client
         handle_error_with_exit("error in socket\n");
@@ -347,7 +345,7 @@ int main(int argc, char *argv[]) {
     skip_space(&line);
     param_client.timer_ms = parse_integer_and_move(&line);
     if (param_client.timer_ms < 0) {
-        handle_error_with_exit("timer must be positive or zero");
+        handle_error_with_exit("timer must be positive or zero\n");
     }
     path_len = (int)strlen(dir_client);
     if (close(fd) == -1) {

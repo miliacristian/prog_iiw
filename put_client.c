@@ -147,9 +147,9 @@ void *put_client_job(void*arg){
     struct temp_buffer temp_buff;
     char *path,dim_string[11];
     printf("thread snd creato\n");
-    strcpy(temp_buff.payload, "put ");
+    //strcpy(temp_buff.payload, "put ");
     sprintf(dim_string, "%d", shm_snd->shm->dimension);
-    strcpy(temp_buff.payload,dim_string);
+    strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
     strcat(temp_buff.payload," ");
     strcat(temp_buff.payload,shm_snd->shm->md5_sent);
     strcat(temp_buff.payload," ");
