@@ -184,20 +184,20 @@ int count_word_in_buf(char*buf){
 }
 
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
-    char num_format_string[4];
+    char num_format_string[4];//3 per le cifre +1 terminatore
     memset(num_format_string,'\0',4);
     strcpy(temp,"_");
     sprintf(num_format_string, "%d",copy_number);
     strcat(temp,num_format_string);
-    strcat(temp,"_");
+    //strcat(temp,"_");
     return;
 }
 
 char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path assoluti tutti diversi tra loro partendo da un file che esiste,o ritorna null se ci sono troppe copie del file(255)
 // fare la free di absolut path nella funzione chiamante dopo aver creato il file
     unsigned char copy_number=1;
-    char temp[6],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
-    memset(temp,'\0',6);
+    char temp[5],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
+    memset(temp,'\0',5);
     absolute_path=generate_full_pathname(filename,path_to_filename);
     if(absolute_path==NULL){
         handle_error_with_exit("error in generate full path\n");
@@ -205,11 +205,11 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     if(!check_if_file_exist(absolute_path)){
         return absolute_path;
     }
-    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+6));;//6==terminatore+ "(" + ")" +3 cifre per il numero
+    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+5));;//6==terminatore+ "(" + ")" +3 cifre per il numero
     if(first_of_the_dot==NULL){
         handle_error_with_exit("error in malloc\n");
     }
-    memset(first_of_the_dot,'\0',strlen(filename)+6);
+    memset(first_of_the_dot,'\0',strlen(filename)+5);
     generate_branches_and_number(temp,copy_number);//scrive dentro temp la stringa da concatenare
     occurence=strchr(filename,'.');
     if(occurence==NULL){//non esiste un punto nel filename
@@ -241,7 +241,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
         }
         else{//esiste un punto nel filename
             generate_branches_and_number(temp, copy_number);
-            memset(first_of_the_dot,'\0',strlen(filename)+6);
+            memset(first_of_the_dot,'\0',strlen(filename)+5);
             strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
             strcat(first_of_the_dot,temp);
             strcat(first_of_the_dot,occurence);
