@@ -156,13 +156,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
             handle_error_with_exit("error in read 2\n");
         }
         *byte_sent += (dim - (*byte_sent));
-        memset(win_buf_snd[*seq_to_send].payload,'\0',MAXPKTSIZE-OVERHEAD);
-        printf("payload finestra %s\n",win_buf_snd[*seq_to_send].payload);
-        printf("payload pkt %s\n",temp_buff.payload);
-        //copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,(dim - (*byte_sent)));
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
-        printf("payload finestra %s\n",win_buf_snd[*seq_to_send].payload);
-        //handle_error_with_exit("");
     }
     else {
         readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
@@ -171,9 +165,6 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         }
         *byte_sent +=( MAXPKTSIZE - OVERHEAD);
         copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
-        //printf("payload pkt %s\n",temp_buff.payload);
-        //printf("payload finestra %s\n",win_buf_snd[*seq_to_send].payload);
-        //handle_error_with_exit("");
     }
     win_buf_snd[*seq_to_send].command = DATA;
     lock_mtx(&(shm->mtx));
