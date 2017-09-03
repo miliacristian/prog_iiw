@@ -174,6 +174,7 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
         *buf2=*buf1;
         buf1++;
         buf2++;
+        //buf2[i]=buf1[i];
     }
     return;
 }

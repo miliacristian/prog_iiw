@@ -89,7 +89,14 @@ int send_put_file2(struct shm_snd *shm_snd) {
     alarm(TIMEOUT);
     while (1) {
         if (((shm_snd->shm->pkt_fly) < (shm_snd->shm->param.window)) && ((shm_snd->shm->byte_sent) < (shm_snd->shm->dimension))) {
-            send_data_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension, shm_snd->shm);
+            if(shm_snd->shm->dimension-shm_snd->shm->byte_sent<(MAXPKTSIZE-OVERHEAD)){
+                //ULTIMO PACCHETTO PERDIlo
+                send_data_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,100,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension, shm_snd->shm);
+            }
+            else {
+                send_data_in_window(shm_snd->shm->addr.sockfd, shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr), shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_snd, &shm_snd->shm->seq_to_send, shm_snd->shm->param.loss_prob, shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, &shm_snd->shm->byte_sent, shm_snd->shm->dimension, shm_snd->shm);
+                //send_data_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd, &(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len, temp_buff,shm_snd->shm->win_buf_snd,&shm_snd->shm->seq_to_send,100,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,&shm_snd->shm->byte_sent,shm_snd->shm->dimension, shm_snd->shm);
+            }
         }
         while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
@@ -155,6 +162,7 @@ void *put_client_job(void*arg){
     strcat(temp_buff.payload,shm_snd->shm->filename);
     //invia messaggio put
     send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand
+    //send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,100,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo risposta del server
@@ -216,6 +224,7 @@ void *put_client_job(void*arg){
 }
 void *put_client_rtx_job(void*arg){
     printf("thread rtx creato\n");
+    int byte_left;
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -256,7 +265,13 @@ void *put_client_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
+                byte_left=shm->dimension-((node->lap*shm->param.window*2+node->seq)*(MAXPKTSIZE-OVERHEAD));
+                if(byte_left>=(MAXPKTSIZE-OVERHEAD)) {
+                    copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                }
+                else{
+                    copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,byte_left);
+                }
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 rtx++;
@@ -282,7 +297,18 @@ void *put_client_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
+                byte_left=shm->dimension-((node->lap*shm->param.window*2+node->seq-1)*(MAXPKTSIZE-OVERHEAD));
+                //-1==messaggi con campo non data in finestra
+                printf("lap %d seq %d\n",node->lap,node->seq);
+                if(byte_left>=(MAXPKTSIZE-OVERHEAD)) {
+                    printf("non ultimo pkt\n");
+                    copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                }
+                else{
+                    printf("ultimo pkt\n");
+                    printf("byte left %d\n",byte_left);
+                    copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,byte_left);
+                }
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 rtx++;
