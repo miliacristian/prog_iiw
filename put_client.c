@@ -12,7 +12,7 @@
 #include "communication.h"
 #include "put_client.h"
 #include "dynamic_list.h"
-
+int rtx=0;
 
 int close_put_send_file2(struct shm_snd *shm_snd){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
@@ -34,6 +34,7 @@ int close_put_send_file2(struct shm_snd *shm_snd){
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
                 printf(GREEN"Fin_ack ricevuto\n"RESET);
+                printf("rtx %d\n",rtx);
                 pthread_cancel(shm_snd->tid);
                 return shm_snd->shm->byte_readed;//fine connesione
             }
@@ -258,6 +259,7 @@ void *put_client_rtx_job(void*arg){
                 copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                rtx++;
                 lock_mtx(&(shm->mtx));
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
@@ -283,6 +285,7 @@ void *put_client_rtx_job(void*arg){
                 copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                rtx++;
                 lock_mtx(&(shm->mtx));
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");

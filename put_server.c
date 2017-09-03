@@ -20,6 +20,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
     if(close(shm_snd->shm->fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
+    check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);
     alarm(2);//chiusura temporizzata
     errno=0;
     while(1){

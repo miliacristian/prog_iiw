@@ -103,7 +103,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         handle_error_with_exit("error in bind\n");
     }
     send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
-    alarm(2);
+    alarm(TIMEOUT);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
         alarm(0);
