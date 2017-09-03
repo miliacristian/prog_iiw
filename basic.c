@@ -42,6 +42,28 @@ void check_md5(char*filename,char*md5_to_check) {
     }
     return;
 }
+void set_max_buff_rcv_size(int sockfd){
+    int buff_size=BUFF_RCV_SIZE;
+    if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
+        handle_error_with_exit("error in setsockopt\n");
+    }
+    return;
+}
+void set_buff_rcv_size(int sockfd,int size){
+    int buff_size=size;
+    if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
+        handle_error_with_exit("error in setsockopt\n");
+    }
+    return;
+}
+
+void print_double_buff_rcv_size(int sockfd){
+    socklen_t  size_sock=sizeof(socklen_t),get_size;
+    if(getsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
+        handle_error_with_exit("error in setsockopt\n");
+    }
+    printf("buffer size %d\n",get_size);
+}
 char to_resend(struct shm_sel_repeat *shm, struct node node){
     if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
         if(shm->win_buf_snd[node.seq].acked==1){

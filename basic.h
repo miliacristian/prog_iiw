@@ -184,3 +184,6 @@ char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend2(struct shm_sel_repeat *shm, struct node node);
 char calc_file_MD5(char *file_name, char *md5_sum);
 void check_md5(char*filename,char*md5_to_check);
+void print_double_buff_rcv_size(int sockfd);
+void set_buff_rcv_size(int sockfd,int size);
+void set_max_buff_rcv_size(int sockfd);
