@@ -219,6 +219,7 @@ void client_list_job() {
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
+    set_max_buff_rcv_size(sockfd);
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
     list_command(sockfd, serv_addr);
     printf("finito comando list\n");
@@ -246,6 +247,7 @@ void client_get_job(char *filename) {
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
+    set_max_buff_rcv_size(sockfd);
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
     get_command(sockfd, serv_addr, filename);
     printf("finito comando get\n");

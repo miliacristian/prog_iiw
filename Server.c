@@ -118,6 +118,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             }
         }
         else if(temp_buff.command==PUT){
+            set_max_buff_rcv_size(shm->addr.sockfd);
             execute_put(shm,temp_buff);
             printf("comando put finito\n");
             if(close(shm->addr.sockfd)==-1){
