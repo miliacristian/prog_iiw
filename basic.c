@@ -174,7 +174,6 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
         *buf2=*buf1;
         buf1++;
         buf2++;
-        //buf2[i]=buf1[i];
     }
     return;
 }
@@ -337,6 +336,7 @@ int count_char_dir(char*path){
 }
 char* files_in_dir(char* path,int lenght) {
     //funzione che, dato un path, crea una stringa (file1\nfile2\nfile3\n...) contenente il nome di tutti file in quella directory
+    //fare la free nel chiamante del char* ritornato
     DIR *d;
     struct dirent *dir;
     char *list;
@@ -363,7 +363,13 @@ char* files_in_dir(char* path,int lenght) {
     }
     return (list);
 }
-
+char*make_list(char*path){
+    char*list;
+    int lenght;
+    lenght=count_char_dir(path);
+    list=files_in_dir(path,lenght);
+    return list;
+}
 char check_if_file_exist(char*path){//verifica che il file esiste in memoria
     if(path==NULL){
         handle_error_with_exit("error in check_if_file_exist\n");

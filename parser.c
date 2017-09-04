@@ -146,9 +146,8 @@ void check_and_parse_command(char*command,char*filename){
     int moved=0;
     size_t lenght;
     temp_command=alloca(sizeof(char)*(MAXCOMMANDLINE+1));
-    main_command=alloca(sizeof(char)*5);
+    main_command=alloca(sizeof(char)*8);//5
     while(1){
-        printf("Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n");
         if(fgets(temp_command,MAXCOMMANDLINE,stdin)==NULL){//fgets aggiunge automaticamente
             // newline e il terminatore di stringa!
             handle_error_with_exit("error in read_line\n");
@@ -160,9 +159,9 @@ void check_and_parse_command(char*command,char*filename){
             temp_command=temp_command-moved;
             continue;
         }
-        strncpy(main_command,temp_command,4);//copio in main_command i 4 byte del comando
-        main_command[4]='\0';//aggiungo terminatore
-        if(strcmp(main_command,"list")==0){
+        strncpy(main_command,temp_command,7);//copio in main_command i 4 byte del comando
+        main_command[7]='\0';//aggiungo terminatore,probabilmente l'errore è qui
+        if(strncmp(main_command,"list",4)==0){
             move_pointer(&temp_command,4);
             moved+=4;
             if(is_blank(temp_command)){
@@ -176,7 +175,7 @@ void check_and_parse_command(char*command,char*filename){
                 continue;
             }
         }
-        else if(strcmp(main_command,"get ")==0){
+        else if(strncmp(main_command,"get ",4)==0){
             move_pointer(&temp_command,4);
             moved+=4;
             lenght=strlen(temp_command);
@@ -191,7 +190,7 @@ void check_and_parse_command(char*command,char*filename){
                 break;
             }
         }
-        else if(strcmp(main_command,"put ")==0){
+        else if(strncmp(main_command,"put ",4)==0){
             move_pointer(&temp_command,4);
             moved+=4;
             lenght=strlen(temp_command);
@@ -204,6 +203,34 @@ void check_and_parse_command(char*command,char*filename){
                 strcpy(command,"put");
                 strcpy(filename,temp_command);
                 break;
+            }
+        }
+        else if(strncmp(main_command,"my list",7)==0){
+            move_pointer(&temp_command,7);
+            moved+=7;
+            if(is_blank(temp_command)){
+                strcpy(filename,"");
+                strcpy(command,"my list");
+                break;
+            }
+            else{
+                printf("my list doesn't allow parameters\n");
+                temp_command=temp_command-moved;
+                continue;
+            }
+        }
+        else if(strncmp(main_command,"exit",4)==0){
+            move_pointer(&temp_command,4);
+            moved+=4;
+            if(is_blank(temp_command)){
+                strcpy(filename,"");
+                strcpy(command,"exit");
+                break;
+            }
+            else{
+                printf("exit doesn't allow parameters\n");
+                temp_command=temp_command-moved;
+                continue;
             }
         }
         temp_command=temp_command-moved;

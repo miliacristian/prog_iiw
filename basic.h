@@ -187,3 +187,4 @@ void check_md5(char*filename,char*md5_to_check);
 void print_double_buff_rcv_size(int sockfd);
 void set_buff_rcv_size(int sockfd,int size);
 void set_max_buff_rcv_size(int sockfd);
+char*make_list(char*path);

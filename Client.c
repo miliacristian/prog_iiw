@@ -302,7 +302,7 @@ void create_thread_waitpid() {
 
 
 int main(int argc, char *argv[]) {
-    char *filename, *command, conf_upload[4], *line, localname[80];
+    char *filename, *command, conf_upload[4], *line, localname[80],*my_list;
     //non fare mai la free su filename e command(servono ad ogni richiesta)
     int path_len, fd;
     pid_t pid;
@@ -350,15 +350,16 @@ int main(int argc, char *argv[]) {
     free(command);
     line=NULL;
     create_thread_waitpid();
-    if ((command = malloc(sizeof(char) * 5)) == NULL) {//contiene il comando digitato,5==lunghezza massima:list\0,get\0 o put\0
+    if ((command = malloc(sizeof(char) * 8)) == NULL) {//contiene il comando digitato,8==lunghezza massima:my+" "+list\0,list\0,get\0 o put\0
         handle_error_with_exit("error in malloc buffercommand\n");
     }
     if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
+    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)my list\n5)exit\n" RESET);
     for (;;) {
         check_and_parse_command(command, filename);//inizializza command,filename e size
-        if (!is_blank(filename) && (strcmp(command, "put") == 0)) {
+        if (!is_blank(filename) && (strncmp(command, "put",3) == 0)) {
             char *path = alloca(sizeof(char) * (strlen(filename) + path_len + 1));
             strcpy(path, dir_client);
             move_pointer(&path, path_len);
@@ -394,7 +395,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-        } else if (!is_blank(filename) && strcmp(command,"get") == 0) {
+        } else if (!is_blank(filename) && strncmp(command,"get",3) == 0) {
             //fai richiesta al server del file
             if ((pid = fork()) == -1) {
                 handle_error_with_exit("error in fork\n");
@@ -402,13 +403,24 @@ int main(int argc, char *argv[]) {
             if (pid == 0) {
                 client_get_job(filename);//i figli non ritornano mai
             }
-        } else if (1) {//list
+        } else if (strncmp(command,"list",4) == 0) {//list
             if ((pid = fork()) == -1) {
                 handle_error_with_exit("error in fork\n");
             }
             if (pid == 0) {
                 client_list_job();//i figli non ritornano mai
             }
+        }
+        else if(strncmp(command,"my list",7) == 0){//comando my_list
+            my_list=make_list(dir_client);
+            printf(GREEN "%s" RESET,my_list);
+            free(my_list);
+        }
+        else if(strncmp(command,"exit",4) == 0){
+            exit(EXIT_SUCCESS);
+        }
+        else{
+            handle_error_with_exit("comando errato\n");
         }
     }
     return EXIT_SUCCESS;
