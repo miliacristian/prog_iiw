@@ -86,26 +86,30 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     }
 }
 
-int execute_get2(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filename,int *byte_written,int *seq_to_send,int *window_base_snd,int *window_base_rcv,int W,int *pkt_fly,struct temp_buffer temp_buff,struct window_rcv_buf*win_buf_rcv,struct window_snd_buf*win_buf_snd,struct shm_snd*shm_snd) {
-    //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
-    double loss_prob = param_serv.loss_prob;
-    char *path, dim_string[11];
-    rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
-    path = generate_full_pathname(temp_buff.payload + 4, dir_server);
-    if(path==NULL){
+int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filename,int *byte_written,int *seq_to_send,int *window_base_snd,int *window_base_rcv,int W,int *pkt_fly,struct temp_buffer temp_buff,struct window_rcv_buf*win_buf_rcv,struct window_snd_buf*win_buf_snd,struct shm_snd*shm_snd) {
+    char*path, dim_string[11];
+    path = generate_full_pathname(shm_snd->shm->filename, dir_server);
+    if (path == NULL) {
         handle_error_with_exit("error in generate full path\n");
     }
     if (check_if_file_exist(path)) {
-        shm_snd->shm->dimension= get_file_size(path);
-        sprintf(dim_string, "%d",shm_snd->shm->dimension);
-        shm_snd->shm->fd= open(path, O_RDONLY);
+        shm_snd->shm->dimension = get_file_size(path);
+        sprintf(dim_string, "%d", shm_snd->shm->dimension);
+        shm_snd->shm->fd = open(path, O_RDONLY);
         if (shm_snd->shm->fd == -1) {
             handle_error_with_exit("error in open\n");
         }
-        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim_string, DIMENSION, seq_to_send, loss_prob, W, pkt_fly,shm_snd->shm);
+        calc_file_MD5(path,shm_snd->shm->md5_sent);
+        strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
+        strcat(temp_buff.payload," ");
+        strcat(temp_buff.payload,shm_snd->shm->md5_sent);
+        free(path);
+        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim_string, DIMENSION, seq_to_send, shm_snd->shm->param.loss_prob, W, pkt_fly, shm_snd->shm);
+        printf("payload %s\n",temp_buff.payload);
+        handle_error_with_exit("");
     }
     else {
-        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, loss_prob, W, pkt_fly,shm_snd->shm);
+        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, shm_snd->shm->param.loss_prob, W, pkt_fly, shm_snd->shm);
     }
     errno = 0;
     alarm(TIMEOUT);
@@ -128,19 +132,18 @@ int execute_get2(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filen
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(*window_base_rcv, W, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, loss_prob);
+                rcv_msg_re_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff,shm_snd->shm->param.loss_prob);
                 alarm(TIMEOUT);
             } else if (temp_buff.command == FIN) {
-                send_message(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK, loss_prob);
+                send_message(sockfd, &cli_addr, len, temp_buff, "FIN_ACK", FIN_ACK,shm_snd->shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm_snd->tid);
                 printf("thread cancel close_put_snd\n");
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv,
-                                                loss_prob, W);
-                send_file(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd,shm_snd->shm->fd, &shm_snd->shm->byte_readed,shm_snd->shm->dimension, loss_prob,shm_snd);
+                rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, shm_snd->shm->param.loss_prob, W);
+                send_file(sockfd, cli_addr, len, seq_to_send, window_base_snd, window_base_rcv, W, pkt_fly, temp_buff, win_buf_snd,shm_snd->shm->fd, &shm_snd->shm->byte_readed,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,shm_snd);
                 if (close(shm_snd->shm->fd) == -1) {
                     handle_error_with_exit("error in close file\n");
                 }
@@ -170,7 +173,7 @@ int execute_get2(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filen
 void *get_server_job(void*arg){
     struct shm_snd *shm_snd=arg;
     struct temp_buffer temp_buff;
-    execute_get2(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,&shm_snd->shm->byte_written,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,temp_buff,shm_snd->shm->win_buf_rcv,shm_snd->shm->win_buf_snd,shm_snd);
+    wait_for_start(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,&shm_snd->shm->byte_written,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,temp_buff,shm_snd->shm->win_buf_rcv,shm_snd->shm->win_buf_snd,shm_snd);
     return NULL;
 }
 void *get_server_rtx_job(void*arg){
@@ -280,48 +283,17 @@ void get_server(struct shm_sel_repeat *shm){
     }
     return;
 }
-//ricevuto pacchetto con get e filename,da modificare
-int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
+int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
-    char*path,*first,*payload;
-    payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
-    if(payload==NULL){
-        handle_error_with_exit("error in payload\n");
-    }
-    strcpy(payload,temp_buff.payload);
-    first=payload;
-    /*shm->dimension=parse_integer_and_move(&payload);
-    payload++;
-    strncpy(shm->md5_sent,payload,MD5_LEN);
-    shm->md5_sent[MD5_LEN]='\0';
-    printf("md5 %s\n",shm->md5_sent);
-    payload+=MD5_LEN;
-    payload++;
-    path=generate_multi_copy(dir_server,payload);
-    shm->filename=malloc(sizeof(char)*MAXFILENAME);
+    shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
     if(shm->filename==NULL){
         handle_error_with_exit("error in malloc\n");
     }
-    strcpy(shm->filename,path);
-    if(path!=NULL) {
-        shm->fd = open(path, O_WRONLY | O_CREAT, 0666);
-        if (shm->fd == -1) {
-            handle_error_with_exit("error in open\n");
-        }
-    }
-    else{
-        shm->fd=-1;
-    }
-    free(path);
-    free(first);
-    payload=NULL;
-    rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);//invio ack della put
+    rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);
+    strcpy(shm->filename,temp_buff.payload + 4);
     get_server(shm);
     if(close(shm->fd)==-1){
         handle_error_with_exit("error in close file\n");
     }
-    printf("return execute put\n");
-    return shm->byte_written;*/
-
+    return shm->byte_readed;
 }
-

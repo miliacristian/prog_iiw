@@ -68,7 +68,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
     }
 }
 
-int  wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob,struct shm_snd *shm_snd){
+int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob,struct shm_snd *shm_snd){
     printf("wait for fin\n");
     alarm(TIMEOUT);;//chiusura temporizzata
     errno=0;
@@ -152,7 +152,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
                 alarm(TIMEOUT);
             }
             else if(seq_is_in_window(*window_base_rcv, W,temp_buff.seq)){
-                //rcv_data_send_ack_in_window(sockfd,fd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
+                rcv_data_send_ack_in_window(sockfd,fd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W,dimension,byte_written);
                 if(*byte_written==dimension){
                     wait_for_fin_get(temp_buff,win_buf_snd,sockfd,serv_addr,len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob,shm_snd);
                     printf("return rcv file 1\n");
@@ -184,12 +184,10 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
 
 int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t  len, char *filename, int *byte_written , int *seq_to_send , int *window_base_snd , int *window_base_rcv, int W, int *pkt_fly , struct temp_buffer temp_buff ,struct window_rcv_buf *win_buf_rcv,struct window_snd_buf *win_buf_snd,struct shm_snd *shm_snd) {
     errno=0;
-    int fd,dimension;
-    char*path;
-    double loss_prob=param_client.loss_prob;
+    char*path,*first,*payload;
     strcpy(temp_buff.payload, "get ");
     strcat(temp_buff.payload, filename);
-    send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,loss_prob,W,pkt_fly,shm_snd->shm);//manda messaggio get
+    send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,shm_snd->shm->param.loss_prob,W,pkt_fly,shm_snd->shm);//manda messaggio get
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
@@ -211,31 +209,45 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 alarm(TIMEOUT);
             }
             else if (temp_buff.command == ERROR) {
-                rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
-                close_connection_get(temp_buff,seq_to_send,win_buf_snd,sockfd,serv_addr, len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,loss_prob,shm_snd);
+                rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,shm_snd->shm->param.loss_prob,W);
+                close_connection_get(temp_buff,seq_to_send,win_buf_snd,sockfd,serv_addr, len,window_base_snd,window_base_rcv,pkt_fly,W,byte_written,shm_snd->shm->param.loss_prob,shm_snd);
                 printf("return wait for dimension 1\n");
                 return *byte_written;
             }
             else if (temp_buff.command == DIMENSION) {
-                rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
-                printf("dimensione %s\n",temp_buff.payload);//stampa dimensione
                 path=generate_multi_copy(dir_client,filename);
                 if(path==NULL){
                     handle_error_with_exit("error:there are too much copies of the file");
                 }
-                fd=open(path,O_WRONLY | O_CREAT,0666);
-                if(fd==-1){
+                shm_snd->shm->fd=open(path,O_WRONLY | O_CREAT,0666);
+                if(shm_snd->shm->fd==-1){
                     handle_error_with_exit("error in open file\n");
                 }
                 free(path);
-                dimension=parse_integer(temp_buff.payload);
-                printf("dimensione intera %d\n",dimension);
-                rcv_get_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,fd,dimension,loss_prob,window_base_snd,window_base_rcv,byte_written,shm_snd);
-                if(close(fd)==-1){
+                payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
+                if(payload==NULL){
+                    handle_error_with_exit("error in malloc\n");
+                }
+                strcpy(payload,temp_buff.payload);
+                printf("payload %s\n",temp_buff.payload);
+                printf("payload %s\n",payload);
+                first=payload;
+                shm_snd->shm->dimension=parse_integer_and_move(&payload);
+                payload++;
+                memset(shm_snd->shm->md5_sent,'\0',MD5_LEN+1);
+                strncpy(shm_snd->shm->md5_sent,payload,MD5_LEN);
+                shm_snd->shm->md5_sent[MD5_LEN]='\0';
+                printf("md5 %s\n",shm_snd->shm->md5_sent);
+                rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,shm_snd->shm->param.loss_prob,W);
+                handle_error_with_exit("");
+                free(first);
+                rcv_get_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,shm_snd->shm->fd,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,window_base_snd,window_base_rcv,byte_written,shm_snd);
+                if(close(shm_snd->shm->fd)==-1){
                     handle_error_with_exit("error in close file\n");
                 }
-                printf("return wait for dimension 2\n");
-                return *byte_written;
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel put client\n");
+                pthread_exit(NULL);
             }
             else {
                 printf("ignorato pacchetto wait get dimension con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
