@@ -19,7 +19,6 @@ int rtx=0;
 int wait_for_fin_put(struct shm_snd *shm_snd){
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
-    //check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);//da controllare solo alla fine
     alarm(2);//chiusura temporizzata
     errno=0;
     while(1){
@@ -123,7 +122,6 @@ int rcv_put_file(struct shm_snd *shm_snd){
                     printf("errore rcv put file\n");
                     printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                     handle_error_with_exit("");
-                    rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window);
                 }
                 alarm(TIMEOUT);
             }
@@ -132,7 +130,6 @@ int rcv_put_file(struct shm_snd *shm_snd){
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         }
         if(errno != EINTR && errno != 0){//aggiungere altri controlli

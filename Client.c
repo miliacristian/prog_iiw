@@ -42,27 +42,73 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
 }
 
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
-    int byte_written = 0,seq_to_send = 0, window_base_snd = 0, window_base_rcv = 0, W = param_client.window, pkt_fly = 0;//primo pacchetto della finestra->primo non riscontrato
-    struct temp_buffer temp_buff;//pacchetto da inviare
-    //struct addr temp_addr;
-    struct window_rcv_buf*win_buf_rcv;
-    struct window_snd_buf*win_buf_snd;
-    win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*W));
-    if(win_buf_rcv==NULL){
+    int byte_written=0;
+    //char*path;
+    //path=generate_full_pathname(filename,dir_client);
+    //if(path==NULL){
+      //  handle_error_with_exit("error in generate full path\n");
+    //}
+    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    if(shm==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    initialize_mtx(&(shm->mtx));
+    initialize_cond(&(shm->list_not_empty));
+    shm->fd=-1;
+    shm->byte_written=0;
+    shm->byte_sent=0;
+    shm->list=NULL;
+    shm->pkt_fly=0;
+    shm->byte_readed=0;
+    shm->window_base_rcv=0;
+    shm->window_base_snd=0;
+    shm->win_buf_snd=0;
+    shm->seq_to_send=0;
+    shm->param.window=param_client.window;
+    shm->param.loss_prob=param_client.loss_prob;
+    shm->param.timer_ms=param_client.timer_ms;
+    shm->addr.sockfd=sockfd;
+    shm->addr.dest_addr=serv_addr;
+    shm->dimension=-1;
+    shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
+    shm->addr.len=sizeof(serv_addr);
+    shm->head=NULL;
+    shm->tail=NULL;
+    if(shm->filename==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    strcpy(shm->filename,filename);
+    //if(!calc_file_MD5(path,shm->md5_sent)){
+      //  handle_error_with_exit("error in calculate md5\n");
+    //}
+    //free(path);
+    //path=NULL;
+    //printf("md5 %s\n",shm->md5_sent);
+    shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
+    if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
     }
-    win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*W));
-    if(win_buf_snd==NULL){
+    shm->win_buf_snd=malloc(sizeof(struct window_snd_buf)*(2*param_client.window));
+    if(shm->win_buf_snd==NULL){
         handle_error_with_exit("error in malloc win buf snd\n");
     }
-    memset(win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * W));//inizializza a zero
-    memset(win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * W));//inizializza a zero
-    socklen_t len = sizeof(serv_addr);
-    wait_for_get_dimension(sockfd, serv_addr, len, filename, &byte_written , &seq_to_send , &window_base_snd , &window_base_rcv, W, &pkt_fly ,temp_buff ,win_buf_rcv,win_buf_snd);
-    free(win_buf_rcv);
-    free(win_buf_snd);
-    win_buf_rcv=NULL;
-    win_buf_snd=NULL;
+    memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
+    memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
+    for (int i = 0; i < 2 *(param_client.window); i++) {
+        shm->win_buf_snd[i].lap = -1;
+    }
+    for (int i = 0; i < 2 *(param_client.window); i++) {
+        shm->win_buf_rcv[i].lap = -1;
+    }
+    get_client(shm);
+    byte_written=shm->byte_written;
+    //ricorda di distruggere cond e rilasciare mtx
+    free(shm->win_buf_rcv);
+    free(shm->win_buf_snd);
+    shm->win_buf_rcv=NULL;
+    shm->win_buf_snd=NULL;
+    free(shm);
+    shm=NULL;
     return byte_written;
 }
 
@@ -151,8 +197,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     put_client(shm);
     byte_readed=shm->byte_readed;
-    //destroy_cond(&shm->list_not_empty);
-    //destroy_mtx(&shm->mtx);
     //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);

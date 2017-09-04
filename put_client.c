@@ -44,7 +44,6 @@ int close_put_send_file(struct shm_snd *shm_snd){
                         printf("errore close put ack file in finestra\n");
                         printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                         handle_error_with_exit("");
-                        rcv_ack_file_in_window(temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->param.window,&shm_snd->shm->window_base_snd,&shm_snd->shm->pkt_fly,shm_snd->shm->dimension,&shm_snd->shm->byte_readed, shm_snd->shm);
                     }
                     else {
                         printf("errore close put ack_msg in finestra\n");
@@ -123,7 +122,6 @@ int send_put_file(struct shm_snd *shm_snd) {
                 printf("ignorato pacchetto send_put_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         }
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
