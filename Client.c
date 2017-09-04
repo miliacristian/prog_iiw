@@ -151,6 +151,9 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     put_client(shm);
     byte_readed=shm->byte_readed;
+    //destroy_cond(&shm->list_not_empty);
+    //destroy_mtx(&shm->mtx);
+    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_rcv=NULL;

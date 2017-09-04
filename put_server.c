@@ -16,10 +16,10 @@
 
 int rtx=0;
 
-int wait_for_fin_put2(struct shm_snd *shm_snd){
+int wait_for_fin_put(struct shm_snd *shm_snd){
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
-    check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);//da controllare solo alla fine
+    //check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);//da controllare solo alla fine
     alarm(2);//chiusura temporizzata
     errno=0;
     while(1){
@@ -38,7 +38,7 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                 printf(GREEN "FIN ricevuto\n" RESET);
                 check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);
                 pthread_cancel(shm_snd->tid);
-                return shm_snd->shm->byte_written;
+                pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(shm_snd->shm->window_base_snd, shm_snd->shm->param.window, temp_buff.ack)){
@@ -58,8 +58,6 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n",shm_snd->shm->window_base_snd,shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->param.loss_prob);
-                alarm(TIMEOUT);
             }
         }
         if(errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK){
@@ -77,11 +75,17 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
     }
 }
 
-int rcv_put_file2(struct shm_snd *shm_snd){
+int rcv_put_file(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
-    send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
+    if(shm_snd->shm->fd!=-1) {
+        send_message_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_snd, "START", START, &shm_snd->shm->seq_to_send, shm_snd->shm->param.loss_prob, shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, shm_snd->shm);
+    }
+    else{
+        send_message_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_snd, "ERROR", ERROR, &shm_snd->shm->seq_to_send, shm_snd->shm->param.loss_prob, shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, shm_snd->shm);
+        //chiusura temporizzata,è esagerato mandare solo errore e terminare?
+    }
     errno=0;
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
@@ -110,7 +114,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
                 if(temp_buff.command==DATA){
                     rcv_data_send_ack_in_window(shm_snd->shm->addr.sockfd,shm_snd->shm->fd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_rcv,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,shm_snd->shm->dimension,&shm_snd->shm->byte_written);
                     if((shm_snd->shm->byte_written)==(shm_snd->shm->dimension)){
-                        wait_for_fin_put2(shm_snd);
+                        wait_for_fin_put(shm_snd);
                         printf("return rcv file\n");
                         return shm_snd->shm->byte_written;
                     }
@@ -231,11 +235,10 @@ void*put_server_rtx_job(void*arg){
 }
 void*put_server_job(void*arg){
     struct shm_snd *shm_snd=arg;
-    rcv_put_file2(shm_snd);
+    rcv_put_file(shm_snd);
     return NULL;
 }
 void put_server(struct shm_sel_repeat *shm){
-    //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     struct shm_snd shm_snd;
     if(pthread_create(&tid_rtx,NULL,put_server_rtx_job,shm)!=0){
@@ -255,7 +258,6 @@ void put_server(struct shm_sel_repeat *shm){
     if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
-    //ricorda di distruggere cond e rilasciare mtx
     return;
 }
 
@@ -282,9 +284,14 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
         handle_error_with_exit("error in malloc\n");
     }
     strcpy(shm->filename,path);
-    shm->fd=open(path, O_WRONLY | O_CREAT,0666);
-    if (shm->fd == -1) {
-        handle_error_with_exit("error in open\n");
+    if(path!=NULL) {
+        shm->fd = open(path, O_WRONLY | O_CREAT, 0666);
+        if (shm->fd == -1) {
+            handle_error_with_exit("error in open\n");
+        }
+    }
+    else{
+        shm->fd=-1;
     }
     free(path);
     free(first);

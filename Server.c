@@ -150,9 +150,9 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         printf("il client non è in ascolto\n");
         return ;
     }
-
-    //condition sono state distrutte?
-    //mutex è stato rilasciato e distrutto?
+    //destroy_cond(&shm->list_not_empty);
+    //destroy_mtx(&shm->mtx);
+    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_snd=NULL;
