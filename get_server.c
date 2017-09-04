@@ -92,6 +92,9 @@ int execute_get2(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filen
     char *path, dim_string[11];
     rcv_msg_send_ack_command_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob, W);
     path = generate_full_pathname(temp_buff.payload + 4, dir_server);
+    if(path==NULL){
+        handle_error_with_exit("error in generate full path\n");
+    }
     if (check_if_file_exist(path)) {
         shm_snd->shm->dimension= get_file_size(path);
         sprintf(dim_string, "%d",shm_snd->shm->dimension);
@@ -287,7 +290,7 @@ int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     }
     strcpy(payload,temp_buff.payload);
     first=payload;
-    shm->dimension=parse_integer_and_move(&payload);
+    /*shm->dimension=parse_integer_and_move(&payload);
     payload++;
     strncpy(shm->md5_sent,payload,MD5_LEN);
     shm->md5_sent[MD5_LEN]='\0';
@@ -318,6 +321,7 @@ int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
         handle_error_with_exit("error in close file\n");
     }
     printf("return execute put\n");
-    return shm->byte_written;
+    return shm->byte_written;*/
+
 }
 
