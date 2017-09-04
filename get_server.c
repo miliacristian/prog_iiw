@@ -31,7 +31,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (*pkt_fly < W && (*byte_sent) < dim) {
             send_data_in_window(sockfd, fd, &cli_addr, len, temp_buff, win_buf_snd, seq_to_send, loss_prob, W,pkt_fly, byte_sent, dim,shm_snd->shm);
         }
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &cli_addr, &len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -42,7 +42,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(*window_base_snd, W, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
-                        //rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim,byte_readed);
+                        rcv_ack_file_in_window(temp_buff, win_buf_snd, W, window_base_snd, pkt_fly, dim,byte_readed,shm_snd->shm);
                         printf("byte readed %d ack dup %d\n",*byte_readed,ack_dup);
                         if (*byte_readed == dim) {
                             close_get_send_file(sockfd, cli_addr, len, temp_buff, win_buf_snd, W, loss_prob,byte_readed,shm_snd);
@@ -104,9 +104,7 @@ int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*fil
         strcat(temp_buff.payload," ");
         strcat(temp_buff.payload,shm_snd->shm->md5_sent);
         free(path);
-        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim_string, DIMENSION, seq_to_send, shm_snd->shm->param.loss_prob, W, pkt_fly, shm_snd->shm);
-        printf("payload %s\n",temp_buff.payload);
-        handle_error_with_exit("");
+        send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, dim_string, DIMENSION, seq_to_send, 100, W, pkt_fly, shm_snd->shm);
     }
     else {
         send_message_in_window(sockfd, &cli_addr, len, temp_buff, win_buf_snd, "il file non esiste", ERROR, seq_to_send, shm_snd->shm->param.loss_prob, W, pkt_fly, shm_snd->shm);
@@ -114,7 +112,7 @@ int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*fil
     errno = 0;
     alarm(TIMEOUT);
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo risposta del client,
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &cli_addr, &len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto

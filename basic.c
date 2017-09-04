@@ -34,6 +34,7 @@ void check_md5(char*filename,char*md5_to_check) {
         handle_error_with_exit("error in calculate md5\n");
     }
     printf("md5 del file ricevuto %s\n", md5);
+    printf("md5 ricevuto %s\n",md5_to_check);
     if (strcmp(md5_to_check, md5) != 0) {
         printf(RED "file corrupted\n" RESET);
     }

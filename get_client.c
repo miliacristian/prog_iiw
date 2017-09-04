@@ -19,7 +19,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
     alarm(TIMEOUT);
     errno=0;
     while(1){
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo fin_ack dal server
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -69,11 +69,16 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
 }
 
 int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_snd,int sockfd,struct sockaddr_in serv_addr,socklen_t len,int *window_base_snd,int *window_base_rcv,int *pkt_fly,int W,int *byte_written,double loss_prob,struct shm_snd *shm_snd){
+    char*path;
     printf("wait for fin\n");
+    path=generate_full_pathname(shm_snd->shm->filename,dir_client);
+    if(path==NULL){
+        handle_error_with_exit("error in generate full pathname\n");
+    }
     alarm(TIMEOUT);;//chiusura temporizzata
     errno=0;
     while(1){
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
@@ -85,7 +90,10 @@ int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_
             if (temp_buff.command==FIN) {
                 alarm(0);
                 printf("return wait_for_fin 1\n");
-                return *byte_written;
+                check_md5(path,shm_snd->shm->md5_sent);
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel put client\n");
+                pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -115,6 +123,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
+            check_md5(path,shm_snd->shm->md5_sent);
             pthread_cancel(shm_snd->tid);
             printf("thread cancel put client\n");
             pthread_exit(NULL);
@@ -129,7 +138,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
     printf("rcv file\n");
     errno=0;
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//bloccati finquando non ricevi file
             // o altri messaggi
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
@@ -190,7 +199,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
     send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,temp_buff.payload,GET,seq_to_send,shm_snd->shm->param.loss_prob,W,pkt_fly,shm_snd->shm);//manda messaggio get
     alarm(TIMEOUT);
     while (1) {
-        if (recvfrom(sockfd, &temp_buff, sizeof(struct temp_buffer), 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
+        if (recvfrom(sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &serv_addr, &len) != -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
@@ -228,18 +237,17 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 if(payload==NULL){
                     handle_error_with_exit("error in malloc\n");
                 }
-                strcpy(payload,temp_buff.payload);
-                printf("payload %s\n",temp_buff.payload);
-                printf("payload %s\n",payload);
+                copy_buf1_in_buf2(payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
+                //strcpy(payload,temp_buff.payload);
+                //printf("payload %s\n",temp_buff.payload);
+                //printf("payload %s\n",payload);
                 first=payload;
                 shm_snd->shm->dimension=parse_integer_and_move(&payload);
                 payload++;
-                memset(shm_snd->shm->md5_sent,'\0',MD5_LEN+1);
                 strncpy(shm_snd->shm->md5_sent,payload,MD5_LEN);
                 shm_snd->shm->md5_sent[MD5_LEN]='\0';
                 printf("md5 %s\n",shm_snd->shm->md5_sent);
                 rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,shm_snd->shm->param.loss_prob,W);
-                handle_error_with_exit("");
                 free(first);
                 rcv_get_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,shm_snd->shm->fd,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,window_base_snd,window_base_rcv,byte_written,shm_snd);
                 if(close(shm_snd->shm->fd)==-1){

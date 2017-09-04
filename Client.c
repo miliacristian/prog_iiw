@@ -43,11 +43,6 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
 
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written=0;
-    //char*path;
-    //path=generate_full_pathname(filename,dir_client);
-    //if(path==NULL){
-      //  handle_error_with_exit("error in generate full path\n");
-    //}
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
@@ -78,12 +73,6 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         handle_error_with_exit("error in malloc\n");
     }
     strcpy(shm->filename,filename);
-    //if(!calc_file_MD5(path,shm->md5_sent)){
-      //  handle_error_with_exit("error in calculate md5\n");
-    //}
-    //free(path);
-    //path=NULL;
-    //printf("md5 %s\n",shm->md5_sent);
     shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
     if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
