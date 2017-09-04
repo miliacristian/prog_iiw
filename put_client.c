@@ -265,14 +265,7 @@ void *put_client_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                //byte_left=shm->dimension-((node->lap*shm->param.window*2+node->seq)*(MAXPKTSIZE-OVERHEAD));
                 copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
-                /*if(byte_left>=(MAXPKTSIZE-OVERHEAD)) {
-                    copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
-                }
-                else{
-                    copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,byte_left);
-                }*/
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 rtx++;
@@ -298,18 +291,6 @@ void *put_client_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                //byte_left=shm->dimension-((node->lap*shm->param.window*2+node->seq-1)*(MAXPKTSIZE-OVERHEAD));
-                //-1==messaggi con campo non data in finestra
-                //printf("lap %d seq %d\n",node->lap,node->seq);
-                /*if(byte_left>=(MAXPKTSIZE-OVERHEAD)) {
-                    printf("non ultimo pkt\n");
-                    copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
-                }
-                else{
-                    printf("ultimo pkt\n");
-                    printf("byte left %d\n",byte_left);
-                    copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,byte_left);
-                }*/
                 copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);

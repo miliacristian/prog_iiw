@@ -156,7 +156,6 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
             handle_error_with_exit("error in read 2\n");
         }
         *byte_sent += (dim - (*byte_sent));
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
     }
     else {
         readed=readn(fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
@@ -164,8 +163,8 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
             handle_error_with_exit("error in read 3\n");
         }
         *byte_sent +=( MAXPKTSIZE - OVERHEAD);
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
     }
+    copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
     win_buf_snd[*seq_to_send].command = DATA;
     lock_mtx(&(shm->mtx));
     (win_buf_snd[*seq_to_send].lap)+=1;
@@ -315,8 +314,6 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
                     *byte_written += (MAXPKTSIZE - OVERHEAD);
                 }
                 else {
-                    printf("scrivo ultimo pkt\n");
-                    printf("%s\n",win_buf_rcv[*window_base_rcv].payload);
                     written=(int)writen(fd, win_buf_rcv[*window_base_rcv].payload, (size_t) dim - *byte_written);
                     if(written<dim - *byte_written){
                         handle_error_with_exit("error in write\n");

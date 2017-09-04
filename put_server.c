@@ -14,13 +14,12 @@
 #include "put_server.h"
 #include "dynamic_list.h"
 
+int rtx=0;
+
 int wait_for_fin_put2(struct shm_snd *shm_snd){
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
-    if(close(shm_snd->shm->fd)==-1){
-        handle_error_with_exit("error in close file\n");
-    }
-    check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);
+    check_md5(shm_snd->shm->filename,shm_snd->shm->md5_sent);//da controllare solo alla fine
     alarm(2);//chiusura temporizzata
     errno=0;
     while(1){
@@ -81,18 +80,9 @@ int wait_for_fin_put2(struct shm_snd *shm_snd){
 int rcv_put_file2(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
-    //int buff_size=BUFF_RCV_SIZE;
-    //socklen_t  size_sock=sizeof(socklen_t),get_size;
     alarm(TIMEOUT);
     send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,"START",START,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);
     errno=0;
-    /*if(setsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
-        handle_error_with_exit("error in setsockopt\n");
-    }
-    if(getsockopt(shm_snd->shm->addr.sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
-        handle_error_with_exit("error in setsockopt\n");
-    }
-    printf("buffer size %d\n",get_size);*/
     while (1) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
             //bloccante o non bloccante??
@@ -157,6 +147,7 @@ int rcv_put_file2(struct shm_snd *shm_snd){
 
 void*put_server_rtx_job(void*arg){
     printf("thread rtx creato\n");
+    int byte_left;
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -197,9 +188,10 @@ void*put_server_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
+                copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                rtx++;
                 lock_mtx(&(shm->mtx));
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
@@ -222,9 +214,10 @@ void*put_server_rtx_job(void*arg){
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
-                copy_buf1_in_buf2(temp_buff.payload,shm->win_buf_snd[node->seq].payload,MAXPKTSIZE-OVERHEAD);
+                copy_buf1_in_buf2(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                rtx++;
                 lock_mtx(&(shm->mtx));
                 if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
@@ -298,9 +291,9 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     payload=NULL;
     rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);//invio ack della put
     put_server(shm);
-    //if(close(shm->fd)==-1){
-      //  handle_error_with_exit("error in close file\n");
-    //}
+    if(close(shm->fd)==-1){
+      handle_error_with_exit("error in close file\n");
+    }
     printf("return execute put\n");
     return shm->byte_written;
 }
