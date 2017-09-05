@@ -59,6 +59,16 @@ void better_strcpy(char*buf1,char*buf2){
     strcpy(buf1,buf2);
     return;
 }
+void better_strncpy(char*buf1,char*buf2,int lenght){
+    if(buf1==NULL){
+        handle_error_with_exit("error better strcpy buf1 is NULL\n");
+    }
+    if(buf2==NULL){
+        handle_error_with_exit("error better strcpy buf2 is NULL\n");
+    }
+    strncpy(buf1,buf2,lenght);
+    return;
+}
 void better_strcat(char*str1,char*str2){
     if(str1==NULL){
         handle_error_with_exit("error better strcat str1 is NULL\n");
