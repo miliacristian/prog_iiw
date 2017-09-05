@@ -169,8 +169,14 @@ void handle_error_with_exit(char*errorString){
     exit(EXIT_FAILURE);
 }
 void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
-    if(buf2==NULL || buf1==NULL || dim<0){
-        handle_error_with_exit("error in copy_buf1_in_buf2\n");
+    //if(buf2==NULL || buf1==NULL || dim<0){
+      //  handle_error_with_exit("error in copy_buf1_in_buf2\n");
+    //}
+    if(buf2==NULL){
+        handle_error_with_exit("buff 2 null\n");
+    }
+    if(buf1==NULL){
+        handle_error_with_exit("buff 1 null\n");
     }
     for(int i=0;i<dim;i++){
         *buf2=*buf1;

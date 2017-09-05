@@ -87,6 +87,18 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     memset(shm->win_buf_rcv,0,sizeof(struct window_rcv_buf)*(2*(param_serv.window)));//inizializza a zero
     memset(shm->win_buf_snd,0,sizeof(struct window_snd_buf)*(2*(param_serv.window)));//inizializza a zero
     for (int i = 0; i < 2 *(param_serv.window); i++) {
+        shm->win_buf_snd[i].payload =malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_snd[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_snd[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+        shm->win_buf_rcv[i].payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_rcv[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+    }
+    for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
     for (int i = 0; i < 2 *(param_serv.window); i++) {
@@ -149,6 +161,12 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         great_alarm_serv=0;
         printf("il client non è in ascolto\n");
         return ;
+    }
+    for (int i = 0; i < 2 *(param_serv.window); i++) {
+        free(shm->win_buf_snd[i].payload);
+        shm->win_buf_snd[i].payload=NULL;
+        free(shm->win_buf_rcv[i].payload);
+        shm->win_buf_rcv[i].payload=NULL;
     }
     //destroy_cond(&shm->list_not_empty);
     //destroy_mtx(&shm->mtx);
@@ -340,7 +358,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
 
     create_pool(FREE_PROCESS);//da cambiare
-    create_thread_pool_handler(mtx_prefork);//da decommentare
+    //create_thread_pool_handler(mtx_prefork);//da decommentare
     while(1) {
         len=sizeof(cliaddr);
         if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {

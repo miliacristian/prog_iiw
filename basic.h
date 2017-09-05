@@ -76,17 +76,18 @@ struct window_rcv_buf{
     char received;
     char command;
     int lap;
-    char payload[MAXPKTSIZE-OVERHEAD];
+    //char payload[MAXPKTSIZE-OVERHEAD];
+    char*payload;
 };
 
 struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
 // se diventa pesante come memoria è meglio allocata nell'heap?
     char acked;
-    char payload[MAXPKTSIZE-OVERHEAD];
     char command;
     struct timespec time;//usato per timer adattativo
     int lap;
-    //int seq_numb;
+    //char payload[MAXPKTSIZE-OVERHEAD];
+    char*payload;
 };
 
 

@@ -165,7 +165,8 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     strcpy(temp_buff.payload, message);
-    strcpy(win_buf_snd[*seq_to_send].payload, temp_buff.payload);
+    //strcpy(win_buf_snd[*seq_to_send].payload, temp_buff.payload);
+    copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
     win_buf_snd[*seq_to_send].command = command;
     win_buf_snd[*seq_to_send].acked = 0;
     lock_mtx(&(shm->mtx));

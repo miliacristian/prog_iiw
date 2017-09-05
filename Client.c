@@ -84,6 +84,18 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
     memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
     for (int i = 0; i < 2 *(param_client.window); i++) {
+        shm->win_buf_snd[i].payload =malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_snd[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_snd[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+        shm->win_buf_rcv[i].payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_rcv[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+    }
+    for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
@@ -91,6 +103,12 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }
     get_client(shm);
     byte_written=shm->byte_written;
+    for (int i = 0; i < 2 *(param_client.window); i++) {
+        free(shm->win_buf_snd[i].payload);
+        shm->win_buf_snd[i].payload=NULL;
+        free(shm->win_buf_rcv[i].payload);
+        shm->win_buf_rcv[i].payload=NULL;
+    }
     //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
@@ -179,6 +197,18 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     memset(shm->win_buf_rcv, 0, sizeof(struct window_rcv_buf) * (2 * param_client.window));//inizializza a zero
     memset(shm->win_buf_snd, 0, sizeof(struct window_snd_buf) * (2 * param_client.window));//inizializza a zero
     for (int i = 0; i < 2 *(param_client.window); i++) {
+        shm->win_buf_snd[i].payload =malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_snd[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_snd[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+        shm->win_buf_rcv[i].payload=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD+1));
+        if(shm->win_buf_rcv[i].payload==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
+    }
+    for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
@@ -186,6 +216,12 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     put_client(shm);
     byte_readed=shm->byte_readed;
+    for (int i = 0; i < 2 *(param_client.window); i++) {
+        free(shm->win_buf_snd[i].payload);
+        shm->win_buf_snd[i].payload=NULL;
+        free(shm->win_buf_rcv[i].payload);
+        shm->win_buf_rcv[i].payload=NULL;
+    }
     //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);

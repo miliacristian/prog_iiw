@@ -133,6 +133,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_
 
 int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_buffer temp_buff,struct window_snd_buf *win_buf_snd,struct window_rcv_buf *win_buf_rcv,int *seq_to_send,int W,int *pkt_fly,int fd,int dimension,double loss_prob,int *window_base_snd,int *window_base_rcv,int *byte_written,struct shm_snd *shm_snd){
     alarm(TIMEOUT);
+    printf("sto ancora qui\n");
     send_message_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_snd,"START",START,seq_to_send,loss_prob,W,pkt_fly,shm_snd->shm);
     printf("messaggio start inviato\n");
     printf("rcv file\n");
@@ -249,6 +250,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 printf("md5 %s\n",shm_snd->shm->md5_sent);
                 rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,shm_snd->shm->param.loss_prob,W);
                 free(first);
+                printf("sto qui\n");
                 rcv_get_file(sockfd,serv_addr,len,temp_buff,win_buf_snd,win_buf_rcv,seq_to_send,W,pkt_fly,shm_snd->shm->fd,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,window_base_snd,window_base_rcv,byte_written,shm_snd);
                 if(close(shm_snd->shm->fd)==-1){
                     handle_error_with_exit("error in close file\n");
