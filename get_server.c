@@ -15,7 +15,8 @@
 int rtx_get_server=0;
 int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,struct shm_snd*shm_snd) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
-    send_message(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, "FIN", FIN, shm_snd->shm->param.loss_prob);
+    send_message(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, "FIN",
+                 FIN, shm_snd->shm->param.loss_prob);
     printf("close get send_file\n");
     pthread_cancel(shm_snd->tid);
     printf("thread cancel \n");
@@ -49,10 +50,13 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 if (seq_is_in_window(shm_snd->shm->window_base_snd, shm_snd->shm->param.window, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
                         rcv_ack_file_in_window(temp_buff, shm_snd->shm->win_buf_snd, shm_snd->shm->param.window,
-                                               &shm_snd->shm->window_base_snd, &shm_snd->shm->pkt_fly, shm_snd->shm->dimension,&shm_snd->shm->byte_readed,shm_snd->shm);
+                                               &shm_snd->shm->window_base_snd, &shm_snd->shm->pkt_fly, shm_snd->shm->dimension,
+                                               &shm_snd->shm->byte_readed,shm_snd->shm);
                         printf("byte readed %d ack dup %d\n",shm_snd->shm->byte_readed,ack_dup);
                         if (shm_snd->shm->byte_readed == shm_snd->shm->dimension) {
-                            close_get_send_file(shm_snd->shm->addr.sockfd, shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_snd, shm_snd->shm->param.window, shm_snd->shm->param.loss_prob,&shm_snd->shm->byte_readed,shm_snd);
+                            close_get_send_file(shm_snd->shm->addr.sockfd, shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,
+                                                temp_buff, shm_snd->shm->win_buf_snd, shm_snd->shm->param.window,
+                                                shm_snd->shm->param.loss_prob,&shm_snd->shm->byte_readed,shm_snd);
                             printf("close sendfile\n");
                             pthread_cancel(shm_snd->tid);
                             printf("thread cancel\n");
@@ -151,18 +155,26 @@ int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*fil
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm_snd->shm->window_base_rcv, shm_snd->shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff,shm_snd->shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr,
+                                                      shm_snd->shm->addr.len, temp_buff,shm_snd->shm->param.loss_prob);
                 alarm(TIMEOUT);
             } else if (temp_buff.command == FIN) {
-                send_message(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, "FIN_ACK", FIN_ACK,shm_snd->shm->param.loss_prob);
+                send_message(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff,
+                             "FIN_ACK", FIN_ACK,shm_snd->shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm_snd->tid);
                 printf("thread cancel close_put_snd\n");
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_rcv, &shm_snd->shm->window_base_rcv, shm_snd->shm->param.loss_prob, W);
-                send_file(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, temp_buff,shm_snd->shm->win_buf_snd,shm_snd->shm->fd, &shm_snd->shm->byte_readed,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,shm_snd);
+                rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr,
+                                                   shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_rcv,
+                                                   &shm_snd->shm->window_base_rcv, shm_snd->shm->param.loss_prob, shm_snd->shm->param.window);
+                send_file(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,
+                          &shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,&shm_snd->shm->window_base_rcv,
+                          shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, temp_buff,shm_snd->shm->win_buf_snd,
+                          shm_snd->shm->fd, &shm_snd->shm->byte_readed,shm_snd->shm->dimension,shm_snd->shm->param.loss_prob,
+                          shm_snd);
                 if (close(shm_snd->shm->fd) == -1) {
                     handle_error_with_exit("error in close file\n");
                 }
@@ -192,7 +204,10 @@ int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*fil
 void *get_server_job(void*arg){
     struct shm_snd *shm_snd=arg;
     struct temp_buffer temp_buff;
-    wait_for_start(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,&shm_snd->shm->byte_written,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,&shm_snd->shm->window_base_rcv,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,temp_buff,shm_snd->shm->win_buf_rcv,shm_snd->shm->win_buf_snd,shm_snd);
+    wait_for_start(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,
+                   &shm_snd->shm->byte_written,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,
+                   &shm_snd->shm->window_base_rcv,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,temp_buff,
+                   shm_snd->shm->win_buf_rcv,shm_snd->shm->win_buf_snd,shm_snd);
     return NULL;
 }
 void *get_server_rtx_job(void*arg){
