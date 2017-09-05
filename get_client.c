@@ -62,7 +62,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm_snd->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel close connection\n");
             pthread_exit(NULL);
         }
     }
@@ -92,7 +92,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_
                 printf("return wait_for_fin 1\n");
                 check_md5(path,shm_snd->shm->md5_sent);
                 pthread_cancel(shm_snd->tid);
-                printf("thread cancel put client\n");
+                printf("thread cancel \n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -125,7 +125,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff,struct window_snd_buf*win_buf_
             alarm(0);
             check_md5(path,shm_snd->shm->md5_sent);
             pthread_cancel(shm_snd->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel wait for fin\n");
             pthread_exit(NULL);
         }
     }
@@ -186,7 +186,7 @@ int rcv_get_file(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct te
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm_snd->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel rcv get file\n");
             pthread_exit(NULL);
         }
     }
@@ -274,7 +274,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm_snd->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel wait for get dimension\n");
             pthread_exit(NULL);
         }
     }
