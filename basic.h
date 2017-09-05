@@ -166,7 +166,7 @@ char seq_is_in_window(int start_win,int window,int seq);
 char check_if_dir_exist(char*dir_path);
 char flip_coin(double loss_prob);
 char* generate_full_pathname(char* filename, char* dir_server);
-void copy_buf1_in_buf2(char*buf2,char*buf1,int dim);
+void copy_buf2_in_buf1(char*buf1,char*buf2,int dim);
 void*try_to_sleep(void*arg);
 pthread_t create_thread_signal_handler();
 char* generate_multi_copy(char*path_to_filename,char*filename);

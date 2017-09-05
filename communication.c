@@ -82,14 +82,14 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
     temp_buff.seq = *seq_to_send;
     win_buf_snd[*seq_to_send].acked = 0;
     if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
-        copy_buf1_in_buf2(temp_buff.payload,shm->list,MAXPKTSIZE-OVERHEAD);
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,shm->list,MAXPKTSIZE-OVERHEAD);
+        copy_buf2_in_buf1(temp_buff.payload,shm->list,MAXPKTSIZE-OVERHEAD);
+        copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload,shm->list,MAXPKTSIZE-OVERHEAD);
         *byte_sent += (dim - (*byte_sent));
         shm->list+=dim - (*byte_sent);
     } else {
-        copy_buf1_in_buf2(temp_buff.payload,shm->list,(MAXPKTSIZE - OVERHEAD));
+        copy_buf2_in_buf1(temp_buff.payload,shm->list,(MAXPKTSIZE - OVERHEAD));
         *byte_sent += (MAXPKTSIZE - OVERHEAD);
-        copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,shm->list,( MAXPKTSIZE - OVERHEAD));
+        copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload,shm->list,( MAXPKTSIZE - OVERHEAD));
         shm->list+=(MAXPKTSIZE-OVERHEAD);
     }
     win_buf_snd[*seq_to_send].command = DATA;
@@ -135,7 +135,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
         }
         *byte_sent +=( MAXPKTSIZE - OVERHEAD);
     }
-    copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
+    copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload, temp_buff.payload,(MAXPKTSIZE - OVERHEAD));
     win_buf_snd[*seq_to_send].command = DATA;
     lock_mtx(&(shm->mtx));
     (win_buf_snd[*seq_to_send].lap)+=1;
@@ -164,7 +164,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     strcpy(temp_buff.payload, message);
-    copy_buf1_in_buf2(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
+    copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
     win_buf_snd[*seq_to_send].command = command;
     win_buf_snd[*seq_to_send].acked = 0;
     lock_mtx(&(shm->mtx));
@@ -216,7 +216,7 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
         if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
+            copy_buf2_in_buf1(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
@@ -240,11 +240,11 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
         // scorro la finestra fino al primo ancora non ricevuto
         while (win_buf_rcv[*window_base_rcv].received == 1) {
             if (dim - *byte_written >=(MAXPKTSIZE - OVERHEAD)) {
-                copy_buf1_in_buf2(shm->list,temp_buff.payload,(MAXPKTSIZE - OVERHEAD));//scrivo in list la parte di lista
+                copy_buf2_in_buf1(shm->list,temp_buff.payload,(MAXPKTSIZE - OVERHEAD));//scrivo in list la parte di lista
                 *byte_written += (MAXPKTSIZE - OVERHEAD);
                 *list+=(MAXPKTSIZE-OVERHEAD);
             } else {
-                copy_buf1_in_buf2(shm->list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
+                copy_buf2_in_buf1(shm->list,temp_buff.payload,dim - *byte_written);//scrivo in list la parte di lista
                 //questa copy_buf potrebbe dar problemi
                 *byte_written += dim - *byte_written;
                 shm->list+=dim-*byte_written;
@@ -263,7 +263,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
         if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            copy_buf1_in_buf2(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));//è giusto copiarli tutti e eventualmente scriverne solo alcuni?
+            copy_buf2_in_buf1(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));//è giusto copiarli tutti e eventualmente scriverne solo alcuni?
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{

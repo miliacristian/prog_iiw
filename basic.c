@@ -43,7 +43,16 @@ void check_md5(char*filename,char*md5_to_check) {
     }
     return;
 }
-
+void better_strcpy(char*buf1,char*buf2){
+    if(buf1==NULL){
+        handle_error_with_exit("buf1 is NULL\n");
+    }
+    if(buf2==NULL){
+        handle_error_with_exit("buf2 is NULL\n");
+    }
+    strcpy(buf1,buf2);
+    return;
+}
 void set_max_buff_rcv_size(int sockfd){
     int buff_size=BUFF_RCV_SIZE;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
@@ -168,10 +177,7 @@ void handle_error_with_exit(char*errorString){
     perror("");
     exit(EXIT_FAILURE);
 }
-void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
-    //if(buf2==NULL || buf1==NULL || dim<0){
-      //  handle_error_with_exit("error in copy_buf1_in_buf2\n");
-    //}
+void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){
     if(buf2==NULL){
         handle_error_with_exit("buff 2 null\n");
     }
@@ -179,7 +185,7 @@ void copy_buf1_in_buf2(char*buf2,char*buf1,int dim){
         handle_error_with_exit("buff 1 null\n");
     }
     for(int i=0;i<dim;i++){
-        *buf2=*buf1;
+        *buf1=*buf2;
         buf1++;
         buf2++;
     }
