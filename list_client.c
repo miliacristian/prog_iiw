@@ -40,7 +40,9 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             else if (temp_buff.command==FIN_ACK) {
                 alarm(0);
                 printf("return close connection\n");
-                return *byte_written;
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel close connection\n");
+                pthread_exit(NULL);
             }
             else if (!seq_is_in_window(*window_base_rcv, W,temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,loss_prob);
@@ -62,7 +64,9 @@ int close_connection_list(struct temp_buffer temp_buff,int *seq_to_send,struct w
             great_alarm_client = 0;
             alarm(0);
             printf("return close connection\n");
-            return *byte_written;
+            pthread_cancel(shm_snd->tid);
+            printf("thread cancel close connection\n");
+            pthread_exit(NULL);
         }
     }
 }
@@ -84,7 +88,9 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             if (temp_buff.command==FIN) {
                 alarm(0);
                 printf("fin ricevuto\n");
-                return *byte_written;
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel wait for fin\n");
+                pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
                 if(seq_is_in_window(*window_base_snd, W, temp_buff.ack)){
@@ -115,7 +121,9 @@ int  wait_for_fin_list(struct temp_buffer temp_buff,struct window_snd_buf*win_bu
             great_alarm_client = 0;
             alarm(0);
             printf("return wait_for_fin\n");
-            return *byte_written;
+            pthread_cancel(shm_snd->tid);
+            printf("thread cancel wait for fin\n");
+            pthread_exit(NULL);
         }
     }
 }
@@ -161,7 +169,6 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
                     printf("errore rcv_list2\n");
                     printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                     handle_error_with_exit("");
-                    rcv_msg_send_ack_command_in_window(sockfd,&serv_addr,len,temp_buff,win_buf_rcv,window_base_rcv,loss_prob,W);
                 }
                 alarm(TIMEOUT);
             }
@@ -181,7 +188,9 @@ int rcv_list2(int sockfd,struct sockaddr_in serv_addr,socklen_t len,struct temp_
             great_alarm_client = 0;
             alarm(0);
             printf("return rcv list\n");
-            return *byte_written;
+            pthread_cancel(shm_snd->tid);
+            printf("thread cancel rcv list\n");
+            pthread_exit(NULL);
         }
     }
 }
@@ -218,7 +227,9 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 close_connection_list(temp_buff, seq_to_send, win_buf_snd, sockfd, serv_addr, len, window_base_snd,
                                  window_base_rcv, pkt_fly, W, byte_written, loss_prob,shm_snd);
                 printf("lista vuota\n");
-                return *byte_written;
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel wait for list dimension\n");
+                pthread_exit(NULL);
             } else if (temp_buff.command == DIMENSION) {
                 rcv_msg_send_ack_command_in_window(sockfd, &serv_addr, len, temp_buff, win_buf_rcv, window_base_rcv, loss_prob,
                                            W);
@@ -249,7 +260,6 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                        temp_buff.command);
                 printf("winbase snd %d winbase rcv %d\n", *window_base_snd, *window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
@@ -258,7 +268,9 @@ int wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             printf("il sender non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
-            return *byte_written;
+            pthread_cancel(shm_snd->tid);
+            printf("thread cancel wait for list dimension\n");
+            pthread_exit(NULL);
         }
     }
 }
