@@ -396,6 +396,7 @@ int get_file_size(char*path){
     if(stat(path,&st)==-1){
         handle_error_with_exit("error get file_status\n");
     }
+    printf("size %d\n",st.st_size);
     return (int)st.st_size;
 }
 

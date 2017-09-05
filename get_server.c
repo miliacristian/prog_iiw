@@ -29,9 +29,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     int value = 0,*byte_sent = &value;
     alarm(TIMEOUT);
     while (1) {
-        printf("pkt fly %d byte sent %d dim %d\n",shm_snd->shm->pkt_fly,shm_snd->shm->byte_sent,shm_snd->shm->dimension);
         if (shm_snd->shm->pkt_fly < shm_snd->shm->param.window && (shm_snd->shm->byte_sent) < shm_snd->shm->dimension) {
-            printf("entrato\n");
             send_data_in_window(shm_snd->shm->addr.sockfd, shm_snd->shm->fd,
                                 &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
                                 temp_buff, shm_snd->shm->win_buf_snd, &shm_snd->shm->seq_to_send,
@@ -102,14 +100,16 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
 
 int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filename,int *byte_written,int *seq_to_send,int *window_base_snd,int *window_base_rcv,int W,int *pkt_fly,struct temp_buffer temp_buff,struct window_rcv_buf*win_buf_rcv,struct window_snd_buf*win_buf_snd,struct shm_snd*shm_snd) {
     char*path, dim_string[11];
-    printf("pkt fly %d byte sent %d dim %d\n",shm_snd->shm->pkt_fly);
     path = generate_full_pathname(shm_snd->shm->filename, dir_server);
+    printf("path %s\n",path);
     if (path == NULL) {
         handle_error_with_exit("error in generate full path\n");
     }
     if (check_if_file_exist(path)) {
         shm_snd->shm->dimension = get_file_size(path);
+        printf("file size %d\n",shm_snd->shm->dimension);
         sprintf(dim_string, "%d",shm_snd->shm->dimension);
+        printf("dim string %s\n",dim_string);
         shm_snd->shm->fd = open(path, O_RDONLY);
         if (shm_snd->shm->fd == -1) {
             handle_error_with_exit("error in open\n");
