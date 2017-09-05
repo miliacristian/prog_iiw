@@ -103,12 +103,12 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     }
 }
 
-int wait_for_start(struct shm_snd *shm_snd, struct temp_buffer temp_buff) {
+int wait_for_start_list(struct shm_snd *shm_snd, struct temp_buffer temp_buff) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char dim[11];
-    rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
+    /*rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
                                        temp_buff, shm_snd->shm->win_buf_rcv, &shm_snd->shm->window_base_rcv,
-                                       shm_snd->shm->param.loss_prob, shm_snd->shm->param.window);
+                                       shm_snd->shm->param.loss_prob, shm_snd->shm->param.window);*/
     shm_snd->shm->dimension = count_char_dir(dir_server);
     if (shm_snd->shm->dimension != 0) {
         sprintf(dim, "%d", shm_snd->shm->dimension);
@@ -276,7 +276,7 @@ void *list_server_rtx_job(void *arg) {
 void *list_server_job(void *arg) {
     struct shm_snd *shm_snd = arg;
     struct temp_buffer temp_buff;
-    wait_for_start(shm_snd, temp_buff);
+    wait_for_start_list(shm_snd, temp_buff);
     return NULL;
 }
 
@@ -311,8 +311,5 @@ int execute_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
                                        shm->win_buf_rcv, &shm->window_base_rcv, shm->param.loss_prob,
                                        shm->param.window);
     list_server(shm);
-    if (close(shm->fd) == -1) {
-        handle_error_with_exit("error in close file\n");
-    }
     return shm->byte_readed;
 }

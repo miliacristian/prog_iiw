@@ -104,6 +104,7 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                 printf("fin ricevuto\n");
                 pthread_cancel(shm_snd->tid);
                 printf("thread cancel wait for fin\n");
+                printf("file list:\n%s",shm_snd->shm->list);
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm_snd->shm->window_base_snd, shm_snd->shm->param.window, temp_buff.ack)) {
@@ -124,7 +125,6 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                        temp_buff.command, temp_buff.payload);
                 printf("winbase snd %d winbase rcv %d\n", shm_snd->shm->window_base_snd, shm_snd->shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
@@ -136,13 +136,13 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
             printf("return wait_for_fin\n");
             pthread_cancel(shm_snd->tid);
             printf("thread cancel wait for fin\n");
+            printf("file list:\n%s",shm_snd->shm->list);
             pthread_exit(NULL);
         }
     }
 }
 
-int
-rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff,
+int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff,
           struct window_snd_buf *win_buf_snd, struct window_rcv_buf *win_buf_rcv, int *seq_to_send, int W, int *pkt_fly,
           char **list, int dimension, double loss_prob, int *window_base_snd, int *window_base_rcv, int *byte_written,
           struct shm_snd *shm_snd) {
@@ -187,7 +187,7 @@ rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_b
                                                 &shm_snd->shm->window_base_rcv,
                                                 shm_snd->shm->param.loss_prob, shm_snd->shm->param.window,
                                                 shm_snd->shm->dimension,
-                                                &shm_snd->shm->byte_written);
+                                                &shm_snd->shm->byte_written,shm_snd->shm);
                     if (shm_snd->shm->byte_written == shm_snd->shm->dimension) {
                         wait_for_fin_list(temp_buff, shm_snd->shm->win_buf_snd, shm_snd->shm->addr.sockfd,
                                           shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
@@ -285,12 +285,13 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                                                    shm_snd->shm->param.window);
                 shm_snd->shm->dimension = parse_integer(temp_buff.payload);
                 printf("dimensione ricevuta %d\n", shm_snd->shm->dimension);
-                list = malloc(sizeof(char) * shm_snd->shm->dimension);
-                if (list == NULL) {
+                shm_snd->shm->list = malloc(sizeof(char) * shm_snd->shm->dimension);
+                if (shm_snd->shm->list == NULL) {
                     handle_error_with_exit("error in malloc\n");
                 }
-                memset(list, '\0', shm_snd->shm->dimension);
-                first = list;
+                memset(shm_snd->shm->list, '\0', shm_snd->shm->dimension);
+
+                first = shm_snd->shm->list;
                 rcv_list2(shm_snd->shm->addr.sockfd, shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff,
                           shm_snd->shm->win_buf_snd, shm_snd->shm->win_buf_rcv, &shm_snd->shm->seq_to_send,
                           shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, &list,

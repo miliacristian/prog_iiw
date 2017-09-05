@@ -98,7 +98,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     }
 }
 
-int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filename,int *byte_written,int *seq_to_send,int *window_base_snd,int *window_base_rcv,int W,int *pkt_fly,struct temp_buffer temp_buff,struct window_rcv_buf*win_buf_rcv,struct window_snd_buf*win_buf_snd,struct shm_snd*shm_snd) {
+int wait_for_start_get(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*filename,int *byte_written,int *seq_to_send,int *window_base_snd,int *window_base_rcv,int W,int *pkt_fly,struct temp_buffer temp_buff,struct window_rcv_buf*win_buf_rcv,struct window_snd_buf*win_buf_snd,struct shm_snd*shm_snd) {
     char*path, dim_string[11];
     path = generate_full_pathname(shm_snd->shm->filename, dir_server);
     printf("path %s\n",path);
@@ -204,7 +204,7 @@ int wait_for_start(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char*fil
 void *get_server_job(void*arg){
     struct shm_snd *shm_snd=arg;
     struct temp_buffer temp_buff;
-    wait_for_start(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,
+    wait_for_start_get(shm_snd->shm->addr.sockfd,shm_snd->shm->addr.dest_addr,shm_snd->shm->addr.len,shm_snd->shm->filename,
                    &shm_snd->shm->byte_written,&shm_snd->shm->seq_to_send,&shm_snd->shm->window_base_snd,
                    &shm_snd->shm->window_base_rcv,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly,temp_buff,
                    shm_snd->shm->win_buf_rcv,shm_snd->shm->win_buf_snd,shm_snd);

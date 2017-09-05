@@ -125,9 +125,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         if(temp_buff.command==LIST){
             execute_list(shm,temp_buff);
             printf("comando list finito\n");
-            if(close(shm->addr.sockfd)==-1){
-                handle_error_with_exit("error in close socket child process\n");
-            }
         }
         else if(temp_buff.command==PUT){
             set_max_buff_rcv_size(shm->addr.sockfd);
