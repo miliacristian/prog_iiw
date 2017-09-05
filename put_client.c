@@ -143,11 +143,11 @@ void *put_client_job(void*arg){
     struct temp_buffer temp_buff;
     char *path,dim_string[11];
     sprintf(dim_string, "%d", shm_snd->shm->dimension);
-    strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
-    strcat(temp_buff.payload," ");
-    strcat(temp_buff.payload,shm_snd->shm->md5_sent);
-    strcat(temp_buff.payload," ");
-    strcat(temp_buff.payload,shm_snd->shm->filename);
+    better_strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
+    better_strcat(temp_buff.payload," ");
+    better_strcat(temp_buff.payload,shm_snd->shm->md5_sent);
+    better_strcat(temp_buff.payload," ");
+    better_strcat(temp_buff.payload,shm_snd->shm->filename);
     //invia messaggio put
     send_message_in_window(shm_snd->shm->addr.sockfd,&(shm_snd->shm->addr.dest_addr),shm_snd->shm->addr.len,temp_buff,shm_snd->shm->win_buf_snd,temp_buff.payload,PUT,&shm_snd->shm->seq_to_send,shm_snd->shm->param.loss_prob,shm_snd->shm->param.window,&shm_snd->shm->pkt_fly, shm_snd->shm);//mand
     alarm(TIMEOUT);

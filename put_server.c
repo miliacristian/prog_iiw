@@ -79,6 +79,7 @@ void rcv_ack_error(struct shm_snd *shm_snd){
     for(;;) {
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
+            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.command == ERROR) {
                 alarm(0);
                 pthread_cancel(shm_snd->tid);
@@ -290,7 +291,7 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     if(payload==NULL){
         handle_error_with_exit("error in payload\n");
     }
-    strcpy(payload,temp_buff.payload);
+    better_strcpy(payload,temp_buff.payload);
     first=payload;
     shm->dimension=parse_integer_and_move(&payload);
     payload++;
@@ -305,7 +306,7 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
         handle_error_with_exit("error in malloc\n");
     }
     if(path!=NULL) {
-        strcpy(shm->filename,path);
+        better_strcpy(shm->filename,path);
         shm->fd = open(path, O_WRONLY | O_CREAT, 0666);
         if (shm->fd == -1) {
             handle_error_with_exit("error in open\n");

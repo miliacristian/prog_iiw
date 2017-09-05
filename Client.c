@@ -23,8 +23,8 @@ void add_slash_to_dir_client(char*argument){
             handle_error_with_exit("error in malloc\n");
         }
         memset(dir_client, '\0', strlen(argument) + 2);
-        strcpy(dir_client, argument);
-        strcat(dir_client, "/");
+        better_strcpy(dir_client, argument);
+        better_strcat(dir_client, "/");
         dir_client[strlen(argument) + 2] = '\0';
     } else {
         dir_client = argument;
@@ -72,7 +72,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     if(shm->filename==NULL){
         handle_error_with_exit("error in malloc\n");
     }
-    strcpy(shm->filename,filename);
+    better_strcpy(shm->filename,filename);
     shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
     if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
@@ -101,6 +101,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
+    set_max_buff_rcv_size(shm->addr.sockfd);
     get_client(shm);
     byte_written=shm->byte_written;
     for (int i = 0; i < 2 *(param_client.window); i++) {
@@ -147,16 +148,6 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     shm->addr.len=sizeof(serv_addr);
     shm->head=NULL;
     shm->tail=NULL;
-    /*if(shm->filename==NULL){
-        handle_error_with_exit("error in malloc\n");
-    }*/
-    /*strcpy(shm->filename,filename);
-    if(!calc_file_MD5(path,shm->md5_sent)){
-        handle_error_with_exit("error in calculate md5\n");
-    }
-    free(path);
-    path=NULL;
-    printf("md5 %s\n",shm->md5_sent);*/
     shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
     if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
@@ -185,6 +176,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
+    set_max_buff_rcv_size(shm->addr.sockfd);
     list_client(shm);
     byte_readed=shm->byte_readed;
     for (int i = 0; i < 2 *(param_client.window); i++) {
@@ -240,7 +232,7 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     if(shm->filename==NULL){
         handle_error_with_exit("error in malloc\n");
     }
-    strcpy(shm->filename,filename);
+    better_strcpy(shm->filename,filename);
     if(!calc_file_MD5(path,shm->md5_sent)){
         handle_error_with_exit("error in calculate md5\n");
     }
@@ -445,7 +437,7 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_client(argv[1]);
-    strcpy(localname,"./parameter.txt");
+    better_strcpy(localname,"./parameter.txt");
     fd = open(localname, O_RDONLY);
     if (fd == -1) {
         handle_error_with_exit("parameter.txt in ./ not found\n");
@@ -494,9 +486,9 @@ int main(int argc, char *argv[]) {
         check_and_parse_command(command, filename);//inizializza command,filename e size
         if (!is_blank(filename) && (strncmp(command, "put",3) == 0)) {
             char *path = alloca(sizeof(char) * (strlen(filename) + path_len + 1));
-            strcpy(path, dir_client);
+            better_strcpy(path, dir_client);
             move_pointer(&path, path_len);
-            strcpy(path, filename);
+            better_strcpy(path, filename);
             path = path - path_len;
             printf("%s\n", path);
             if (!check_if_file_exist(path)) {

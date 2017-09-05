@@ -233,7 +233,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                         struct shm_snd *shm_snd) {
     errno = 0;
     char *list, *first;
-    strcpy(temp_buff.payload, "list");
+    better_strcpy(temp_buff.payload, "list");
     send_message_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff,
                            shm_snd->shm->win_buf_snd, temp_buff.payload, LIST, &shm_snd->shm->seq_to_send,
                            shm_snd->shm->param.loss_prob,

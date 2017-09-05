@@ -59,7 +59,7 @@
 #define STR(name) STR_VALUE(name)
 #define PATH_LEN 256
 #define MD5_LEN 32
-#define OVERHEAD 13
+#define OVERHEAD (sizeof(int)*3+sizeof(char))
 #define FREE_PROCESS 1
 #define MAX_PROC_JOB 4
 #ifndef LINE_H
@@ -189,3 +189,5 @@ void print_double_buff_rcv_size(int sockfd);
 void set_buff_rcv_size(int sockfd,int size);
 void set_max_buff_rcv_size(int sockfd);
 char*make_list(char*path);
+void better_strcpy(char*buf1,char*buf2);
+void better_strcat(char*str1,char*str2);

@@ -45,12 +45,22 @@ void check_md5(char*filename,char*md5_to_check) {
 }
 void better_strcpy(char*buf1,char*buf2){
     if(buf1==NULL){
-        handle_error_with_exit("buf1 is NULL\n");
+        handle_error_with_exit("error better strcpy buf1 is NULL\n");
     }
     if(buf2==NULL){
-        handle_error_with_exit("buf2 is NULL\n");
+        handle_error_with_exit("error better strcpy buf2 is NULL\n");
     }
     strcpy(buf1,buf2);
+    return;
+}
+void better_strcat(char*str1,char*str2){
+    if(str1==NULL){
+        handle_error_with_exit("error better strcat str1 is NULL\n");
+    }
+    if(str2==NULL){
+        handle_error_with_exit("error better strcat str2 is NULL\n");
+    }
+    strcat(str1,str2);
     return;
 }
 void set_max_buff_rcv_size(int sockfd){
@@ -222,10 +232,9 @@ int count_word_in_buf(char*buf){
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];//3 per le cifre +1 terminatore
     memset(num_format_string,'\0',4);
-    strcpy(temp,"_");
+    better_strcpy(temp,"_");
     sprintf(num_format_string, "%d",copy_number);
-    strcat(temp,num_format_string);
-    //strcat(temp,"_");
+    better_strcat(temp,num_format_string);
     return;
 }
 
@@ -249,13 +258,13 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     generate_branches_and_number(temp,copy_number);//scrive dentro temp la stringa da concatenare
     occurence=strchr(filename,'.');
     if(occurence==NULL){//non esiste un punto nel filename
-        strcpy(first_of_the_dot,filename);
-        strcat(first_of_the_dot,temp);
+        better_strcpy(first_of_the_dot,filename);
+        better_strcat(first_of_the_dot,temp);
     }
     else{//esiste un punto nel filename
         strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
-        strcat(first_of_the_dot,temp);
-        strcat(first_of_the_dot,occurence);
+        better_strcat(first_of_the_dot,temp);
+        better_strcat(first_of_the_dot,occurence);
     }
     absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
     if(absolute_path==NULL){
@@ -268,8 +277,8 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
         }
         if(occurence==NULL) {//aggiungi alla fine del filename le parentesi e il numero
             generate_branches_and_number(temp, copy_number);
-            strcpy(first_of_the_dot,filename);
-            strcat(first_of_the_dot,temp);
+            better_strcpy(first_of_the_dot,filename);
+            better_strcat(first_of_the_dot,temp);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
             if(absolute_path==NULL){
                 handle_error_with_exit("error in generate full path\n");
@@ -279,8 +288,8 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
             generate_branches_and_number(temp, copy_number);
             memset(first_of_the_dot,'\0',strlen(filename)+5);
             strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
-            strcat(first_of_the_dot,temp);
-            strcat(first_of_the_dot,occurence);
+            better_strcat(first_of_the_dot,temp);
+            better_strcat(first_of_the_dot,occurence);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
             if(absolute_path==NULL){
                 handle_error_with_exit("error in generate full path\n");
@@ -366,8 +375,8 @@ char* files_in_dir(char* path,int lenght) {
     if (d!=NULL) {
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type != DT_DIR) {
-                strcat(list, dir->d_name);
-                strcat(list, "\n");
+                better_strcat(list, dir->d_name);
+                better_strcat(list, "\n");
             }
         }
         closedir(d);
@@ -450,7 +459,7 @@ char* generate_full_pathname(char* filename, char* dir){//ricordarsi di fare la 
         handle_error_with_exit("error in malloc\n");
     }
     memset(path,'\0',MAXPKTSIZE);
-    strcpy(path,dir);
-    strcat(path,filename);
+    better_strcpy(path,dir);
+    better_strcat(path,filename);
     return path;
 }

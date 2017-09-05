@@ -23,8 +23,8 @@ void add_slash_to_dir_serv(char*argument){
             handle_error_with_exit("error in malloc\n");
         }
         memset(dir_server,'\0',strlen(argument)+2);
-        strcpy(dir_server,argument);
-        strcat(dir_server,"/");
+        better_strcpy(dir_server,argument);
+        better_strcat(dir_server,"/");
         dir_server[strlen(argument)+2]='\0';
     }
     else {
@@ -295,7 +295,7 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_serv(argv[1]);
-    strcpy(localname,"./parameter.txt");
+    better_strcpy(localname,"./parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
         handle_error_with_exit("parameter.txt in ./ not found\n");

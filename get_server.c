@@ -114,9 +114,9 @@ int wait_for_start_get(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char
             handle_error_with_exit("error in open\n");
         }
         calc_file_MD5(path,shm_snd->shm->md5_sent);
-        strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
-        strcat(temp_buff.payload," ");
-        strcat(temp_buff.payload,shm_snd->shm->md5_sent);
+        better_strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
+        better_strcat(temp_buff.payload," ");
+        better_strcat(temp_buff.payload,shm_snd->shm->md5_sent);
         free(path);
         send_message_in_window(shm_snd->shm->addr.sockfd,&shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
                                temp_buff, shm_snd->shm->win_buf_snd, dim_string, DIMENSION,
@@ -323,7 +323,7 @@ int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff) {
         handle_error_with_exit("error in malloc\n");
     }
     rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);
-    strcpy(shm->filename,temp_buff.payload + 4);
+    better_strcpy(shm->filename,temp_buff.payload + 4);
     get_server(shm);
     if(close(shm->fd)==-1){
         handle_error_with_exit("error in close file\n");

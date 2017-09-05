@@ -165,8 +165,8 @@ void check_and_parse_command(char*command,char*filename){
             move_pointer(&temp_command,4);
             moved+=4;
             if(is_blank(temp_command)){
-                strcpy(filename,"");
-                strcpy(command,"list");
+                better_strcpy(filename,"");
+                better_strcpy(command,"list");
                 break;
             }
             else{
@@ -185,8 +185,8 @@ void check_and_parse_command(char*command,char*filename){
                 continue;
             }
             else{
-                strcpy(command,"get");
-                strcpy(filename,temp_command);
+                better_strcpy(command,"get");
+                better_strcpy(filename,temp_command);
                 break;
             }
         }
@@ -200,8 +200,8 @@ void check_and_parse_command(char*command,char*filename){
                 continue;
             }
             else{
-                strcpy(command,"put");
-                strcpy(filename,temp_command);
+                better_strcpy(command,"put");
+                better_strcpy(filename,temp_command);
                 break;
             }
         }
@@ -209,8 +209,8 @@ void check_and_parse_command(char*command,char*filename){
             move_pointer(&temp_command,7);
             moved+=7;
             if(is_blank(temp_command)){
-                strcpy(filename,"");
-                strcpy(command,"my list");
+                better_strcpy(filename,"");
+                better_strcpy(command,"my list");
                 break;
             }
             else{
@@ -223,8 +223,8 @@ void check_and_parse_command(char*command,char*filename){
             move_pointer(&temp_command,4);
             moved+=4;
             if(is_blank(temp_command)){
-                strcpy(filename,"");
-                strcpy(command,"exit");
+                better_strcpy(filename,"");
+                better_strcpy(command,"exit");
                 break;
             }
             else{

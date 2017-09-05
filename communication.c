@@ -11,7 +11,7 @@
 
 void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct temp_buffer temp_buff, char *data,
                   char command, double loss_prob) {
-    strcpy(temp_buff.payload, data);
+    better_strcpy(temp_buff.payload, data);
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = NOT_A_PKT;
     temp_buff.command = command;
@@ -46,7 +46,7 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
     temp_buff.seq=NOT_AN_ACK;
     temp_buff.command=SYN;
     temp_buff.ack=NOT_AN_ACK;
-    strcpy(temp_buff.payload,"SYN");
+    better_strcpy(temp_buff.payload,"SYN");
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
@@ -63,7 +63,7 @@ void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double
     temp_buff.seq=NOT_AN_ACK;
     temp_buff.command=SYN_ACK;
     temp_buff.ack=NOT_AN_ACK;
-    strcpy(temp_buff.payload,"SYN_ACK");
+    better_strcpy(temp_buff.payload,"SYN_ACK");
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
@@ -163,7 +163,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     temp_buff.command = command;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
-    strcpy(temp_buff.payload, message);
+    better_strcpy(temp_buff.payload, message);
     copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload,temp_buff.payload,MAXPKTSIZE-OVERHEAD);
     win_buf_snd[*seq_to_send].command = command;
     win_buf_snd[*seq_to_send].acked = 0;
@@ -195,7 +195,7 @@ void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_a
     //già memorizzato in finestra
     temp_buff.ack=temp_buff.seq;
     temp_buff.seq=NOT_A_PKT;
-    strcpy(temp_buff.payload,"ACK");
+    better_strcpy(temp_buff.payload,"ACK");
     //lascia invariato il tipo di comando
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
@@ -225,7 +225,7 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
     }
     ack_buff.ack = temp_buff.seq;
     ack_buff.seq = NOT_A_PKT;
-    strcpy(ack_buff.payload, "ACK");
+    better_strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
@@ -272,7 +272,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     }
     ack_buff.ack = temp_buff.seq;
     ack_buff.seq = NOT_A_PKT;
-    strcpy(ack_buff.payload, "ACK");
+    better_strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
@@ -316,7 +316,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
         if ((win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             win_buf_rcv[temp_buff.seq].lap=temp_buff.lap;
             win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
+            better_strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
@@ -325,7 +325,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
     }
     ack_buff.ack=temp_buff.seq;
     ack_buff.seq=NOT_A_PKT;
-    strcpy(ack_buff.payload,"ACK");
+    better_strcpy(ack_buff.payload,"ACK");
     ack_buff.command=temp_buff.command;
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server

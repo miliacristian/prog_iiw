@@ -215,8 +215,8 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                             struct window_snd_buf *win_buf_snd, struct shm_snd *shm_snd) {
     errno = 0;
     char *path, *first, *payload;
-    strcpy(temp_buff.payload, "get ");
-    strcat(temp_buff.payload, filename);
+    better_strcpy(temp_buff.payload, "get ");
+    better_strcat(temp_buff.payload, filename);
     send_message_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff,
                            shm_snd->shm->win_buf_snd, temp_buff.payload, GET, &shm_snd->shm->seq_to_send,
                            shm_snd->shm->param.loss_prob, shm_snd->shm->param.window, &shm_snd->shm->pkt_fly,
