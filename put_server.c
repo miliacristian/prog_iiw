@@ -98,6 +98,7 @@ void rcv_ack_error(struct shm_snd *shm_snd){
     }
     return;
 }
+
 int rcv_put_file(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;

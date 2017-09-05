@@ -11,11 +11,14 @@
 #include "get_server.h"
 #include "communication.h"
 
-char calc_file_MD5(char *file_name, char *md5_sum){
+char calc_file_MD5(char *filename, char *md5_sum){
+    if(filename==NULL || md5_sum==NULL){
+        handle_error_with_exit("error in calc md5\n");
+    }
     printf("making md5...\n");
 #define MD5SUM_CMD_FMT "md5sum %." STR(PATH_LEN) "s 2>/dev/null"
     char cmd[PATH_LEN + sizeof (MD5SUM_CMD_FMT)];
-    sprintf(cmd, MD5SUM_CMD_FMT, file_name);
+    sprintf(cmd, MD5SUM_CMD_FMT, filename);
 #undef MD5SUM_CMD_FMT
     FILE *p = popen(cmd, "r");
     if (p == NULL) return 0;
@@ -30,6 +33,9 @@ char calc_file_MD5(char *file_name, char *md5_sum){
 void check_md5(char*filename,char*md5_to_check) {
     char md5[MD5_LEN + 1];
     printf("checking md5...\n");
+    if(filename==NULL || md5_to_check==NULL){
+        handle_error_with_exit("error in check md5\n");
+    }
     if (!calc_file_MD5(filename, md5)) {
         handle_error_with_exit("error in calculate md5\n");
     }
@@ -63,6 +69,12 @@ void better_strcat(char*str1,char*str2){
     strcat(str1,str2);
     return;
 }
+void better_strcmp(char*str1,char*str2){
+    return;
+}
+void better_strncmp(char*str1,char*str2){
+    return;
+}
 void set_max_buff_rcv_size(int sockfd){
     int buff_size=BUFF_RCV_SIZE;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
@@ -86,6 +98,9 @@ void print_double_buff_rcv_size(int sockfd){
     printf("buffer size %d\n",get_size);
 }
 char to_resend(struct shm_sel_repeat *shm, struct node node){
+    if(shm==NULL){
+        handle_error_with_exit("error in to_resend shm is NULL\n");
+    }
     if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
         if(shm->win_buf_snd[node.seq].acked==1){
             return 0;
@@ -97,6 +112,9 @@ char to_resend(struct shm_sel_repeat *shm, struct node node){
 
 char to_resend2(struct shm_sel_repeat *shm, struct node node){
     //printf("lap finestra %d lap lista %d\n",shm->win_buf_snd[node.seq].lap,node.lap);
+    if(shm==NULL){
+        handle_error_with_exit("error in to_resend shm is NULL\n");
+    }
     if(node.lap == (shm->win_buf_snd[node.seq]).lap){
         //printf("acked %d seq %d\n", shm->win_buf_snd[node.seq].acked, node.seq);
         if((shm->win_buf_snd[node.seq].acked)!= 0){
@@ -122,59 +140,92 @@ void block_signal(int signal){
     return;
 }
 void initialize_sem(sem_t*mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in initialize_sem mtx is NULL\n");
+    }
     if(sem_init(mtx,1,1)==-1){
         handle_error_with_exit("error in sem_init\n");
     }
     return;
 }
 void initialize_mtx(pthread_mutex_t *mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in initialize_mtx mtx is NULL\n");
+    }
     if(pthread_mutex_init(mtx,NULL)!=0){
         handle_error_with_exit("error in initialize mtx\n");
     }
     return;
 }
 void destroy_mtx(pthread_mutex_t *mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in destroy_mtx mtx is NULL\n");
+    }
     if(pthread_mutex_destroy(mtx)!=0){
         handle_error_with_exit("error in destroy mtx\n");
     }
     return;
 }
 void lock_mtx(pthread_mutex_t *mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in lock_mtx mtx is NULL\n");
+    }
     if(pthread_mutex_lock(mtx)!=0){
         handle_error_with_exit("error in pthread_mutex_lock\n");
     }
     return;
 }
 void unlock_mtx(pthread_mutex_t *mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in unlock_mtx mtx is NULL\n");
+    }
     if(pthread_mutex_unlock(mtx)!=0){
         handle_error_with_exit("error in pthread_mutex_unlock\n");
     }
     return;
 }
 void initialize_cond(pthread_cond_t*cond){
+    if(cond==NULL){
+        handle_error_with_exit("error in initialize_cond cond is NULL\n");
+    }
     if(pthread_cond_init(cond,NULL)!=0){
         handle_error_with_exit("error in initialize cond\n");
     }
 }
 void destroy_cond(pthread_cond_t*cond){
+    if(cond==NULL){
+        handle_error_with_exit("error in destroy_cond cond is NULL\n");
+    }
     if(pthread_cond_destroy(cond)!=0){
         handle_error_with_exit("error in destroy cond\n");
     }
     return;
 }
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){
+    if(mtx==NULL){
+        handle_error_with_exit("error in wait condition mtx is NULL\n");
+    }
+    if(cond==NULL){
+        handle_error_with_exit("error in wait condition cond is NULL\n");
+    }
     if(pthread_cond_wait(cond,mtx)!=0){
         handle_error_with_exit("error in wait on a condition\n");
     }
     return;
 }
 void unlock_thread_on_a_condition(pthread_cond_t*cond){
+    if(cond==NULL){
+        handle_error_with_exit("error in unlock_thread cond is NULL\n");
+    }
     if(pthread_cond_signal(cond)!=0){
         handle_error_with_exit("error in unlock_thread_on_a_condition\n");
     }
     return;
 }
 char check_if_dir_exist(char*dir_path){
+    if(dir_path==NULL){
+        handle_error_with_exit("error in check if dir exist path is NULL\n");
+    }
     DIR *dir;
     if((dir=opendir(dir_path))==NULL){
         handle_error_with_exit("error in open directory\n");
@@ -203,6 +254,9 @@ void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){
 }
 
 int count_word_in_buf(char*buf){
+    if(buf==NULL){
+        handle_error_with_exit("error in count_word buf is NULL\n");
+    }
     int word=0;
     size_t lun;
     lun=strlen(buf);
@@ -231,6 +285,9 @@ int count_word_in_buf(char*buf){
 
 void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
     char num_format_string[4];//3 per le cifre +1 terminatore
+    if(temp==NULL){
+        handle_error_with_exit("error in generate branches temp is NULL\n");
+    }
     memset(num_format_string,'\0',4);
     better_strcpy(temp,"_");
     sprintf(num_format_string, "%d",copy_number);
@@ -243,6 +300,12 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     unsigned char copy_number=1;
     char temp[5],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
     memset(temp,'\0',5);
+    if(path_to_filename==NULL){
+        handle_error_with_exit("error generate multi copy path_to_filename is NULL\n");
+    }
+    if(filename==NULL){
+        handle_error_with_exit("error generate multi copy filename is NULL\n");
+    }
     absolute_path=generate_full_pathname(filename,path_to_filename);
     if(absolute_path==NULL){
         handle_error_with_exit("error in generate full path\n");
@@ -302,6 +365,9 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
 
 char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
+    if(win_base<0 || window<1){
+        handle_error_with_exit("invalid win_base or window in seq_is_in_window\n");
+    }
     int end_win=(win_base+window-1)%(2*window);
     if(seq<0){
         return 0;
@@ -325,6 +391,9 @@ char seq_is_in_window(int win_base,int window,int seq){
 }
 
 char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
+    if(loss_prob<0 || loss_prob>100){
+        handle_error_with_exit("error in flip_coin invalid loss_prob\n");
+    }
     int random_num=rand()%101;
     if(loss_prob>(random_num)){
         return 0;
@@ -333,6 +402,9 @@ char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrim
 }
 
 int count_char_dir(char*path){
+    if(path==NULL){
+        handle_error_with_exit("error in count_char_dir path is NULL\n");
+    }
     DIR *d;
     struct dirent *dir;
     int lenght=0;
@@ -422,6 +494,7 @@ void lock_sem(sem_t*sem){
     return;
 }
 void unlock_sem(sem_t*sem){
+
     if(sem_post(sem)==-1){
         handle_error_with_exit("error in sem_post\n");
     }
