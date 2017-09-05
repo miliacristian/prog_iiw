@@ -27,7 +27,7 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
     alarm(TIMEOUT);
     errno = 0;
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), 0,
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) !=
             -1) {//attendo fin_ack dal server
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
@@ -88,7 +88,7 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
     alarm(TIMEOUT);//chiusura temporizzata
     errno = 0;
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), 0,
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) !=
             -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
@@ -155,7 +155,7 @@ int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct te
     printf("rcv list\n");
     errno = 0;
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), 0,
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) !=
             -1) {//bloccati finquando non ricevi file
             // o altri messaggi
@@ -240,7 +240,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                            shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, shm_snd->shm);//manda messaggio get
     alarm(TIMEOUT);
     while (1) {
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, sizeof(struct temp_buffer), 0,
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) !=
             -1) {//attendo risposta del server
             //mi blocco sulla risposta del server

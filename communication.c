@@ -159,7 +159,6 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     return;
 }
 
-
 void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t len, struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, char *message, char command, int *seq_to_send, double loss_prob, int W, int *pkt_fly, struct shm_sel_repeat *shm) {
     temp_buff.command = command;
     temp_buff.ack = NOT_AN_ACK;
