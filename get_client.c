@@ -269,9 +269,6 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                     handle_error_with_exit("error in malloc\n");
                 }
                 copy_buf1_in_buf2(payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
-                //strcpy(payload,temp_buff.payload);
-                //printf("payload %s\n",temp_buff.payload);
-                //printf("payload %s\n",payload);
                 first = payload;
                 shm_snd->shm->dimension = parse_integer_and_move(&payload);
                 payload++;
