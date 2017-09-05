@@ -73,7 +73,30 @@ int wait_for_fin_put(struct shm_snd *shm_snd){
         }
     }
 }
-
+void rcv_ack_error(struct shm_snd *shm_snd){
+    struct temp_buffer temp_buff;
+    alarm(2);
+    for(;;) {
+        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
+                     (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {
+            if (temp_buff.command == ERROR) {
+                alarm(0);
+                pthread_cancel(shm_snd->tid);
+                printf("thread cancel put client\n");
+                pthread_exit(NULL);
+            }
+        }
+        if (great_alarm_serv == 1) {
+            printf("il sender non sta mandando più nulla o errore interno\n");
+            great_alarm_serv = 0;
+            alarm(0);
+            pthread_cancel(shm_snd->tid);
+            printf("thread cancel put client\n");
+            pthread_exit(NULL);
+        }
+    }
+    return;
+}
 int rcv_put_file(struct shm_snd *shm_snd){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
@@ -84,6 +107,7 @@ int rcv_put_file(struct shm_snd *shm_snd){
     else{
         send_message_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, shm_snd->shm->win_buf_snd, "ERROR", ERROR, &shm_snd->shm->seq_to_send, shm_snd->shm->param.loss_prob, shm_snd->shm->param.window, &shm_snd->shm->pkt_fly, shm_snd->shm);
         //chiusura temporizzata,è esagerato mandare solo errore e terminare?
+        rcv_ack_error(shm_snd);
     }
     errno=0;
     while (1) {

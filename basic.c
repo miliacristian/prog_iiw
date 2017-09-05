@@ -257,7 +257,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     }
     while(check_if_file_exist(absolute_path)){
         copy_number+=1;
-        if(copy_number>=255){
+        if(copy_number>=3){
             return NULL;
         }
         if(occurence==NULL) {//aggiungi alla fine del filename le parentesi e il numero
