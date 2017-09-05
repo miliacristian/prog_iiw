@@ -20,7 +20,7 @@ int close_connection_get(struct temp_buffer temp_buff,int *seq_to_send,struct wi
     errno=0;
     while(1){
         if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) != -1) {//attendo fin_ack dal server
-            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
+            if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){//
                 continue;//ignora pacchetto
             }
             else{
