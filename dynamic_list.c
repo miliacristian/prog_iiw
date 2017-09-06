@@ -1,6 +1,9 @@
 #include "dynamic_list.h"
 
 void initialize_timeval(struct timespec *tv,int timer_ms){
+    if(tv==NULL){
+        handle_error_with_exit("error in initialize timeval\n");
+    }
     long temp;
     temp=tv->tv_nsec+(timer_ms*1000000);
     if(temp>=1000000000){
@@ -14,7 +17,16 @@ void initialize_timeval(struct timespec *tv,int timer_ms){
 }
 //Creates a new Node and returns pointer to it.
 struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms) {
+    if(seq<0 || lap<0 ){
+        handle_error_with_exit("error in get_new_node seq or lap invalid\n");
+    }
+    if(timer_ms<0){
+        handle_error_with_exit("error in get_new_node timer smaller than 0\n");
+    }
     struct node* new_node = (struct node*)malloc(sizeof(struct node));
+    if(new_node==NULL){
+        handle_error_with_exit("error in malloc get_new_node\n");
+    }
     new_node->seq = seq;
     new_node->tv.tv_sec=timespec.tv_sec;
     new_node->tv.tv_nsec=timespec.tv_nsec;
@@ -27,6 +39,9 @@ struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms)
 
 int delete_head(struct node** head, struct node* old_head){
     //initializza oldhead con il primo nodo della lista
+    if(head==NULL){
+        handle_error_with_exit("error in delete head\n");
+    }
     if(*head == NULL){
         printf("empty list\n");
         return -1;
@@ -54,6 +69,12 @@ int delete_head(struct node** head, struct node* old_head){
 }
 
 void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {
+    if(head==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
+    if(tail==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
     if(*head == NULL) {
         *head = new_node;
         *tail = new_node;
@@ -89,6 +110,9 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     struct node* next_node = NULL;
     struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
     //printf("aggiungo alla lista %d\n", new_node->lap);
+    if(head==NULL || tail==NULL){
+        handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
+    }
     if(*head == NULL) {
         *head = new_node;
         *tail = new_node;
@@ -122,6 +146,9 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
 
 void print(struct node* head) {
     struct node* temp = head;
+    if (temp == NULL) {
+        return;
+    }
     while(temp != NULL) {
         printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
         temp = temp->next;

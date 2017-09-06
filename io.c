@@ -18,6 +18,9 @@ ssize_t writen(int fd, void *buf, size_t n){
     size_t nleft;
     ssize_t nwritten;
     const char *ptr;
+    if(buf==NULL){
+        handle_error_with_exit("error in writen buf is NULL\n");
+    }
     ptr = buf;
     nleft = n;
     while (nleft > 0) {

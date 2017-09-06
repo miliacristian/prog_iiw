@@ -17,6 +17,9 @@ struct select_param param_client;
 char *dir_client;
 
 void add_slash_to_dir_client(char*argument){
+    if(argument==NULL){
+        handle_error_with_exit("error in add_slah\n");
+    }
     if ((argument[strlen(argument) - 1]) != '/') {
         dir_client = malloc(strlen(argument) + 2);//1 per "/" uno per terminatore
         if (dir_client == NULL) {
@@ -44,6 +47,9 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written=0;
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    if(filename==NULL){
+        handle_error_with_exit("error in get_command\n");
+    }
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
     }
@@ -199,6 +205,9 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
     int byte_readed=0;
     char*path;
+    if(filename==NULL){
+        handle_error_with_exit("error in put command\n");
+    }
     path=generate_full_pathname(filename,dir_client);
     if(path==NULL){
         handle_error_with_exit("error in generate full path\n");
@@ -356,6 +365,9 @@ void client_get_job(char *filename) {
     printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
+    if(filename==NULL){
+        handle_error_with_exit("error in client_get_job\n");
+    }
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -384,6 +396,9 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
     printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
+    if(filename==NULL){
+        handle_error_with_exit("error in client_put_job\n");
+    }
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
