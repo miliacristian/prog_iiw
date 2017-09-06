@@ -30,7 +30,7 @@
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
-#define MAXPKTSIZE 1468//1468==no packet fragmentation //1468
+#define MAXPKTSIZE 100//1468==no packet fragmentation //1468
 #define MAXLINE 1024
 #define BUFF_RCV_SIZE (208*1024)//(208*1024)//208*1024 max buff_size_without root
 #define SERVER_PORT 5195
@@ -76,7 +76,6 @@ struct window_rcv_buf{
     char received;
     char command;
     int lap;
-    //char payload[MAXPKTSIZE-OVERHEAD];
     char*payload;
 };
 
@@ -86,7 +85,6 @@ struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
     char command;
     struct timespec time;//usato per timer adattativo
     int lap;
-    //char payload[MAXPKTSIZE-OVERHEAD];
     char*payload;
 };
 
@@ -135,10 +133,6 @@ struct msgbuf{
     long mtype;
     struct sockaddr_in addr;
 };
-/*struct shm_snd {
-    struct shm_sel_repeat *shm;
-    pthread_t tid;
-};*/
 
 struct node  {
     int seq;

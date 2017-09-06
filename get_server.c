@@ -324,8 +324,10 @@ int execute_get(struct shm_sel_repeat*shm,struct temp_buffer temp_buff) {
     rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);
     better_strcpy(shm->filename,temp_buff.payload + 4);
     get_server(shm);
-    if(close(shm->fd)==-1){
-        handle_error_with_exit("error in close file\n");
+    if(shm->fd!=-1) {
+        if (close(shm->fd) == -1) {
+            handle_error_with_exit("error in close file\n");
+        }
     }
     return shm->byte_readed;
 }

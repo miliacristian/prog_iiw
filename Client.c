@@ -150,7 +150,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=-1;
-    //shm->filename=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
+    shm->filename=NULL;
     shm->addr.len=sizeof(serv_addr);
     shm->head=NULL;
     shm->tail=NULL;
@@ -191,7 +191,6 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
         free(shm->win_buf_rcv[i].payload);
         shm->win_buf_rcv[i].payload=NULL;
     }
-    //ricorda di distruggere cond e rilasciare mtx
     //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);

@@ -30,7 +30,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm){
             else{
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto wait for fin con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq,temp_buff.command);
+            printf(MAGENTA"pacchetto ricevuto wait for fin con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,temp_buff.command,temp_buff.lap);
             if (temp_buff.command==FIN){
                 alarm(0);
                 send_message(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len,temp_buff,"FIN_ACK",FIN_ACK,shm->param.loss_prob);
@@ -53,8 +53,8 @@ int wait_for_fin_put(struct shm_sel_repeat *shm){
                 alarm(TIMEOUT);
             }
             else {
-                printf("ignorato wait for fin pacchetto con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.command);
+                printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                       temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n",shm->window_base_snd,shm->window_base_rcv);
                 handle_error_with_exit("");
             }
@@ -73,31 +73,6 @@ int wait_for_fin_put(struct shm_sel_repeat *shm){
         }
     }
 }
-void rcv_ack_error(struct shm_sel_repeat *shm){
-    struct temp_buffer temp_buff;
-    alarm(2);
-    for(;;) {
-        if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
-                     (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {
-            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
-            if (temp_buff.command == ERROR) {
-                alarm(0);
-                pthread_cancel(shm->tid);
-                printf("thread cancel put client\n");
-                pthread_exit(NULL);
-            }
-        }
-        if (great_alarm_serv == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
-            great_alarm_serv = 0;
-            alarm(0);
-            pthread_cancel(shm->tid);
-            printf("thread cancel put client\n");
-            pthread_exit(NULL);
-        }
-    }
-    return;
-}
 
 int rcv_put_file(struct shm_sel_repeat *shm){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
@@ -109,7 +84,6 @@ int rcv_put_file(struct shm_sel_repeat *shm){
     else{
         send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, shm->win_buf_snd, "ERROR", ERROR, &shm->seq_to_send, shm->param.loss_prob, shm->param.window, &shm->pkt_fly, shm);
         //chiusura temporizzata,è esagerato mandare solo errore e terminare?
-        rcv_ack_error(shm);
     }
     errno=0;
     while (1) {
@@ -120,6 +94,14 @@ int rcv_put_file(struct shm_sel_repeat *shm){
             }
             else{
                 alarm(0);
+            }
+            if (temp_buff.command == FIN) {
+                send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
+                             "FIN_ACK", FIN_ACK, shm->param.loss_prob);
+                alarm(0);
+                pthread_cancel(shm->tid);
+                printf("thread cancel close_put_snd\n");
+                pthread_exit(NULL);
             }
             printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack!=NOT_AN_ACK) {
@@ -152,8 +134,8 @@ int rcv_put_file(struct shm_sel_repeat *shm){
                 alarm(TIMEOUT);
             }
             else {
-                printf("ignorato pacchetto rcv put file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.command);
+                printf("ignorato pacchetto rcv put file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                       temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n",shm->window_base_snd,shm->window_base_rcv);
                 handle_error_with_exit("");
             }
