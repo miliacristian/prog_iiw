@@ -122,6 +122,7 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     char*list;
     struct select_param param;
     int fd;
+    pthread_t tid;
     struct node* head;
     struct node *tail;
 };
@@ -134,10 +135,10 @@ struct msgbuf{
     long mtype;
     struct sockaddr_in addr;
 };
-struct shm_snd {
+/*struct shm_snd {
     struct shm_sel_repeat *shm;
     pthread_t tid;
-};
+};*/
 
 struct node  {
     int seq;
