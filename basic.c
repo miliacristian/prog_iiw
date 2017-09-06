@@ -255,6 +255,9 @@ void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){
     if(buf1==NULL){
         handle_error_with_exit("buff 1 null\n");
     }
+    if(dim<0){
+        handle_error_with_exit("error in copy_buf2 in buf1\n");
+    }
     for(int i=0;i<dim;i++){
         *buf1=*buf2;
         buf1++;

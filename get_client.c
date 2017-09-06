@@ -414,7 +414,7 @@ void get_client(struct shm_sel_repeat *shm) {
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     //shm_snd.shm=shm;
-    if(pthread_create(&tid_snd,NULL,get_client_job,&shm)!=0){
+    if(pthread_create(&tid_snd,NULL,get_client_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);

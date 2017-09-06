@@ -42,7 +42,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto send_file con ack %d seq %d command %d win_base_snd %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,shm->window_base_snd);
+            printf("pacchetto ricevuto send_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,shm->window_base_snd);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
@@ -302,7 +302,7 @@ void get_server(struct shm_sel_repeat *shm){
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     //shm_snd.shm=shm;
-    if(pthread_create(&tid_snd,NULL,get_server_job,&shm)!=0){
+    if(pthread_create(&tid_snd,NULL,get_server_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);

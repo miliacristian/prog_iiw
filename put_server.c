@@ -269,7 +269,7 @@ void put_server(struct shm_sel_repeat *shm){
     }
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
-    if(pthread_create(&tid_snd,NULL,put_server_job,&shm)!=0){
+    if(pthread_create(&tid_snd,NULL,put_server_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);
