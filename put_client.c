@@ -27,14 +27,21 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo fin_ack dal server
+            printf("pacchetto ricevuto close_conn get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {//
                 continue;//ignora pacchetto
             } else {
                 alarm(0);
             }
-            printf("pacchetto ricevuto close_conn get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
+            if (temp_buff.command == FIN_ACK) {
+                alarm(0);
+                pthread_cancel(shm->tid);
+                printf("thread cancel close connection\n");
+                printf(RED "il server ha troppe copie del file %s\n"RESET,shm->filename);
+                pthread_exit(NULL);
+            }
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly, shm);
@@ -42,13 +49,7 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
                     printf("close connect get ack duplicato\n");
                 }
                 alarm(TIMEOUT);
-            } else if (temp_buff.command == FIN_ACK) {
-                alarm(0);
-                pthread_cancel(shm->tid);
-                printf("thread cancel close connection\n");
-                printf(RED "il server ha troppe copie del file %s\n"RESET,shm->filename);
-                pthread_exit(NULL);
-            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
@@ -82,14 +83,14 @@ int close_put_send_file(struct shm_sel_repeat *shm){
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,MSG_DONTWAIT, (struct sockaddr *) &(shm->addr.dest_addr), &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
+            printf(MAGENTA"pacchetto ricevuto close put send file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
+                   temp_buff.command,temp_buff.lap);
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
             else{
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto close put send file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
                 printf(GREEN"Fin_ack ricevuto\n"RESET);
@@ -148,13 +149,13 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 send_data_in_window(shm->addr.sockfd,shm->fd, &(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->win_buf_snd,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly,&shm->byte_sent,shm->dimension, shm);
         }
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
+            printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
             else{
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
