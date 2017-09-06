@@ -43,7 +43,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                                 &shm_snd->shm->pkt_fly, &shm_snd->shm->byte_sent, shm_snd->shm->dimension,
                                 shm_snd->shm);
         }
-        if (recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT,
+        while(recvfrom(shm_snd->shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT,
                      (struct sockaddr *) &shm_snd->shm->addr.dest_addr, &shm_snd->shm->addr.len) !=
             -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
