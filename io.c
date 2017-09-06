@@ -44,6 +44,9 @@ ssize_t readn(int fd,void *buf, size_t n){
     char *ptr;
     ptr = buf;
     nleft = n;
+    if(buf==NULL){
+        handle_error_with_exit("error in readn buf is NULL\n");
+    }
     while (nleft > 0) {
         if ((nread = read(fd, ptr, nleft)) <= 0) {
             if ((nread < 0) && (errno == EINTR)){//se è stato interrotto da un segnale continua
@@ -63,8 +66,10 @@ int readline(int fd, void *vptr, int maxlen)
 {
     int  n, rc;
     char c, *ptr;
-
     ptr = vptr;
+    if(vptr==NULL){
+        handle_error_with_exit("error in readline\n");
+    }
     for (n = 1; n < maxlen; n++) {
         if ((rc = (int)read(fd, &c, 1)) == 1) {
             *ptr++ = c;
