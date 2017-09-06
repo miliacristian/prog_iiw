@@ -17,6 +17,9 @@ struct select_param param_serv;
 char*dir_server;
 
 void add_slash_to_dir_serv(char*argument){
+    if(argument==NULL){
+        handle_error_with_exit("error in add_slash argument is NULL\n");
+    }
     if((argument[strlen(argument)-1])!='/'){
         dir_server=malloc(strlen(argument)+2);//1 per "/" uno per terminatore
         if(dir_server==NULL){
@@ -41,6 +44,9 @@ void timeout_handler_serv(int sig, siginfo_t *si, void *uc){
 }
 
 void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){
+    if(mtx_prefork==NULL){
+        handle_error_with_exit("error in initialize_mtx_prefork\n");
+    }
     if(sem_init(&(mtx_prefork->sem),1,1)==-1){
         handle_error_with_exit("error in sem_init\n");
     }
@@ -269,10 +275,14 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
     return NULL;
 }
 
-void create_thread_pool_handler(struct mtx_prefork*mtxPrefork){//funzione che crea il gestore(thread) della riserva
+void create_thread_pool_handler(struct mtx_prefork*mtx_prefork){//funzione che crea il gestore(thread) della riserva
     // di processi
+
+    if(mtx_prefork==NULL){
+        handle_error_with_exit("error in create thread_pool_handler\n");
+    }
     pthread_t tid;
-    if(pthread_create(&tid,NULL,pool_handler_job,mtxPrefork)!=0){
+    if(pthread_create(&tid,NULL,pool_handler_job,mtx_prefork)!=0){
         handle_error_with_exit("error in create_pool_handler\n");
     }
     block_signal(SIGALRM);
