@@ -22,7 +22,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
     alarm(2);//chiusura temporizzata
     errno = 0;
     while (1) {
-        if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE,MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr,
+        if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) &shm->addr.dest_addr,
                      &shm->addr.len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo,bloccante o non bloccante??
             printf(MAGENTA"pacchetto ricevuto wait for fin con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack,

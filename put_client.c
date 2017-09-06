@@ -81,7 +81,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
     alarm(TIMEOUT);
     send_message_in_window(shm->addr.sockfd, &(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->win_buf_snd, "FIN", FIN,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly, shm);
     while (1) {
-        if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,MSG_DONTWAIT, (struct sockaddr *) &(shm->addr.dest_addr), &shm->addr.len) != -1) {//attendo risposta del client,
+        if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &(shm->addr.dest_addr), &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
             printf(MAGENTA"pacchetto ricevuto close put send file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
                    temp_buff.command,temp_buff.lap);
