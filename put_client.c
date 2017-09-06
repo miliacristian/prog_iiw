@@ -14,7 +14,7 @@
 #include "dynamic_list.h"
 int rtx=0;
 
-int close_put_send_file(struct shm_snd *shm_snd){
+int close_put_send_file(struct shm_sel_repeat *shm){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("close_put_send_file\n");
     struct temp_buffer temp_buff;
@@ -80,7 +80,7 @@ int close_put_send_file(struct shm_snd *shm_snd){
         }
     }
 }
-int send_put_file(struct shm_snd *shm_snd) {
+int send_put_file(struct shm_sel_repeat *shm) {
     struct temp_buffer temp_buff;
     printf("send_put_file\n");
     alarm(TIMEOUT);
@@ -139,7 +139,7 @@ int send_put_file(struct shm_snd *shm_snd) {
 }
 
 void *put_client_job(void*arg){
-    struct shm_snd *shm_snd=arg;
+    struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     char *path,dim_string[11];
     sprintf(dim_string, "%d", shm_snd->shm->dimension);
@@ -303,14 +303,12 @@ void *put_client_rtx_job(void*arg){
 void put_client(struct shm_sel_repeat *shm){
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
-    struct shm_snd shm_snd;
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_rtx\n",tid_rtx);
-    shm_snd.tid=tid_rtx;
-    shm_snd.shm=shm;
-    if(pthread_create(&tid_snd,NULL,put_client_job,&shm_snd)!=0){
+    shm->tid=tid_rtx;
+    if(pthread_create(&tid_snd,NULL,put_client_job,&shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);

@@ -16,7 +16,7 @@ int rtx_list_server = 0;
 
 int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff,
                struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,
-               struct shm_snd *shm_snd) {//manda fin non in finestra senza sequenza e ack e chiudi
+               struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
     send_message(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len, temp_buff, "FIN",
                  FIN, shm_snd->shm->param.loss_prob);
@@ -29,7 +29,7 @@ int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct te
 int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd,
               int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff,
               struct window_snd_buf *win_buf_snd, int *byte_readed, int dim, double loss_prob,
-              struct shm_snd *shm_snd) {
+              struct shm_sel_repeat *shm) {
     printf("send_list\n");
     char *temp_list;//creare la lista e poi inviarla in parti
     shm_snd->shm->list = files_in_dir(dir_server, shm_snd->shm->dimension);
@@ -103,7 +103,7 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     }
 }
 
-int wait_for_start_list(struct shm_snd *shm_snd, struct temp_buffer temp_buff) {
+int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char dim[11];
     /*rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr, shm_snd->shm->addr.len,
@@ -274,32 +274,29 @@ void *list_server_rtx_job(void *arg) {
 }
 
 void *list_server_job(void *arg) {
-    struct shm_snd *shm_snd = arg;
+    struct shm_sel_repeat *shm= arg;
     struct temp_buffer temp_buff;
-    wait_for_start_list(shm_snd, temp_buff);
+    wait_for_start_list(shm, temp_buff);
     return NULL;
 }
 
 void list_server(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
-    pthread_t tid_snd, tid_rtx;
-    struct shm_snd shm_snd;
-    if (pthread_create(&tid_rtx, NULL, list_server_rtx_job, shm) != 0) {
+    pthread_t tid_snd,tid_rtx;
+    if(pthread_create(&tid_rtx,NULL,list_server_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
-    printf("%d tid_rtx\n", tid_rtx);
-    shm_snd.tid = tid_rtx;
-    shm_snd.shm = shm;
-    if (pthread_create(&tid_snd, NULL, list_server_job, &shm_snd) != 0) {
+    printf("%d tid_rtx\n",tid_rtx);
+    shm->tid=tid_rtx;
+    if(pthread_create(&tid_snd,NULL,list_server_job,&shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
-    printf("%d tid_snd\n", tid_snd);
-    block_signal(
-            SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
-    if (pthread_join(tid_snd, NULL) != 0) {
+    printf("%d tid_snd\n",tid_snd);
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
-    if (pthread_join(tid_rtx, NULL) != 0) {
+    if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
     return;

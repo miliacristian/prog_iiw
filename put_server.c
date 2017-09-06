@@ -16,7 +16,7 @@
 
 int rtx=0;
 
-int wait_for_fin_put(struct shm_snd *shm_snd){
+int wait_for_fin_put(struct shm_sel_repeat *shm){
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
     alarm(2);//chiusura temporizzata
@@ -73,7 +73,7 @@ int wait_for_fin_put(struct shm_snd *shm_snd){
         }
     }
 }
-void rcv_ack_error(struct shm_snd *shm_snd){
+void rcv_ack_error(struct shm_sel_repeat *shm){
     struct temp_buffer temp_buff;
     alarm(2);
     for(;;) {
@@ -99,7 +99,7 @@ void rcv_ack_error(struct shm_snd *shm_snd){
     return;
 }
 
-int rcv_put_file(struct shm_snd *shm_snd){
+int rcv_put_file(struct shm_sel_repeat *shm){
     //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
@@ -257,20 +257,19 @@ void*put_server_rtx_job(void*arg){
     return NULL;
 }
 void*put_server_job(void*arg){
-    struct shm_snd *shm_snd=arg;
-    rcv_put_file(shm_snd);
+    struct shm_sel_repeat *shm=arg;
+    rcv_put_file(shm);
     return NULL;
 }
 void put_server(struct shm_sel_repeat *shm){
+    //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
-    struct shm_snd shm_snd;
     if(pthread_create(&tid_rtx,NULL,put_server_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
-    printf("%d tid_rcv\n",tid_rtx);
-    shm_snd.tid=tid_rtx;
-    shm_snd.shm=shm;
-    if(pthread_create(&tid_snd,NULL,put_server_job,&shm_snd)!=0){
+    printf("%d tid_rtx\n",tid_rtx);
+    shm->tid=tid_rtx;
+    if(pthread_create(&tid_snd,NULL,put_server_job,&shm)!=0){
         handle_error_with_exit("error in create thread put client rcv\n");
     }
     printf("%d tid_snd\n",tid_snd);
