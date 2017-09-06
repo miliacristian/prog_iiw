@@ -15,15 +15,16 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = NOT_A_PKT;
     temp_buff.command = command;
+    temp_buff.lap=NO_LAP;
     //niente ack e sequenza
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) addr, len) ==
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf(CYAN"pacchetto inviato con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     } else {
-        printf(BLUE"pacchetto con ack %d, seq %d command %d perso\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(BLUE"pacchetto con ack %d, seq %d command %d lap %d perso\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     }
     return;
 }
@@ -33,10 +34,10 @@ void resend_message(int sockfd,struct temp_buffer*temp_buff,struct sockaddr_in *
         if (sendto(sockfd, temp_buff, MAXPKTSIZE,0, (struct sockaddr *) addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf(YELLOW"pacchetto ritrasmesso con ack %d seq %d command %d\n"RESET, temp_buff->ack, temp_buff->seq,temp_buff->command);
+        printf(YELLOW"pacchetto ritrasmesso con ack %d seq %d command %d lap %d\n"RESET, temp_buff->ack, temp_buff->seq,temp_buff->command,temp_buff->lap);
     }
     else{
-        printf(YELLOW"pacchetto ritrasmesso con ack %d, seq %d command %d perso\n" RESET,temp_buff->ack,temp_buff->seq,temp_buff->command);
+        printf(YELLOW"pacchetto ritrasmesso con ack %d, seq %d command %d lap %d perso\n" RESET,temp_buff->ack,temp_buff->seq,temp_buff->command,temp_buff->lap);
     }
     return;
 }
@@ -46,6 +47,7 @@ void send_syn(int sockfd,struct sockaddr_in *serv_addr, socklen_t len, double lo
     temp_buff.seq=NOT_AN_ACK;
     temp_buff.command=SYN;
     temp_buff.ack=NOT_AN_ACK;
+    temp_buff.lap=NO_LAP;
     better_strcpy(temp_buff.payload,"SYN");
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
@@ -63,6 +65,7 @@ void send_syn_ack(int sockfd,struct sockaddr_in *serv_addr,socklen_t len, double
     temp_buff.seq=NOT_AN_ACK;
     temp_buff.command=SYN_ACK;
     temp_buff.ack=NOT_AN_ACK;
+    temp_buff.lap=NO_LAP;
     better_strcpy(temp_buff.payload,"SYN_ACK");
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd,&temp_buff,MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
@@ -107,9 +110,9 @@ void send_list_in_window(int sockfd,char**list, struct sockaddr_in *serv_addr, s
             -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf("pacchetto inviato con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf("pacchetto inviato con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     } else {
-        printf("pacchetto con ack %d, seq %d command %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf("pacchetto con ack %d, seq %d command %d lap %d perso\n", temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
@@ -181,9 +184,9 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        printf(CYAN "pacchetto inviato con ack %d seq %d command %d\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(CYAN "pacchetto inviato con ack %d seq %d command %d lap %d\n" RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     } else {
-        printf(BLUE"pacchetto con ack %d, seq %d command %d perso\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command);
+        printf(BLUE"pacchetto con ack %d, seq %d command %d lap %d perso\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
@@ -201,10 +204,10 @@ void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_a
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
         }
-        printf(CYAN"pacchetto inviato con ack %d seq %d command %d\n"RESET, temp_buff.ack, temp_buff.seq,temp_buff.command);
+        printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,temp_buff.command,temp_buff.lap);
     }
     else{
-        printf(BLUE"pacchetto con ack %d, seq %d command %d perso\n"RESET,temp_buff.ack, temp_buff.seq,temp_buff.command);
+        printf(BLUE"pacchetto con ack %d, seq %d command %d lap %d perso\n"RESET,temp_buff.ack, temp_buff.seq,temp_buff.command,temp_buff.lap);
     }
     return;
 }

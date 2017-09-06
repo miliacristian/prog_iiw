@@ -62,6 +62,7 @@
 #define OVERHEAD (sizeof(int)*3+sizeof(char))
 #define FREE_PROCESS 1
 #define MAX_PROC_JOB 4
+#define NO_LAP (-1)
 #ifndef LINE_H
 #define LINE_H
 //pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
