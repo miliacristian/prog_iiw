@@ -42,7 +42,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto send_file con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,shm->window_base_snd);
+            printf("pacchetto ricevuto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     if(temp_buff.command==DATA) {
@@ -76,9 +76,9 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                                                       shm->addr.len, temp_buff,shm->param.loss_prob);
                 alarm(TIMEOUT);
             } else {
-                printf("ignorato pacchetto send_file con ack %d seq %d command %d\n", temp_buff.ack,
+                printf("ignorato pacchetto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack,
                        temp_buff.seq,
-                       temp_buff.command);
+                       temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
@@ -142,8 +142,8 @@ int wait_for_start_get(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char
             else{
                 alarm(0);
             }
-            printf("pacchetto ricevuto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command);
+            printf("pacchetto ricevuto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command,temp_buff.lap);
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd,
@@ -181,8 +181,8 @@ int wait_for_start_get(int sockfd,struct sockaddr_in cli_addr,socklen_t len,char
                 printf("thread cancel close_put_snd\n");
                 pthread_exit(NULL);
             } else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d\n", temp_buff.ack, temp_buff.seq,
-                       temp_buff.command);
+                printf("ignorato pacchetto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                       temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
