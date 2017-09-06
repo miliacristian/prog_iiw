@@ -46,13 +46,14 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
+            printf("pacchetto ricevuto send_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
                 alarm(0);
             }
-            printf("pacchetto ricevuto send_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {//se è un messaggio contenente dati
@@ -127,33 +128,22 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
+            printf("pacchetto ricevuto execute list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                   temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
                 alarm(0);
             }
-            printf("pacchetto ricevuto execute list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly, shm);
-                } else {
-                    printf("execute list ack duplicato\n");
-                }
-                alarm(TIMEOUT);
-            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
-                alarm(TIMEOUT);
-            } else if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len,
                              temp_buff, "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait for start\n");
                 pthread_exit(NULL);
-            } else if (temp_buff.command == START) {
+            }
+            else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
                                                    shm->addr.len, temp_buff, shm->win_buf_rcv,
@@ -169,7 +159,20 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                     printf("errore nell'invio della lista\n");
                 }
                 return shm->byte_readed;
-            } else {
+            }
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
+                                      &shm->window_base_snd, &shm->pkt_fly, shm);
+                } else {
+                    printf("execute list ack duplicato\n");
+                }
+                alarm(TIMEOUT);
+            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
+                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                alarm(TIMEOUT);
+            }  else {
                 printf("ignorato pacchetto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
