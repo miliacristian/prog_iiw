@@ -64,7 +64,6 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
@@ -309,7 +308,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
-        } else if (errno != EINTR) {
+        } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {

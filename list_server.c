@@ -87,7 +87,6 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         }
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
@@ -107,7 +106,6 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
 int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char dim[11];
-
     shm->dimension = count_char_dir(dir_server);
     if (shm->dimension != 0) {
         sprintf(dim, "%d", shm->dimension);

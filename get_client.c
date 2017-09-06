@@ -142,13 +142,11 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
                  int *pkt_fly, int fd, int dimension, double loss_prob, int *window_base_snd, int *window_base_rcv,
                  int *byte_written,struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
-    printf("sto ancora qui\n");
     send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                            shm->win_buf_snd, "START", START, &shm->seq_to_send,
                            shm->param.loss_prob, shm->param.window, &shm->pkt_fly,
                            shm);
     printf("messaggio start inviato\n");
-    printf("rcv file\n");
     errno = 0;
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
@@ -194,7 +192,6 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
-                alarm(TIMEOUT);
             }
         } else if (errno != EINTR && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
