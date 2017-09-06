@@ -296,7 +296,7 @@ int execute_put(struct shm_sel_repeat*shm,struct temp_buffer temp_buff){
     first=payload;
     shm->dimension=parse_integer_and_move(&payload);
     payload++;
-    strncpy(shm->md5_sent,payload,MD5_LEN);
+    better_strncpy(shm->md5_sent,payload,MD5_LEN);
     shm->md5_sent[MD5_LEN]='\0';
     printf("md5 %s\n",shm->md5_sent);
     payload+=MD5_LEN;

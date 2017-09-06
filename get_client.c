@@ -272,7 +272,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 first = payload;
                 shm_snd->shm->dimension = parse_integer_and_move(&payload);
                 payload++;
-                strncpy(shm_snd->shm->md5_sent, payload, MD5_LEN);
+                better_strncpy(shm_snd->shm->md5_sent, payload, MD5_LEN);
                 shm_snd->shm->md5_sent[MD5_LEN] = '\0';
                 printf("md5 %s\n", shm_snd->shm->md5_sent);
                 rcv_msg_send_ack_command_in_window(shm_snd->shm->addr.sockfd, &shm_snd->shm->addr.dest_addr,

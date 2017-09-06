@@ -335,7 +335,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
         better_strcat(first_of_the_dot,temp);
     }
     else{//esiste un punto nel filename
-        strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
+        better_strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
         better_strcat(first_of_the_dot,temp);
         better_strcat(first_of_the_dot,occurence);
     }
@@ -360,7 +360,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
         else{//esiste un punto nel filename
             generate_branches_and_number(temp, copy_number);
             memset(first_of_the_dot,'\0',strlen(filename)+5);
-            strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
+            better_strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
             better_strcat(first_of_the_dot,temp);
             better_strcat(first_of_the_dot,occurence);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);

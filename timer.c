@@ -13,6 +13,7 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
+
 long  calculate_time_left(struct node node){
     //ritorna il numero di millisecondi(tv-getttimeofday)
     struct timespec time_current;
@@ -30,6 +31,9 @@ long  calculate_time_left(struct node node){
 }
 
 void sleep_struct(struct timespec* sleep_time, long timer_ns_left){
+    if(sleep_time==NULL){
+        handle_error_with_exit("error in sleep_struct\n");
+    }
     sleep_time->tv_nsec = timer_ns_left % 1000000000;
     sleep_time->tv_sec = (timer_ns_left - (sleep_time->tv_nsec))/100000000;
     return;

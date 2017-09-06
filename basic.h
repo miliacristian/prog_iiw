@@ -191,3 +191,4 @@ void set_max_buff_rcv_size(int sockfd);
 char*make_list(char*path);
 void better_strcpy(char*buf1,char*buf2);
 void better_strcat(char*str1,char*str2);
+void better_strncpy(char*buf1,char*buf2,int lenght);
