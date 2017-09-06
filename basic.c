@@ -442,6 +442,9 @@ int count_char_dir(char*path){
 char* files_in_dir(char* path,int lenght) {
     //funzione che, dato un path, crea una stringa (file1\nfile2\nfile3\n...) contenente il nome di tutti file in quella directory
     //fare la free nel chiamante del char* ritornato
+    if(path==NULL || lenght<0){
+        handle_error_with_exit("error in files_in_dir\n");
+    }
     DIR *d;
     struct dirent *dir;
     char *list;
@@ -471,6 +474,9 @@ char* files_in_dir(char* path,int lenght) {
 char*make_list(char*path){
     char*list;
     int lenght;
+    if(path==NULL){
+        handle_error_with_exit("error in make list path is NULL\n");
+    }
     lenght=count_char_dir(path);
     list=files_in_dir(path,lenght);
     return list;
@@ -498,13 +504,18 @@ int get_file_size(char*path){
 }
 
 void lock_sem(sem_t*sem){
+    if(sem==NULL){
+        handle_error_with_exit("error in lock_sem sem is NULL\n");
+    }
     if(sem_wait(sem)==-1){
         handle_error_with_exit("error in sem_wait\n");
     }
     return;
 }
 void unlock_sem(sem_t*sem){
-
+    if(sem==NULL){
+        handle_error_with_exit("error in unlock_sem sem is NULL\n");
+    }
     if(sem_post(sem)==-1){
         handle_error_with_exit("error in sem_post\n");
     }
@@ -514,7 +525,7 @@ int get_id_msg_queue(){//funzione che crea la coda di messaggi
     int msgid;
     if((msgid=msgget(IPC_PRIVATE,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in msgget\n");
-    };
+    }
     return msgid;
 }
 int get_id_shared_mem(int size){
