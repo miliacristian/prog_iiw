@@ -37,7 +37,7 @@ ssize_t writen(int fd, void *buf, size_t n){
     }
     return(n-nleft);
 }
-
+//
 ssize_t readn(int fd,void *buf, size_t n){
     size_t nleft;
     ssize_t nread;
