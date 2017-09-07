@@ -202,7 +202,7 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     }
     if (sigaction(SIGALRM, &sa_timeout, NULL) == -1) {
         handle_error_with_exit("error in sigaction\n");
-    }
+    }//
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
         printf("pid %d in attesa della richiesta\n",getpid());
