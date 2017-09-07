@@ -103,6 +103,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
+        shm->win_buf_snd[i].acked=2;
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
@@ -178,6 +179,7 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
+        shm->win_buf_snd[i].acked=2;
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
@@ -271,6 +273,7 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_snd[i].lap = -1;
+        shm->win_buf_snd[i].acked=2;
     }
     for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;

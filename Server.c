@@ -107,6 +107,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     }
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].lap = -1;
+        shm->win_buf_snd[i].acked=2;
     }
     for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
