@@ -20,7 +20,6 @@ int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct te
     alarm(0);
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
-    printf("close_list\n");
     pthread_cancel(shm->tid);
     printf("thread cancel close list\n");
     pthread_exit(NULL);
@@ -137,7 +136,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                              temp_buff, "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait for start\n");
+                printf("thread cancel wait_for_start_list\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.command == START) {

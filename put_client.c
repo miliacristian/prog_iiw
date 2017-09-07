@@ -94,8 +94,8 @@ int close_put_send_file(struct shm_sel_repeat *shm){
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
                 printf(GREEN"FIN_ACK ricevuto\n"RESET);
-                printf("rtx %d\n",rtx);
                 pthread_cancel(shm->tid);
+                printf("thread cancel close_put_send_file\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {

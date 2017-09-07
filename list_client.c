@@ -39,7 +39,6 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
             }
             if (temp_buff.command == FIN_ACK) {
                 alarm(0);
-                printf("return close connection\n");
                 pthread_cancel(shm->tid);
                 printf(RED "list is empty\n" RESET);
                 printf("thread cancel close_connection_list\n");
@@ -134,7 +133,6 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
-            printf("return wait_for_fin_list\n");
             pthread_cancel(shm->tid);
             printf("thread cancel wait_for_fin_list\n");
             return shm->byte_written;
@@ -217,7 +215,6 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
-            printf("return rcv list\n");
             pthread_cancel(shm->tid);
             printf("thread cancel rcv_list\n");
             pthread_exit(NULL);

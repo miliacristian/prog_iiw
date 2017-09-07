@@ -39,6 +39,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                 printf(GREEN "FIN ricevuto\n" RESET);
                 check_md5(shm->filename, shm->md5_sent);
                 pthread_cancel(shm->tid);
+                printf("thread cancel wait_for_fin_put\n");
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
@@ -313,6 +314,5 @@ int execute_put(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
             handle_error_with_exit("error in close file\n");
         }
     }
-    printf("return execute put\n");
     return shm->byte_written;
 }

@@ -22,7 +22,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
                  FIN, shm->param.loss_prob);
     printf("close_get_send_file\n");
     pthread_cancel(shm->tid);
-    printf("thread cancel \n");
+    printf("thread cancel close_get_send_file\n");
     pthread_exit(NULL);
 }
 
@@ -62,9 +62,8 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                             close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
                                                 temp_buff, shm->win_buf_snd, shm->param.window,
                                                 shm->param.loss_prob, &shm->byte_readed, shm);
-                            printf("close sendfile\n");
                             pthread_cancel(shm->tid);
-                            printf("thread cancel\n");
+                            printf("thread cancel send_file\n");
                             pthread_exit(NULL);
                         }
                     } else {
@@ -96,7 +95,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             printf("il client non è in ascolto send file\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel \n");
+            printf("thread cancel send_file\n");
             pthread_exit(NULL);
         }
     }
@@ -155,7 +154,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel close_put_snd\n");
+                printf("thread cancel wait_for_start_get\n");
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
@@ -202,7 +201,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
             printf("il client non è in ascolto wait_for_start_get\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel\n");
+            printf("thread cancel wait_for_start_get\n");
             pthread_exit(NULL);
         }
     }
