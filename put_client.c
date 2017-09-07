@@ -160,7 +160,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff,shm->win_buf_snd, shm->param.window,&shm->window_base_snd,&(shm->pkt_fly),shm->dimension,&(shm->byte_readed), shm);
-                        if ((shm->byte_readed) ==(shm->dimension)) {
+                        if ((shm->byte_readed) >=(shm->dimension)) {
                             close_put_send_file(shm);
                             return shm->byte_readed;
                         }
@@ -189,6 +189,11 @@ int send_put_file(struct shm_sel_repeat *shm) {
         if (great_alarm_client == 1) {
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
+            for(int i = 0; i< 2* (shm-> param.window); i++ ){
+                if((shm->win_buf_snd[i].acked) != 2){
+                    printf("seq %d lap %d acked %d", i, (shm->win_buf_snd[i].lap), (shm->win_buf_snd[i].acked));
+                }
+            }
             alarm(0);
             pthread_cancel(shm->tid);
             printf("thread cancel send_put_file\n");

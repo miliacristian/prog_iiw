@@ -389,13 +389,16 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
                 win_buf_snd[*window_base_snd].time.tv_sec = 0;
                 *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
                 (*pkt_fly)--;
-                if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                /*if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
                     *byte_readed += (MAXPKTSIZE - OVERHEAD);
                     printf("byte readed %d\n", *byte_readed);
                 } else {
+                    printf(RED"ultimo pacchetto\n"RESET);
                     *byte_readed += dim - *byte_readed;
                     printf("byte readed %d\n", *byte_readed);
-                }
+                }*/
+                *byte_readed += (MAXPKTSIZE - OVERHEAD);
+                printf("byte readed %d\n", *byte_readed);
             }
         }
     }else{

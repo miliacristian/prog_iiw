@@ -64,7 +64,7 @@ int delete_head(struct node** head, struct node* old_head){
         *head = old_head->next;
         (*head)-> prev = NULL;
     }
-    //printf("nodo eliminato\n");
+    printf("nodo eliminato seq %d, lap %d\n", old_head->seq, old_head->lap);
     return 0;
 }
 
