@@ -228,7 +228,7 @@ void *put_client_job(void*arg){
                 shm->fd= open(path, O_RDONLY);
                 if (shm->fd == -1) {
                     handle_error_with_exit("error in open file\n");
-                }
+                }//
                 free(path);
                 send_put_file(shm);
                 if (close(shm->fd) == -1) {
