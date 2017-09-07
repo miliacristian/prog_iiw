@@ -234,7 +234,6 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                            shm->win_buf_snd, temp_buff.payload, LIST, &shm->seq_to_send,
                            shm->param.loss_prob,
                            shm->param.window, &shm->pkt_fly, shm);//manda messaggio get
-    handle_error_with_exit("");
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
@@ -431,5 +430,6 @@ void list_client(struct shm_sel_repeat *shm) {
     if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
+    unlock_signal(SIGALRM);
     return;
 }

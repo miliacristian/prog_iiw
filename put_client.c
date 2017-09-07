@@ -208,7 +208,7 @@ void *put_client_job(void*arg){
     better_strcat(temp_buff.payload," ");
     better_strcat(temp_buff.payload,shm->filename);
     //invia messaggio put
-    send_message_in_window(shm->addr.sockfd,&(shm->addr.dest_addr),shm->addr.len,temp_buff,shm->win_buf_snd,temp_buff.payload,PUT,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly, shm);//mand
+    send_message_in_window(shm->addr.sockfd,&(shm->addr.dest_addr),shm->addr.len,temp_buff,shm->win_buf_snd,temp_buff.payload,PUT,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly, shm);
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//attendo risposta del server
@@ -378,6 +378,7 @@ void put_client(struct shm_sel_repeat *shm){
     if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
+    unlock_signal(SIGALRM);
     return;
 }
 

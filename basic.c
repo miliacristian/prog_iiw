@@ -149,6 +149,19 @@ void block_signal(int signal){
     }
     return;
 }
+void unlock_signal(int signal){
+    sigset_t set;
+    if(sigemptyset(&set)==-1){
+        handle_error_with_exit("error in sigemptyset\n");
+    }
+    if(sigaddset(&set,signal)==-1){//aggiungi segnale al sigset
+        handle_error_with_exit("error in sigaddset\n");
+    }
+    if(pthread_sigmask(SIG_UNBLOCK,&set,NULL)!=0){//blocca i segnali presenti nel sig_set
+        handle_error_with_exit("error in pthread_sigmask\n");
+    }
+    return;
+}
 void initialize_sem(sem_t*mtx){
     if(mtx==NULL){
         handle_error_with_exit("error in initialize_sem mtx is NULL\n");

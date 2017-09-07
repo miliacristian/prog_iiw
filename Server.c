@@ -190,8 +190,9 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     int value;
     char done_jobs=0;
     struct sigaction sa_timeout;
-    memset(&sa_timeout,0,sizeof(struct sigaction));
     struct mtx_prefork*mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);
+    memset(&sa_timeout,0,sizeof(struct sigaction));
+    unlock_signal(SIGALRM);
     sem_t *mtx=(sem_t*)attach_shm(child_mtx_id);
     if(close(main_sockfd)==-1){//chiudi il socket del padre
         handle_error_with_exit("error in close socket fd\n");

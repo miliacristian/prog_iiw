@@ -312,14 +312,14 @@ void get_server(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread get_server_\n");
     }
     printf("%d tid_snd\n", tid_snd);
-    block_signal(
-            SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if (pthread_join(tid_snd, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
     }
     if (pthread_join(tid_rtx, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
     }
+    unlock_signal(SIGALRM);
     return;
 }
 

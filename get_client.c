@@ -172,7 +172,7 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
                 rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
-            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) { //if(temp.command ==DATA){}
                 rcv_data_send_ack_in_window(shm->addr.sockfd, shm->fd, &shm->addr.dest_addr,
                                             shm->addr.len, temp_buff, shm->win_buf_rcv,
                                             &shm->window_base_rcv, shm->param.loss_prob,
@@ -421,5 +421,6 @@ void get_client(struct shm_sel_repeat *shm) {
     if(pthread_join(tid_rtx,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
+    unlock_signal(SIGALRM);
     return;
 }

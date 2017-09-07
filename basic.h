@@ -30,7 +30,7 @@
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
-#define MAXPKTSIZE 1468//1468==no packet fragmentation //1468
+#define MAXPKTSIZE 120//1468==no packet fragmentation //1468
 #define MAXLINE 1024
 #define BUFF_RCV_SIZE (208*1024)//(208*1024)//208*1024 max buff_size_without root
 #define SERVER_PORT 5195
@@ -188,3 +188,4 @@ char*make_list(char*path);
 void better_strcpy(char*buf1,char*buf2);
 void better_strcat(char*str1,char*str2);
 void better_strncpy(char*buf1,char*buf2,int lenght);
+void unlock_signal(int signal);
