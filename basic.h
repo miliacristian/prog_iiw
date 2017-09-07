@@ -47,7 +47,7 @@
 #define DATA 0
 #define SYN 9
 #define SYN_ACK 10
-#define TIMEOUT 5
+#define TIMEOUT 2
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
 #define YELLOW  "\x1b[33m"

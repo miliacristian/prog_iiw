@@ -129,6 +129,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
+                printf("alarm stoppato\n");
                 alarm(0);
             }
             if (temp_buff.command == FIN) {
@@ -174,10 +175,11 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
-        } else if (errno != EINTR) {
+        }
+         else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_serv == 1) {
+        if(great_alarm_serv == 1){
             great_alarm_serv = 0;
             printf("il client non è in ascolto wait_for_start_list\n");
             alarm(0);
