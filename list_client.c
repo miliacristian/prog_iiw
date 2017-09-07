@@ -19,7 +19,7 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
                       struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
                       int *pkt_fly, int W, int *byte_written, double loss_prob,
                       struct shm_sel_repeat *shm) {
-    printf("close connection\n");
+    printf("close_connection_list\n");
     send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                            shm->win_buf_snd, "FIN", FIN, &shm->seq_to_send,
                            shm->param.loss_prob, shm->param.window, &shm->pkt_fly,
@@ -30,7 +30,7 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo fin_ack dal server
-            printf("pacchetto ricevuto close connection con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto close connection list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -42,7 +42,7 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
                 printf("return close connection\n");
                 pthread_cancel(shm->tid);
                 printf(RED "list is empty\n" RESET);
-                printf("thread cancel close connection\n");
+                printf("thread cancel close_connection_list\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -51,7 +51,7 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
                 } else {
-                    printf("ack duplicato\n");
+                    printf("close_connection_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -69,12 +69,12 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
             printf(RED "list is empty\n" RESET);
-            printf("thread cancel close connection\n");
+            printf("thread cancel close_connection_list\n");
             pthread_exit(NULL);
         }
     }
@@ -93,7 +93,7 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
-            printf("pacchetto ricevuto wait for fin_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto wait_for_fin_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -104,7 +104,7 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
             if (temp_buff.command == FIN) {
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait for fin\n");
+                printf("thread cancel wait_for_fin_list\n");
                 return shm->byte_written;
                 //non terminare il thread fallo ritornare al chiamante che termina lui
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -113,7 +113,7 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
                 } else {
-                    printf("wait for fin ack duplicato\n");
+                    printf("wait_for_fin_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -131,18 +131,18 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
-            printf("return wait_for_fin\n");
+            printf("return wait_for_fin_list\n");
             pthread_cancel(shm->tid);
-            printf("thread cancel wait for fin\n");
+            printf("thread cancel wait_for_fin_list\n");
             return shm->byte_written;
         }
     }
 }
 
-int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff,
+int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct temp_buffer temp_buff,
           struct window_snd_buf *win_buf_snd, struct window_rcv_buf *win_buf_rcv, int *seq_to_send, int W, int *pkt_fly,
           char **list, int dimension, double loss_prob, int *window_base_snd, int *window_base_rcv, int *byte_written,
               struct shm_sel_repeat *shm) {
@@ -159,7 +159,7 @@ int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct te
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//bloccati finquando non ricevi file
             // o altri messaggi
-            printf("pacchetto ricevuto rcv_list2 con ack %d seq %d command %d lap %d\n", temp_buff.ack,
+            printf("pacchetto ricevuto rcv_list con ack %d seq %d command %d lap %d\n", temp_buff.ack,
                    temp_buff.seq, temp_buff.command, temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -172,7 +172,7 @@ int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct te
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
                 } else {
-                    printf("rcv_list2 ack duplicato\n");
+                    printf("rcv_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -198,14 +198,14 @@ int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct te
                         return shm->byte_written;
                     }
                 } else {
-                    printf("errore rcv_list2\n");
+                    printf("errore rcv_list\n");
                     printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd,
                            shm->window_base_rcv);
                     handle_error_with_exit("");
                 }
                 alarm(TIMEOUT);
             } else {
-                printf("ignorato pacchetto rcv list2 con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto rcv list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
@@ -214,12 +214,12 @@ int rcv_list2(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct te
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             printf("return rcv list\n");
             pthread_cancel(shm->tid);
-            printf("thread cancel rcv list\n");
+            printf("thread cancel rcv_list\n");
             pthread_exit(NULL);
         }
     }
@@ -278,7 +278,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 }
                 memset(shm->list, '\0', shm->dimension);
                 first = shm->list;
-                rcv_list2(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len, temp_buff,
+                rcv_list(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len, temp_buff,
                           shm->win_buf_snd, shm->win_buf_rcv, &shm->seq_to_send,
                           shm->param.window, &shm->pkt_fly, &shm->list,
                           shm->dimension, shm->param.loss_prob, &shm->window_base_snd,
@@ -299,11 +299,11 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
                 } else {
-                    printf("ack duplicato non fare nulla\n");
+                    printf("wait_for_list_dim ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             }  else {
-                printf("ignorato pacchetto wait list dim con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto wait_for_list_dim con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
@@ -312,7 +312,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
@@ -418,12 +418,12 @@ void list_client(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,list_client_rtx_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread list_client_rtx\n");
     }
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,list_client_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread list_client\n");
     }
     printf("%d tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)

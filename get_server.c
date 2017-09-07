@@ -20,7 +20,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
     alarm(0);
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
-    printf("close get send_file\n");
+    printf("close_get_send_file\n");
     pthread_cancel(shm->tid);
     printf("thread cancel \n");
     pthread_exit(NULL);
@@ -143,7 +143,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *)
                 &shm->addr.dest_addr, &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            printf("pacchetto ricevuto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command, temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -171,7 +171,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
                     handle_error_with_exit("error in close file\n");
                 }
                 pthread_cancel(shm->tid);
-                printf("thread cancel close_put_snd\n");
+                printf("thread cancel wait_for_start_get \n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -180,7 +180,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
                                       shm->param.window, &shm->window_base_snd,
                                       &shm->pkt_fly, shm);
                 } else {
-                    printf("execute get ack duplicato\n");
+                    printf("wait_for_start_get ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -188,7 +188,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
             }  else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
+                printf("ignorato pacchetto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command, temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
@@ -199,7 +199,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
         }
         if (great_alarm_serv == 1) {
             great_alarm_serv = 0;
-            printf("il client non è in ascolto wait for start\n");
+            printf("il client non è in ascolto wait_for_start_get\n");
             alarm(0);
             pthread_cancel(shm->tid);
             printf("thread cancel\n");
@@ -304,13 +304,13 @@ void get_server(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd, tid_rtx;
     if (pthread_create(&tid_rtx, NULL, get_server_rtx_job, shm) != 0) {
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread get_server_rtx\n");
     }
     printf("%d tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_server_job, shm) != 0) {
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread get_server_\n");
     }
     printf("%d tid_snd\n", tid_snd);
     block_signal(

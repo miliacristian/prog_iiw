@@ -17,7 +17,7 @@ int rtx_get_client = 0;
 int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct window_snd_buf *win_buf_snd, int sockfd,
                          struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
                          int *pkt_fly, int W, int *byte_written, double loss_prob,struct shm_sel_repeat *shm) {
-    printf("close connection\n");
+    printf("close connection_get\n");
     send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                            shm->win_buf_snd, "FIN", FIN, &shm->seq_to_send,
                            shm->param.loss_prob, shm->param.window, &shm->pkt_fly,
@@ -47,7 +47,7 @@ int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct 
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly, shm);
                 } else {
-                    printf("close connect get ack duplicato\n");
+                    printf("close_connect_get ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -55,7 +55,7 @@ int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct 
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
             } else {
-                printf("ignorato close connect pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato close_connect_get pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
@@ -64,11 +64,11 @@ int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct 
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel close connection\n");
+            printf("thread cancel close connection_get\n");
             printf(RED "file not exist\n" RESET);
             pthread_exit(NULL);
         }
@@ -126,7 +126,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct window_snd_buf *win_bu
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             check_md5(path, shm->md5_sent);
@@ -197,7 +197,7 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
@@ -277,7 +277,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                     handle_error_with_exit("error in close file\n");
                 }
                 pthread_cancel(shm->tid);
-                printf("thread cancel put client\n");
+                printf("thread cancel wait_for_get_dimension\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -289,7 +289,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
                 }
                 alarm(TIMEOUT);
             }else {
-                printf("ignorato pacchetto wait get dimension con ack %d seq %d command %d lap %d\n", temp_buff.ack,
+                printf("ignorato pacchetto wait_for_get_dimension con ack %d seq %d command %d lap %d\n", temp_buff.ack,
                        temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
@@ -299,7 +299,7 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
@@ -405,13 +405,13 @@ void get_client(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,get_client_rtx_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread get_client_rtx\n");
     }
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     //shm_snd.shm=shm;
     if(pthread_create(&tid_snd,NULL,get_client_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread get_client\n");
     }
     printf("%d tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)

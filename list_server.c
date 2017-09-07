@@ -20,7 +20,7 @@ int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct te
     alarm(0);
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
-    printf("close send_list\n");
+    printf("close_list\n");
     pthread_cancel(shm->tid);
     printf("thread cancel close list\n");
     pthread_exit(NULL);
@@ -64,7 +64,6 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                             close_list(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
                                        temp_buff, shm->win_buf_snd, shm->param.window,
                                        shm->param.loss_prob, &shm->byte_readed, shm);
-                            printf("close sendlist\n");
                             free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
                             shm->list = NULL;
                             return shm->byte_readed;
@@ -126,7 +125,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            printf("pacchetto ricevuto execute list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+            printf("pacchetto ricevuto wait_for_start_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                    temp_buff.command,temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -163,7 +162,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly, shm);
                 } else {
-                    printf("execute list ack duplicato\n");
+                    printf("wait_for_start_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -171,7 +170,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
             }  else {
-                printf("ignorato pacchetto execute get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
+                printf("ignorato pacchetto wait_for_start_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
@@ -181,10 +180,10 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
         }
         if (great_alarm_serv == 1) {
             great_alarm_serv = 0;
-            printf("il client non è in ascolto execut get\n");
+            printf("il client non è in ascolto wait_for_start_list\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait for start\n");
+            printf("thread cancel wait for start list\n");
             pthread_exit(NULL);
         }
     }
@@ -283,12 +282,12 @@ void list_server(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,list_server_rtx_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread list_server_rtx\n");
     }
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,list_server_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread list_server\n");
     }
     printf("%d tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
