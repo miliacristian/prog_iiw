@@ -139,7 +139,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
             pthread_exit(NULL);
         }
     }
-}
+}//
 int send_put_file(struct shm_sel_repeat *shm) {
     struct temp_buffer temp_buff;
     printf("send_put_file\n");
