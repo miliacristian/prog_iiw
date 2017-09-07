@@ -269,7 +269,7 @@ void *put_client_job(void*arg){
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel put_client_job\n");
             pthread_exit(NULL);
         }
     }
@@ -363,12 +363,12 @@ void put_client(struct shm_sel_repeat *shm){
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread put_client_rtx\n");
     }
     printf("%d tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,put_client_job,shm)!=0){
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread put_client\n");
     }
     printf("%d tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)

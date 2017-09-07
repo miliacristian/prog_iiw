@@ -25,7 +25,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) &shm->addr.dest_addr,
                      &shm->addr.len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo,bloccante o non bloccante??
-            printf(MAGENTA"pacchetto ricevuto wait for fin con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack,
+            printf(MAGENTA"pacchetto ricevuto wait for fin put con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack,
                    temp_buff.seq, temp_buff.command, temp_buff.lap);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
@@ -45,7 +45,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window, &shm->window_base_snd,
                                       &shm->pkt_fly, shm);
                 } else {
-                    printf("wait for fin ack duplicato\n");
+                    printf("wait_for_fin_put ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -64,12 +64,12 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il client non sta mandando più nulla o errore interno\n");
             great_alarm_serv = 0;
             alarm(0);
             check_md5(shm->filename, shm->md5_sent);
             pthread_cancel(shm->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel wait_for_fin_put\n");
             pthread_exit(NULL);
         }
     }
@@ -106,7 +106,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel close_put_snd\n");
+                printf("thread cancel rcv_put_file\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
@@ -129,7 +129,6 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                                                 &shm->byte_written);
                     if ((shm->byte_written) == (shm->dimension)) {
                         wait_for_fin_put(shm);
-                        printf("return rcv file\n");
                         return shm->byte_written;
                     }
                 } else {
@@ -150,11 +149,11 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {
-            printf("il sender non sta mandando più nulla o errore interno\n");
+            printf("il client non sta mandando più nulla o errore interno\n");
             great_alarm_serv = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel put client\n");
+            printf("thread cancel rcv_put_file\n");
             pthread_exit(NULL);
         }
     }
@@ -252,12 +251,12 @@ void put_server(struct shm_sel_repeat *shm) {
     //initialize_cond();inizializza tutte le cond
     pthread_t tid_snd, tid_rtx;
     if (pthread_create(&tid_rtx, NULL, put_server_rtx_job, shm) != 0) {
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread put_server_rtx\n");
     }
     printf("%d tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     if (pthread_create(&tid_snd, NULL, put_server_job, shm) != 0) {
-        handle_error_with_exit("error in create thread put client rcv\n");
+        handle_error_with_exit("error in create thread put_server\n");
     }
     printf("%d tid_snd\n", tid_snd);
     block_signal(
