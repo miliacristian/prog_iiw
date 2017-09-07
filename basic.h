@@ -30,7 +30,7 @@
 
 #define MAXCOMMANDLINE 320
 #define MAXFILENAME 255
-#define MAXPKTSIZE 120//1468==no packet fragmentation //1468
+#define MAXPKTSIZE 1468//1468==no packet fragmentation //1468
 #define MAXLINE 1024
 #define BUFF_RCV_SIZE (208*1024)//(208*1024)//208*1024 max buff_size_without root
 #define SERVER_PORT 5195

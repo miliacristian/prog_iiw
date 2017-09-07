@@ -224,12 +224,14 @@ void rcv_list_send_ack_in_window(int sockfd,char**list, struct sockaddr_in *serv
         }
         else{
             //ignora pacchetto
+            handle_error_with_exit("pacchetto vecchia finestra\n");
         }
     }
     ack_buff.ack = temp_buff.seq;
     ack_buff.seq = NOT_A_PKT;
     better_strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
+    ack_buff.lap = temp_buff.lap;
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
@@ -270,6 +272,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
+            handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
             //ignora pacchetto
         }
     }
@@ -277,6 +280,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
     ack_buff.seq = NOT_A_PKT;
     better_strcpy(ack_buff.payload, "ACK");
     ack_buff.command = DATA;
+    ack_buff.lap = temp_buff.lap;
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
@@ -323,6 +327,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
             win_buf_rcv[temp_buff.seq].received = 1;
         }
         else{
+            handle_error_with_exit("pacchetto vecchia finestra\n");
             //ignora pacchetto
         }
     }
@@ -330,6 +335,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
     ack_buff.seq=NOT_A_PKT;
     better_strcpy(ack_buff.payload,"ACK");
     ack_buff.command=temp_buff.command;
+    ack_buff.lap = temp_buff.lap;
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &ack_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
@@ -351,16 +357,20 @@ void rcv_msg_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_addr
 
 void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W, int *window_base_snd,int *pkt_fly, struct shm_sel_repeat *shm) {
     lock_mtx(&(shm->mtx));
-    win_buf_snd[temp_buff.ack].acked = 1;
-    if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
-        while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
-            //avanzo la finestra
-            win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
-            win_buf_snd[*window_base_snd].time.tv_nsec=0;
-            win_buf_snd[*window_base_snd].time.tv_sec=0;
-            *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
-            (*pkt_fly)--;
+    if(temp_buff.lap ==win_buf_snd[temp_buff.ack].lap ){
+        win_buf_snd[temp_buff.ack].acked = 1;
+        if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
+            while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
+                //avanzo la finestra
+                win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
+                win_buf_snd[*window_base_snd].time.tv_nsec=0;
+                win_buf_snd[*window_base_snd].time.tv_sec=0;
+                *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
+                (*pkt_fly)--;
+            }
         }
+    }else{
+        handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
 }
@@ -369,24 +379,27 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
                                  int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {
     //tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
-    win_buf_snd[temp_buff.ack].acked = 1;
-    if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
-        while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
-            //avanzo la finestra
-            win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
-            win_buf_snd[*window_base_snd].time.tv_nsec=0;
-            win_buf_snd[*window_base_snd].time.tv_sec=0;
-            *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
-            (*pkt_fly)--;
-            if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
-                *byte_readed += (MAXPKTSIZE - OVERHEAD);
-                printf("byte readed %d\n",*byte_readed);
-            }
-            else {
-                *byte_readed += dim - *byte_readed;
-                printf("byte readed %d\n",*byte_readed);
+    if(temp_buff.lap ==win_buf_snd[temp_buff.ack].lap ) {
+        win_buf_snd[temp_buff.ack].acked = 1;
+        if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
+            while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
+                //avanzo la finestra
+                win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
+                win_buf_snd[*window_base_snd].time.tv_nsec = 0;
+                win_buf_snd[*window_base_snd].time.tv_sec = 0;
+                *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
+                (*pkt_fly)--;
+                if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                    *byte_readed += (MAXPKTSIZE - OVERHEAD);
+                    printf("byte readed %d\n", *byte_readed);
+                } else {
+                    *byte_readed += dim - *byte_readed;
+                    printf("byte readed %d\n", *byte_readed);
+                }
             }
         }
+    }else{
+        handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
     return;
@@ -395,24 +408,27 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
-    win_buf_snd[temp_buff.ack].acked = 1;
-    if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
-        while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
-            //avanzo la finestra
-            win_buf_snd[*window_base_snd].acked =2;//resetta quando scorri finestra
-            win_buf_snd[*window_base_snd].time.tv_nsec=0;
-            win_buf_snd[*window_base_snd].time.tv_sec=0;
-            *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
-            (*pkt_fly)--;
-            if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
-                *byte_readed +=( MAXPKTSIZE - OVERHEAD);
-                printf("byte readed %d\n",*byte_readed);
-            }
-            else {
-                *byte_readed += dim - *byte_readed;
-                printf("byte readed %d\n",*byte_readed);
+    if(temp_buff.lap ==win_buf_snd[temp_buff.ack].lap ) {
+        win_buf_snd[temp_buff.ack].acked = 1;
+        if (temp_buff.ack == *window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
+            while (win_buf_snd[*window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
+                //avanzo la finestra
+                win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
+                win_buf_snd[*window_base_snd].time.tv_nsec = 0;
+                win_buf_snd[*window_base_snd].time.tv_sec = 0;
+                *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
+                (*pkt_fly)--;
+                if (dim - *byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                    *byte_readed += (MAXPKTSIZE - OVERHEAD);
+                    printf("byte readed %d\n", *byte_readed);
+                } else {
+                    *byte_readed += dim - *byte_readed;
+                    printf("byte readed %d\n", *byte_readed);
+                }
             }
         }
+    }else{
+        handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
     return;
