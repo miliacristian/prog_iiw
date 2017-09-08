@@ -194,7 +194,9 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
                     }
                 }
                 else{
-                    handle_error_with_exit(RED "ricevuto messaggio speciale in finestra durante ricezione file\n");
+                    printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
+                    handle_error_with_exit(RED "ricevuto messaggio speciale in finestra durante ricezione file\n"RESET);
+
                 }
                 alarm(TIMEOUT);
             } else {

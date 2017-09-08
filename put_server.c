@@ -133,9 +133,8 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                         return shm->byte_written;
                     }
                 } else {
-                    printf("errore rcv put file\n");
                     printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
-                    handle_error_with_exit("");
+                    handle_error_with_exit(RED "ricevuto messaggio speciale in finestra durante ricezione file\n"RESET);
                 }
                 alarm(TIMEOUT);
             } else {

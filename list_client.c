@@ -46,9 +46,14 @@ close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct win
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly,
-                                      shm);
+                    if (temp_buff.command == DATA) {
+                        handle_error_with_exit("impossibile ricevere dati dopo aver ricevuto messaggio errore\n");
+                    }
+                    else {
+                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
+                                          &shm->window_base_snd, &shm->pkt_fly,
+                                          shm);
+                    }
                 } else {
                     printf("close_connection_list ack duplicato\n");
                 }
@@ -197,10 +202,8 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
                     }
                 }
                 else {
-                    printf("errore rcv_list\n");
-                    printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd,
-                           shm->window_base_rcv);
-                    handle_error_with_exit("");
+                    printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
+                    handle_error_with_exit(RED "ricevuto messaggio speciale in finestra durante ricezione file\n"RESET);
                 }
                 alarm(TIMEOUT);
             } else {
