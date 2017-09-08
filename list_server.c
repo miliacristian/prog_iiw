@@ -70,6 +70,14 @@ int send_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     } else {//se è un messaggio speciale
                         rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                           &shm->window_base_snd, &shm->pkt_fly, shm);
+                        if(shm->byte_readed==shm->dimension){
+                            close_list(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
+                                       temp_buff, shm->win_buf_snd, shm->param.window,
+                                       shm->param.loss_prob, &shm->byte_readed, shm);
+                            free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
+                            shm->list = NULL;
+                            return shm->byte_readed;
+                        }
                     }
                 } else {
                     printf("send_list ack duplicato\n");

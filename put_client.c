@@ -166,13 +166,17 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff,shm->win_buf_snd, shm->param.window,&shm->window_base_snd,&(shm->pkt_fly),shm->dimension,&(shm->byte_readed), shm);
-                        if ((shm->byte_readed) >=(shm->dimension)) {
+                        if ((shm->byte_readed) ==(shm->dimension)) {
                             close_put_send_file(shm);
                             return shm->byte_readed;
                         }
                     }
                     else{
                         rcv_ack_in_window(temp_buff,shm->win_buf_snd,shm->param.window,&shm->window_base_snd,&shm->pkt_fly, shm);
+                        if ((shm->byte_readed) ==(shm->dimension)) {
+                            close_put_send_file(shm);
+                            return shm->byte_readed;
+                        }
                     }
                 }
                 else {

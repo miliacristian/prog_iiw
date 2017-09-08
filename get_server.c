@@ -69,6 +69,14 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     } else {
                         rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                           &shm->window_base_snd, &shm->pkt_fly, shm);
+                        if (shm->byte_readed == shm->dimension) {
+                            close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
+                                                temp_buff, shm->win_buf_snd, shm->param.window,
+                                                shm->param.loss_prob, &shm->byte_readed, shm);
+                            pthread_cancel(shm->tid);
+                            printf("thread cancel send_file\n");
+                            pthread_exit(NULL);
+                        }
                     }
                 } else {
                     printf("send_file ack duplicato\n");
