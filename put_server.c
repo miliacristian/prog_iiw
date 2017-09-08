@@ -43,6 +43,9 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("errore in ack wait for fin\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window, &shm->window_base_snd,
                                       &shm->pkt_fly, shm);
                 } else {
@@ -112,6 +115,9 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("errore in ack rcv_put_file\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window, &shm->window_base_snd,
                                       &shm->pkt_fly, shm);
                 } else {

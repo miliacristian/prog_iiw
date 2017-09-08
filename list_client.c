@@ -113,6 +113,9 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                 //non terminare il thread fallo ritornare al chiamante che termina lui
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("error ack wait for fin list\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
@@ -171,6 +174,9 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
             }
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("errore ack in rcv_list\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);
@@ -296,6 +302,9 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
             }
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("errore in ack wait for list dim\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly,
                                       shm);

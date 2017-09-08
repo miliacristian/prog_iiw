@@ -111,6 +111,9 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct window_snd_buf *win_bu
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("errore ack wait for fin\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly, shm);
                 } else {
@@ -199,7 +202,8 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
 
                 }
                 alarm(TIMEOUT);
-            } else {
+            }
+            else {
                 printf("ignorato pacchetto rcv get file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                        temp_buff.command,temp_buff.lap);
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
@@ -294,6 +298,9 @@ int wait_for_get_dimension2(int sockfd, struct sockaddr_in serv_addr, socklen_t 
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("error ack wait for get dimension\n");
+                    }
                     rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
                                       &shm->window_base_snd, &shm->pkt_fly, shm);
                 } else {
