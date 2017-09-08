@@ -196,7 +196,6 @@ int send_put_file(struct shm_sel_repeat *shm) {
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
             for(int i = 0; i< 2* (shm-> param.window); i++ ){
-                printf("acked %d\n",shm->win_buf_snd[i].acked);
                 if((shm->win_buf_snd[i].acked) != 2){
                     printf("seq %d lap %d acked %d", i, (shm->win_buf_snd[i].lap), (shm->win_buf_snd[i].acked));
                 }
