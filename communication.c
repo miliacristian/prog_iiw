@@ -432,6 +432,15 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
 void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_snd, int W,
                             int *window_base_snd, int *pkt_fly, int dim, int *byte_readed, struct shm_sel_repeat *shm) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
+    int sample_RTT;
+    if(shm->adaptive) {
+        sample_RTT = calculate_sample_RTT((shm->win_buf_snd[temp_buff.ack].time));
+        shm->est_RTT_ms = 0;
+        shm->dev_RTT_ms = 0;
+        lock_mtx(&(shm->mtx));
+        shm->param.timer_ms = 0;
+        unlock_mtx(&(shm->mtx));
+    }
     lock_mtx(&(shm->mtx));
     if(temp_buff.lap ==win_buf_snd[temp_buff.ack].lap ) {
         if(win_buf_snd[temp_buff.ack].acked!=2) {

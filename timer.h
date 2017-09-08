@@ -7,14 +7,9 @@
 
 #endif //PROG_IIW_TIMER_H
 
-void start_timer(timer_t timer_id, struct itimerspec *its);
-void stop_timer(timer_t timer_id);
-void make_timeout_timer(timer_t* timer_id);
-void start_timeout_timer(timer_t timer_id, int msec);
-void make_timers(struct window_snd_buf *win_buf, int W);
-void set_timer(struct itimerspec *its, int msec);
-void stop_all_timers(struct window_snd_buf* win_buf_snd, int W);
-void stop_timeout_timer(timer_t timer_id);
-void stoppa_timer(struct window_snd_buf* win_buf_snd, int W);
 long calculate_time_left(struct node node);
 void sleep_struct(struct timespec* sleep_time, long timer_ns_left);
+int calculate_sample_RTT(struct timespec tx_time);
+int calculate_est_RTT(int est_RTT, int sample_RTT);
+int calculate_dev_RTT(int est_RTT, int sample_RTT, int dev_RTT);
+int calculate_timeout(int est_RTT, int dev_RTT);

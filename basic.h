@@ -48,6 +48,7 @@
 #define SYN 9
 #define SYN_ACK 10
 #define TIMEOUT 2
+#define TIMER_BASE_ADAPTIVE 1000 //in millisecondi
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
 #define YELLOW  "\x1b[33m"
@@ -101,6 +102,7 @@ struct select_param{
     double loss_prob;
     int timer_ms;
 };
+
 struct shm_sel_repeat{//variabili inutilizzate da togliere
     struct timeval time;//
     struct addr addr;
@@ -120,6 +122,9 @@ struct shm_sel_repeat{//variabili inutilizzate da togliere
     int byte_sent;
     char*list;
     struct select_param param;
+    int est_RTT_ms;
+    int dev_RTT_ms;
+    char adaptive;
     int fd;
     pthread_t tid;
     struct node* head;
