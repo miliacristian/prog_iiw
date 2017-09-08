@@ -398,12 +398,13 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if (win_buf_snd[temp_buff.ack].acked != 2) {
-            printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                   win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
+            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
+                 //  win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
+            //printf("seq %d\n", temp_buff.ack);
             if (shm->adaptive) {
-                adaptive_timer(shm, temp_buff.seq);
+                adaptive_timer(shm, temp_buff.ack);
             }
-            printf("timer %d\n", shm->param.timer_ms);
+            //printf("timer %d\n", shm->param.timer_ms);
             win_buf_snd[temp_buff.ack].acked = 1;
             win_buf_snd[*window_base_snd].time.tv_nsec = 0;
             win_buf_snd[*window_base_snd].time.tv_sec = 0;
@@ -442,12 +443,13 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if (win_buf_snd[temp_buff.ack].acked != 2) {
-            printf("timer %d est %d dev %d sec %d nsec %d\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                   win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
+            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
+                   //win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
+            //printf("seq %d\n", temp_buff.ack);
             if (shm->adaptive) {
-                adaptive_timer(shm, temp_buff.seq);
+                adaptive_timer(shm, temp_buff.ack);
             }
-            printf("timer %d\n", shm->param.timer_ms);
+            //printf("timer %d\n", shm->param.timer_ms);
             win_buf_snd[temp_buff.ack].acked = 1;
             win_buf_snd[*window_base_snd].time.tv_nsec = 0;
             win_buf_snd[*window_base_snd].time.tv_sec = 0;
@@ -484,12 +486,12 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if (win_buf_snd[temp_buff.ack].acked != 2) {
-            printf("timer %d est %d dev %d sec %d nsec %d\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                   win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
+            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
+                  // win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
             if (shm->adaptive) {
-                adaptive_timer(shm, temp_buff.seq);
+                adaptive_timer(shm, temp_buff.ack);
             }
-            printf("timer %d\n", shm->param.timer_ms);
+            //printf("timer %d\n", shm->param.timer_ms);
             win_buf_snd[temp_buff.ack].acked = 1;
             win_buf_snd[*window_base_snd].time.tv_nsec = 0;
             win_buf_snd[*window_base_snd].time.tv_sec = 0;
