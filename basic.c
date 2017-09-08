@@ -391,13 +391,10 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
 
 char seq_is_in_window(int win_base,int window,int seq){
     //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
-    if(win_base<0 || window<1){
-        handle_error_with_exit("invalid win_base or window in seq_is_in_window\n");
+    if(win_base<0 || window<1 || seq<0){
+        handle_error_with_exit("invalid win_base,window or seq in seq_is_in_window\n");
     }
     int end_win=(win_base+window-1)%(2*window);
-    if(seq<0){
-        return 0;
-    }
     if(seq>((2*window)-1)){
         return 0;
     }

@@ -195,7 +195,8 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
                                           shm->param.loss_prob, shm);
                         return shm->byte_written;
                     }
-                } else {
+                }
+                else {
                     printf("errore rcv_list\n");
                     printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd,
                            shm->window_base_rcv);
@@ -273,7 +274,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 if (shm->list == NULL) {
                     handle_error_with_exit("error in malloc\n");
                 }
-                memset(shm->list, '\0', shm->dimension);
+                memset(shm->list, '\0',(size_t) shm->dimension);
                 first = shm->list;
                 rcv_list(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len, temp_buff,
                           shm->win_buf_snd, shm->win_buf_rcv, &shm->seq_to_send,

@@ -199,7 +199,7 @@ void rcv_msg_re_send_ack_command_in_window(int sockfd,struct sockaddr_in *serv_a
     temp_buff.ack=temp_buff.seq;
     temp_buff.seq=NOT_A_PKT;
     better_strcpy(temp_buff.payload,"ACK");
-    //lascia invariato il tipo di comando
+    //lascia invariato il tipo di comando e il lap
     if(flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) serv_addr, len) == -1) {//manda richiesta del client al server
             handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato

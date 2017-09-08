@@ -43,9 +43,15 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly, shm);
-                } else {
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("error in close connection\n");//impossibile ricevere dati dopo aver ricevuto errore
+                    }
+                    else {
+                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
+                                          &shm->window_base_snd, &shm->pkt_fly, shm);
+                    }
+                }
+                else {
                     printf("close connect put ack duplicato\n");
                 }
                 alarm(TIMEOUT);
@@ -190,6 +196,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
             for(int i = 0; i< 2* (shm-> param.window); i++ ){
+                printf("acked %d\n",shm->win_buf_snd[i].acked);
                 if((shm->win_buf_snd[i].acked) != 2){
                     printf("seq %d lap %d acked %d", i, (shm->win_buf_snd[i].lap), (shm->win_buf_snd[i].acked));
                 }

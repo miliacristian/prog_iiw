@@ -44,8 +44,13 @@ int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct 
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly, shm);
+                    if(temp_buff.command==DATA){
+                        handle_error_with_exit("impossibile ricevere dati dopo aver ricevuto messaggio errore\n");
+                    }
+                    else {
+                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
+                                          &shm->window_base_snd, &shm->pkt_fly, shm);
+                    }
                 } else {
                     printf("close_connect_get ack duplicato\n");
                 }
@@ -172,19 +177,24 @@ int rcv_get_file(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct
                 rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
                                                       shm->addr.len, temp_buff, shm->param.loss_prob);
                 alarm(TIMEOUT);
-            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) { //if(temp.command ==DATA){}
-                rcv_data_send_ack_in_window(shm->addr.sockfd, shm->fd, &shm->addr.dest_addr,
-                                            shm->addr.len, temp_buff, shm->win_buf_rcv,
-                                            &shm->window_base_rcv, shm->param.loss_prob,
-                                            shm->param.window, shm->dimension,
-                                            &shm->byte_written);
-                if (shm->byte_written == shm->dimension) {
-                    wait_for_fin_get(temp_buff, shm->win_buf_snd, shm->addr.sockfd,
-                                     shm->addr.dest_addr, shm->addr.len, &shm->window_base_snd,
-                                     &shm->window_base_rcv, &shm->pkt_fly, shm->param.window, &shm->byte_written,
-                                     shm->param.loss_prob, shm);
-                    printf("return rcv file 1\n");
-                    return shm->byte_written;
+            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                if(temp_buff.command ==DATA) {
+                    rcv_data_send_ack_in_window(shm->addr.sockfd, shm->fd, &shm->addr.dest_addr,
+                                                shm->addr.len, temp_buff, shm->win_buf_rcv,
+                                                &shm->window_base_rcv, shm->param.loss_prob,
+                                                shm->param.window, shm->dimension,
+                                                &shm->byte_written);
+                    if (shm->byte_written == shm->dimension) {
+                        wait_for_fin_get(temp_buff, shm->win_buf_snd, shm->addr.sockfd,
+                                         shm->addr.dest_addr, shm->addr.len, &shm->window_base_snd,
+                                         &shm->window_base_rcv, &shm->pkt_fly, shm->param.window, &shm->byte_written,
+                                         shm->param.loss_prob, shm);
+                        printf("return rcv file 1\n");
+                        return shm->byte_written;
+                    }
+                }
+                else{
+                    handle_error_with_exit(RED "ricevuto messaggio speciale in finestra durante ricezione file\n");
                 }
                 alarm(TIMEOUT);
             } else {

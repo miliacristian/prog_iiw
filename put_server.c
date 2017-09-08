@@ -196,6 +196,7 @@ void *put_server_rtx_job(void *arg) {
                 //printf("no rtx immediata\n");
                 continue;
             } else {
+                lock_mtx(&(shm->mtx));
                 //printf("rtx immediata\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
@@ -204,7 +205,6 @@ void *put_server_rtx_job(void *arg) {
                 temp_buff.command = shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd, &temp_buff, &shm->addr.dest_addr, shm->addr.len, shm->param.loss_prob);
                 rtx++;
-                lock_mtx(&(shm->mtx));
                 if (clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time)) != 0) {
                     handle_error_with_exit("error in get_time\n");
                 }
@@ -221,6 +221,7 @@ void *put_server_rtx_job(void *arg) {
             if (!to_rtx) {
                 continue;
             } else {
+                lock_mtx(&(shm->mtx));
                 //printf("rtx dopo sleep\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
@@ -229,7 +230,7 @@ void *put_server_rtx_job(void *arg) {
                 temp_buff.command = shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd, &temp_buff, &shm->addr.dest_addr, shm->addr.len, shm->param.loss_prob);
                 rtx++;
-                lock_mtx(&(shm->mtx));
+
                 if (clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time)) != 0) {
                     handle_error_with_exit("error in get_time\n");
                 }
