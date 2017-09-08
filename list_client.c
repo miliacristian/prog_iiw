@@ -14,8 +14,7 @@
 
 int rtx_list_client = 0;
 
-int
-close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct window_snd_buf *win_buf_snd, int sockfd,
+int close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct window_snd_buf *win_buf_snd, int sockfd,
                       struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
                       int *pkt_fly, int W, int *byte_written, double loss_prob,
                       struct shm_sel_repeat *shm) {
@@ -351,7 +350,7 @@ void *list_client_rtx_job(void *arg) {
     struct node*node=NULL;
     long timer_ns_left;
     char to_rtx;
-    struct timespec sleep_time;
+    struct timespec sleep_time, rtx_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
     for(;;) {
@@ -390,10 +389,10 @@ void *list_client_rtx_job(void *arg) {
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
-                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                if(clock_gettime(CLOCK_MONOTONIC, &(rtx_time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }
@@ -415,10 +414,10 @@ void *list_client_rtx_job(void *arg) {
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
-                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                if(clock_gettime(CLOCK_MONOTONIC, &(rtx_time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

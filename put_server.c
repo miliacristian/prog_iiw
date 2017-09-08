@@ -173,7 +173,7 @@ void *put_server_rtx_job(void *arg) {
     struct node*node=NULL;
     long timer_ns_left;
     char to_rtx;
-    struct timespec sleep_time;
+    struct timespec sleep_time, rtx_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
     for(;;) {
@@ -213,10 +213,10 @@ void *put_server_rtx_job(void *arg) {
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 rtx++;
-                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                if(clock_gettime(CLOCK_MONOTONIC, &rtx_time)!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }
@@ -239,10 +239,10 @@ void *put_server_rtx_job(void *arg) {
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
                 rtx++;
-                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
+                if(clock_gettime(CLOCK_MONOTONIC, &rtx_time)!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }

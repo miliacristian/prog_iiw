@@ -67,7 +67,18 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     shm->seq_to_send=0;
     shm->param.window=param_client.window;
     shm->param.loss_prob=param_client.loss_prob;
-    shm->param.timer_ms=param_client.timer_ms;
+    if(param_client.timer_ms !=0 ) {
+        shm->param.timer_ms = param_client.timer_ms;
+        shm->adaptive = 0;
+    }
+    else{
+        shm->param.timer_ms = TIMER_BASE_ADAPTIVE;
+        shm->adaptive = 1;
+        shm->dev_RTT_ms=0;
+        shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
+    }
+    printf("dev_RTT %f est_RTT %f\n", shm->dev_RTT_ms, shm->est_RTT_ms);
+    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=-1;
@@ -147,7 +158,18 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     shm->seq_to_send=0;
     shm->param.window=param_client.window;
     shm->param.loss_prob=param_client.loss_prob;
-    shm->param.timer_ms=param_client.timer_ms;
+    if(param_client.timer_ms !=0 ) {
+        shm->param.timer_ms = param_client.timer_ms;
+        shm->adaptive = 0;
+    }
+    else{
+        shm->param.timer_ms = TIMER_BASE_ADAPTIVE;
+        shm->adaptive = 1;
+        shm->dev_RTT_ms=0;
+        shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
+    }
+    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
+    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=-1;
@@ -231,7 +253,18 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     shm->seq_to_send=0;
     shm->param.window=param_client.window;
     shm->param.loss_prob=param_client.loss_prob;
-    shm->param.timer_ms=param_client.timer_ms;
+    if(param_client.timer_ms !=0 ) {
+        shm->param.timer_ms = param_client.timer_ms;
+        shm->adaptive = 0;
+    }
+    else{
+        shm->param.timer_ms = TIMER_BASE_ADAPTIVE;
+        shm->adaptive = 1;
+        shm->dev_RTT_ms=0;
+        shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
+    }
+    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
+    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=dimension;

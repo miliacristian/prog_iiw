@@ -89,6 +89,8 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         shm->dev_RTT_ms=0;
         shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
     }
+    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
+    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->param.loss_prob=param_serv.loss_prob;
     shm->head=NULL;
     shm->tail=NULL;
