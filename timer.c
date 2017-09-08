@@ -39,14 +39,14 @@ int calculate_sample_RTT(struct timespec tx_time){
     long time_ms_tx;
     int sample_RTT;
     if(clock_gettime(CLOCK_MONOTONIC,&time_current)!=0){
-        handle_error_with_exit("error in gettimeofday\n");
+        handle_error_with_exit("error in clock gettime\n");
     }
     printf("time current sec %ld nsec %ld\n", time_current.tv_sec ,time_current.tv_nsec);
     printf("time tx sec %ld nsec %ld\n", tx_time.tv_sec ,tx_time.tv_nsec);
     time_ms_cur=(time_current.tv_nsec/1000000)+(time_current.tv_sec*1000);
     time_ms_tx=(tx_time.tv_nsec/1000000)+(tx_time.tv_sec*1000);
     printf("time_cur %ld time_tx %ld\n", time_ms_cur, time_ms_tx);
-    sample_RTT = time_ms_cur - time_ms_tx;
+    sample_RTT =time_ms_cur - time_ms_tx;
     if ( sample_RTT == 0){
         return 1;
     }else if( sample_RTT < 0){
@@ -57,25 +57,41 @@ int calculate_sample_RTT(struct timespec tx_time){
 
 double absolute(double value){
     if (value<0){
-        return (value*(-1));
+        return ((value)*(-1));
     }
     return value;
 }
+
 double calculate_est_RTT(double est_RTT, double sample_RTT){
+    if(est_RTT<0 || sample_RTT<0){
+        handle_error_with_exit("error in calculate est_RTT\n");
+    }
     est_RTT = est_RTT -(est_RTT/8) + (sample_RTT/8);
     return est_RTT;
 }
 double calculate_dev_RTT(double est_RTT, double sample_RTT, double dev_RTT){
-    double diff = absolute(sample_RTT-est_RTT);
-    dev_RTT = dev_RTT-(dev_RTT/4)+((diff)/4);
+    if(est_RTT<0 || sample_RTT<0 || dev_RTT<0){
+        handle_error_with_exit("error in calculate dev_RTT\n");
+    }
+    double diff_positive = absolute(sample_RTT-est_RTT);
+    if(diff_positive<0){
+        handle_error_with_exit("error in calculate dev_RTT\n");
+    }
+    dev_RTT = dev_RTT-(dev_RTT/4)+((diff_positive)/4);
     return dev_RTT;
 }
 int calculate_timeout(double est_RTT, double dev_RTT){
+    if(est_RTT<0 || dev_RTT<0){
+        handle_error_with_exit("error calculate timeout\n");
+    }
     double timeout = est_RTT + (dev_RTT*4);
-    if(timeout<=1){
+    if(timeout<0){
+        handle_error_with_exit("error in calculate timeout\n");
+    }
+    else if(timeout<=1){
         return 1;
     }
-    else if (timeout > 1000){
+    else if (timeout >=1000){
         return 1000;
     }
     return (int)timeout;
@@ -83,8 +99,12 @@ int calculate_timeout(double est_RTT, double dev_RTT){
 
 void adaptive_timer(struct shm_sel_repeat* shm, int seq){
     int timeout;
-    printf("timer sec %ld nsec %ld\n", shm->win_buf_snd[seq].time.tv_sec, shm->win_buf_snd[seq].time.tv_nsec);
-    int sample = calculate_sample_RTT((shm->win_buf_snd[seq].time));
+    int sample;
+    if(shm==NULL || seq<0 || seq>(shm->param.window*2-1)){
+        handle_error_with_exit("error in adaptive_timer\n");
+    }
+    sample= calculate_sample_RTT((shm->win_buf_snd[seq].time));
+    printf("timer in finestra sec %ld nsec %ld\n", shm->win_buf_snd[seq].time.tv_sec, shm->win_buf_snd[seq].time.tv_nsec);
     printf("sample %d\n", sample);
     shm->est_RTT_ms = calculate_est_RTT(shm->est_RTT_ms, sample);
     printf("est_timer %f\n", shm->est_RTT_ms);
@@ -97,6 +117,9 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){
 }
 
 void sleep_struct(struct timespec* sleep_time, long timer_ns_left){
+    if(timer_ns_left<0){
+        handle_error_with_exit("error in sleep struct\n");
+    }
     if(sleep_time==NULL){
         handle_error_with_exit("error in sleep_struct\n");
     }

@@ -103,7 +103,6 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
             } else {
                 alarm(0);
             }
-
             if (temp_buff.command == FIN) {
                 printf(GREEN "FIN ricevuto\n" RESET);
                 alarm(0);
