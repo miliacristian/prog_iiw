@@ -138,7 +138,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
         }
         if (great_alarm_client == 1) {
             great_alarm_client = 0;
-            printf("il server non è in ascolto close_put_send_file\n");
+            printf(BLUE "FIN_ACK non ricevuto\n"RESET);
             alarm(0);
             pthread_cancel(shm->tid);
             printf("thread cancel close_put_send_file\n");
@@ -195,11 +195,6 @@ int send_put_file(struct shm_sel_repeat *shm) {
         if (great_alarm_client == 1) {
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
-            for(int i = 0; i< 2* (shm-> param.window); i++ ){
-                if((shm->win_buf_snd[i].acked) != 2){
-                    printf("seq %d lap %d acked %d", i, (shm->win_buf_snd[i].lap), (shm->win_buf_snd[i].acked));
-                }
-            }
             alarm(0);
             pthread_cancel(shm->tid);
             printf("thread cancel send_put_file\n");
@@ -326,10 +321,10 @@ void *put_client_rtx_job(void*arg){
             }
             else{
                 //printf("rtx immediata\n");
-                lock_mtx(&(shm->mtx));
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
+                lock_mtx(&(shm->mtx));
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
@@ -351,11 +346,11 @@ void *put_client_rtx_job(void*arg){
                 continue;
             }
             else{
-                //printf("rtx dopo sleep\n");
-                lock_mtx(&(shm->mtx));
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
                 temp_buff.lap=node->lap;
+                //printf("rtx dopo sleep\n");
+                lock_mtx(&(shm->mtx));
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);

@@ -336,78 +336,80 @@ void *list_client_job(void *arg) {
 
 void *list_client_rtx_job(void *arg) {
     printf("thread rtx creato\n");
-    struct shm_sel_repeat *shm = arg;
+    int byte_left;
+    struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
-    struct node *node = NULL;
+    struct node*node=NULL;
     long timer_ns_left;
     char to_rtx;
     struct timespec sleep_time;
     block_signal(SIGALRM);//il thread receiver non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
-    for (;;) {
+    for(;;) {
         lock_mtx(&(shm->mtx));
         while (1) {
-            if (delete_head(&shm->head, node) == -1) {
-                wait_on_a_condition(&(shm->list_not_empty), &shm->mtx);
-            } else {
-                if (!to_resend2(shm, *node)) {
+            if(delete_head(&shm->head,node)==-1){
+                wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
+            }
+            else{
+                if(!to_resend2(shm, *node)){
                     //printf("pkt non da ritrasmettere\n");
                     continue;
-                } else {
+                }
+                else{
                     //printf("pkt da ritrasmettere\n");
                     break;
                 }
             }
         }
         unlock_mtx(&(shm->mtx));
-        timer_ns_left = calculate_time_left(*node);
-        if (timer_ns_left <= 0) {
+        timer_ns_left=calculate_time_left(*node);
+        if(timer_ns_left<=0){
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
             unlock_mtx(&(shm->mtx));
-            if (!to_rtx) {
+            if(!to_rtx){
                 //printf("no rtx immediata\n");
                 continue;
-            } else {
+            }
+            else{
                 //printf("rtx immediata\n");
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
-                temp_buff.lap = node->lap;
-                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
-                temp_buff.command = shm->win_buf_snd[node->seq].command;
-                resend_message(shm->addr.sockfd, &temp_buff, &shm->addr.dest_addr, shm->addr.len, shm->param.loss_prob);
-                rtx_list_client++;
+                temp_buff.lap=node->lap;
                 lock_mtx(&(shm->mtx));
-                if (clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time)) != 0) {
+                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq, node->lap, shm->win_buf_snd[node->seq].time, shm->param.timer_ms, &shm->head,
-                               &shm->tail);
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
-        } else {
+        }
+        else{
             sleep_struct(&sleep_time, timer_ns_left);
-            nanosleep(&sleep_time, NULL);
+            nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
             to_rtx = to_resend2(shm, *node);
             unlock_mtx(&(shm->mtx));
-            if (!to_rtx) {
+            if(!to_rtx){
                 continue;
-            } else {
-                //printf("rtx dopo sleep\n");
+            }
+            else{
                 temp_buff.ack = NOT_AN_ACK;
                 temp_buff.seq = node->seq;
-                temp_buff.lap = node->lap;
-                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
-                temp_buff.command = shm->win_buf_snd[node->seq].command;
-                resend_message(shm->addr.sockfd, &temp_buff, &shm->addr.dest_addr, shm->addr.len, shm->param.loss_prob);
-                rtx_list_client++;
+                temp_buff.lap=node->lap;
+                //printf("rtx dopo sleep\n");
                 lock_mtx(&(shm->mtx));
-                if (clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time)) != 0) {
+                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                if(clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[node->seq].time))!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
-                insert_ordered(node->seq, node->lap, shm->win_buf_snd[node->seq].time, shm->param.timer_ms, &shm->head,
-                               &shm->tail);
+                insert_ordered(node->seq,node->lap,shm->win_buf_snd[node->seq].time,shm->param.timer_ms,&shm->head,&shm->tail);
                 unlock_mtx(&(shm->mtx));
             }
         }
