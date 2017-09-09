@@ -1,5 +1,4 @@
 
-#include <time.h>
 #ifndef PROG_IIW_CLIENT_H
 #define PROG_IIW_CLIENT_H
 

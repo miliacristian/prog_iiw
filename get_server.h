@@ -1,8 +1,4 @@
 #include "basic.h"
-#include "io.h"
-#include "parser.h"
-#include "timer.h"
-#include "Server.h"
 
 #ifndef PROG_IIW_GET_SERVER_H
 #define PROG_IIW_GET_SERVER_H

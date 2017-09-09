@@ -1,17 +1,6 @@
 
 #include "basic.h"
 #include "io.h"
-#include "basic.h"
-#include "io.h"
-#include "parser.h"
-#include "timer.h"
-#include "Client.h"
-#include "Server.h"
-#include "list_client.h"
-#include "list_server.h"
-#include "get_client.h"
-#include "get_server.h"
-#include "communication.h"
 
 ssize_t writen(int fd, void *buf, size_t n){//scrive n byte su un file
     size_t nleft;

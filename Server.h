@@ -1,5 +1,4 @@
-#include <signal.h>
-#include <time.h>
+
 
 #ifndef PROG_IIW_SERVER_H
 #define PROG_IIW_SERVER_H

@@ -1,14 +1,5 @@
 #include "basic.h"
-#include "io.h"
-#include "parser.h"
 #include "timer.h"
-#include "Client.h"
-#include "Server.h"
-#include "list_client.h"
-#include "list_server.h"
-#include "get_client.h"
-#include "get_server.h"
-#include "communication.h"
 
 char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
     if(filename==NULL || md5_sum==NULL){
