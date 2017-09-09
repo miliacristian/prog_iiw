@@ -279,8 +279,7 @@ void rcv_list_send_ack_in_window(int sockfd, char **list, struct sockaddr_in *se
                 *byte_written += (MAXPKTSIZE - OVERHEAD);
                 *list += (MAXPKTSIZE - OVERHEAD);
             } else {
-                copy_buf2_in_buf1(shm->list, temp_buff.payload, dim - *byte_written);//scrivo in list la parte di lista
-                //questa copy_buf potrebbe dar problemi
+                copy_buf2_in_buf1(shm->list, temp_buff.payload, dim - *byte_written);
                 *byte_written += dim - *byte_written;
                 shm->list += dim - *byte_written;
             }
@@ -431,7 +430,8 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
         } else {
             handle_error_with_exit("error in rcv ack window\n");
         }
-    } else {
+    }
+    else {
         handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));

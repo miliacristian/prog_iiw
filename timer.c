@@ -113,7 +113,7 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){
     timeout = calculate_timeout(shm->est_RTT_ms,shm->dev_RTT_ms);
     printf("timeout %d\n", timeout);
     shm->param.timer_ms = timeout;
-    handle_error_with_exit("");
+    //handle_error_with_exit("");
 }
 
 void sleep_struct(struct timespec* sleep_time, long timer_ns_left){
