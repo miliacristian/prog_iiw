@@ -396,7 +396,10 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
                        int *pkt_fly, struct shm_sel_repeat *shm) {
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
-        if (win_buf_snd[temp_buff.ack].acked != 2) {
+        if(win_buf_snd[temp_buff.ack].acked==1){
+            return;
+        }
+        if (win_buf_snd[temp_buff.ack].acked==0) {
             //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
                  //  win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
             //printf("seq %d\n", temp_buff.ack);
@@ -442,7 +445,10 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     //tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
-        if (win_buf_snd[temp_buff.ack].acked != 2) {
+        if(win_buf_snd[temp_buff.ack].acked==1){
+            return;
+        }
+        if (win_buf_snd[temp_buff.ack].acked == 0) {
             //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
                    //win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
             //printf("seq %d\n", temp_buff.ack);
@@ -485,7 +491,10 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     // parte di lista,tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
-        if (win_buf_snd[temp_buff.ack].acked != 2) {
+        if(win_buf_snd[temp_buff.ack].acked==1){
+            return;
+        }
+        if (win_buf_snd[temp_buff.ack].acked == 0) {
             //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
                   // win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
             if (shm->adaptive) {
