@@ -11,7 +11,7 @@
 #include "get_server.h"
 #include "communication.h"
 
-char calc_file_MD5(char *filename, char *md5_sum){
+char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
     if(filename==NULL || md5_sum==NULL){
         handle_error_with_exit("error in calc md5\n");
     }
@@ -30,7 +30,7 @@ char calc_file_MD5(char *filename, char *md5_sum){
     pclose(p);
     return i == MD5_LEN;
 }
-void check_md5(char*filename,char*md5_to_check) {
+void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono uguali
     char md5[MD5_LEN + 1];
     printf("checking md5...\n");
     if(filename==NULL || md5_to_check==NULL){
@@ -49,7 +49,7 @@ void check_md5(char*filename,char*md5_to_check) {
     }
     return;
 }
-void better_strcpy(char*buf1,char*buf2){
+void better_strcpy(char*buf1,char*buf2){//strcpy+controllo buffer
     if(buf1==NULL){
         handle_error_with_exit("error better strcpy buf1 is NULL\n");
     }
@@ -59,7 +59,7 @@ void better_strcpy(char*buf1,char*buf2){
     strcpy(buf1,buf2);
     return;
 }
-void better_strncpy(char*buf1,char*buf2,int lenght){
+void better_strncpy(char*buf1,char*buf2,int lenght){//strncpy+controllo buffer
     if(buf1==NULL){
         handle_error_with_exit("error better strcpy buf1 is NULL\n");
     }
@@ -69,7 +69,7 @@ void better_strncpy(char*buf1,char*buf2,int lenght){
     strncpy(buf1,buf2,lenght);
     return;
 }
-void better_strcat(char*str1,char*str2){
+void better_strcat(char*str1,char*str2){//strcat+controllo buffer
     if(str1==NULL){
         handle_error_with_exit("error better strcat str1 is NULL\n");
     }
@@ -79,20 +79,20 @@ void better_strcat(char*str1,char*str2){
     strcat(str1,str2);
     return;
 }
-void better_strcmp(char*str1,char*str2){
+void better_strcmp(char*str1,char*str2){//strncmp+controllo buffer
     return;
 }
-void better_strncmp(char*str1,char*str2){
+void better_strncmp(char*str1,char*str2){//strncmp+controllo buffer
     return;
 }
-void set_max_buff_rcv_size(int sockfd){
+void set_max_buff_rcv_size(int sockfd){//imposta il buffer ricezione della socket al massimo possibile(senza root)
     int buff_size=BUFF_RCV_SIZE;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
         handle_error_with_exit("error in setsockopt\n");
     }
     return;
 }
-void set_buff_rcv_size(int sockfd,int size){
+void set_buff_rcv_size(int sockfd,int size){//imposta il buffer ricezione della socket al valore definito come parametro
     int buff_size=size;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
         handle_error_with_exit("error in setsockopt\n");
@@ -100,14 +100,14 @@ void set_buff_rcv_size(int sockfd,int size){
     return;
 }
 
-void print_double_buff_rcv_size(int sockfd){
+void print_double_buff_rcv_size(int sockfd){//stampa il doppio del valore del buffer di ricezione della socket
     socklen_t  size_sock=sizeof(socklen_t),get_size;
     if(getsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
         handle_error_with_exit("error in setsockopt\n");
     }
     printf("buffer size %d\n",get_size);
 }
-char to_resend(struct shm_sel_repeat *shm, struct node node){
+/*char to_resend(struct shm_sel_repeat *shm, struct node node){
     if(shm==NULL){
         handle_error_with_exit("error in to_resend shm is NULL\n");
     }
@@ -118,15 +118,13 @@ char to_resend(struct shm_sel_repeat *shm, struct node node){
         return 1;
     }
     return 0;
-}
+}*/
 
-char to_resend2(struct shm_sel_repeat *shm, struct node node){
-    //printf("lap finestra %d lap lista %d\n",shm->win_buf_snd[node.seq].lap,node.lap);
+char to_resend(struct shm_sel_repeat *shm, struct node node){//verifica se un pacchetto è da ritrasmettere
     if(shm==NULL){
         handle_error_with_exit("error in to_resend shm is NULL\n");
     }
     if(node.lap == (shm->win_buf_snd[node.seq]).lap){
-        //printf("acked %d seq %d\n", shm->win_buf_snd[node.seq].acked, node.seq);
         if((shm->win_buf_snd[node.seq].acked)!= 0){
             return 0;
         }
@@ -136,7 +134,7 @@ char to_resend2(struct shm_sel_repeat *shm, struct node node){
         return 0;
     }
 }
-void block_signal(int signal){
+void block_signal(int signal){//non fa ricevere il segnale definito al thread chiamante
     sigset_t set;
     if(sigemptyset(&set)==-1){
         handle_error_with_exit("error in sigemptyset\n");
@@ -149,7 +147,7 @@ void block_signal(int signal){
     }
     return;
 }
-void unlock_signal(int signal){
+void unlock_signal(int signal){//fa ricevere il segnale definito al thread chiamante
     sigset_t set;
     if(sigemptyset(&set)==-1){
         handle_error_with_exit("error in sigemptyset\n");
@@ -162,7 +160,7 @@ void unlock_signal(int signal){
     }
     return;
 }
-void initialize_sem(sem_t*mtx){
+void initialize_sem(sem_t*mtx){//inizializza semaforo
     if(mtx==NULL){
         handle_error_with_exit("error in initialize_sem mtx is NULL\n");
     }
@@ -171,7 +169,7 @@ void initialize_sem(sem_t*mtx){
     }
     return;
 }
-void initialize_mtx(pthread_mutex_t *mtx){
+void initialize_mtx(pthread_mutex_t *mtx){//inizializza mutex
     if(mtx==NULL){
         handle_error_with_exit("error in initialize_mtx mtx is NULL\n");
     }
@@ -180,7 +178,7 @@ void initialize_mtx(pthread_mutex_t *mtx){
     }
     return;
 }
-void destroy_mtx(pthread_mutex_t *mtx){
+void destroy_mtx(pthread_mutex_t *mtx){//distrugge mutex
     if(mtx==NULL){
         handle_error_with_exit("error in destroy_mtx mtx is NULL\n");
     }
@@ -189,7 +187,7 @@ void destroy_mtx(pthread_mutex_t *mtx){
     }
     return;
 }
-void lock_mtx(pthread_mutex_t *mtx){
+void lock_mtx(pthread_mutex_t *mtx){//lock mutex
     if(mtx==NULL){
         handle_error_with_exit("error in lock_mtx mtx is NULL\n");
     }
@@ -198,7 +196,7 @@ void lock_mtx(pthread_mutex_t *mtx){
     }
     return;
 }
-void unlock_mtx(pthread_mutex_t *mtx){
+void unlock_mtx(pthread_mutex_t *mtx){//unlock mutex
     if(mtx==NULL){
         handle_error_with_exit("error in unlock_mtx mtx is NULL\n");
     }
@@ -207,7 +205,7 @@ void unlock_mtx(pthread_mutex_t *mtx){
     }
     return;
 }
-void initialize_cond(pthread_cond_t*cond){
+void initialize_cond(pthread_cond_t*cond){//inizializza variabile condizione
     if(cond==NULL){
         handle_error_with_exit("error in initialize_cond cond is NULL\n");
     }
@@ -215,7 +213,7 @@ void initialize_cond(pthread_cond_t*cond){
         handle_error_with_exit("error in initialize cond\n");
     }
 }
-void destroy_cond(pthread_cond_t*cond){
+void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
     if(cond==NULL){
         handle_error_with_exit("error in destroy_cond cond is NULL\n");
     }
@@ -224,7 +222,7 @@ void destroy_cond(pthread_cond_t*cond){
     }
     return;
 }
-void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){
+void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){//il thread chiamante aspetta che la condizione diventi vera
     if(mtx==NULL){
         handle_error_with_exit("error in wait condition mtx is NULL\n");
     }
@@ -236,7 +234,7 @@ void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){
     }
     return;
 }
-void unlock_thread_on_a_condition(pthread_cond_t*cond){
+void unlock_thread_on_a_condition(pthread_cond_t*cond){//sblocca un thread bloccato sulla condizione specificata
     if(cond==NULL){
         handle_error_with_exit("error in unlock_thread cond is NULL\n");
     }
@@ -245,7 +243,7 @@ void unlock_thread_on_a_condition(pthread_cond_t*cond){
     }
     return;
 }
-char check_if_dir_exist(char*dir_path){
+char check_if_dir_exist(char*dir_path){//verifica se una directory esiste
     if(dir_path==NULL){
         handle_error_with_exit("error in check if dir exist path is NULL\n");
     }
@@ -256,12 +254,12 @@ char check_if_dir_exist(char*dir_path){
     closedir(dir);
     return 1;
 }
-void handle_error_with_exit(char*errorString){
+void handle_error_with_exit(char*errorString){//uccide il processo dopo essersi accorto di un errore
     printf(RED "%s" RESET, errorString);
     perror("");
     exit(EXIT_FAILURE);
 }
-void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){
+void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){//copia dim byte da buf 2 a buf1
     if(buf2==NULL){
         handle_error_with_exit("buff 2 null\n");
     }
@@ -279,7 +277,7 @@ void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){
     return;
 }
 
-int count_word_in_buf(char*buf){
+int count_word_in_buf(char*buf){//conta le parole dentro una stringa
     if(buf==NULL){
         handle_error_with_exit("error in count_word buf is NULL\n");
     }
@@ -309,7 +307,7 @@ int count_word_in_buf(char*buf){
     return word;
 }
 
-void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con parentesi e numero dentro
+void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con underscore e numero dentro
     char num_format_string[4];//3 per le cifre +1 terminatore
     if(temp==NULL){
         handle_error_with_exit("error in generate branches temp is NULL\n");
@@ -324,7 +322,7 @@ void generate_branches_and_number(char*temp,char copy_number){//fa diventare tem
 char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path assoluti tutti diversi tra loro partendo da un file che esiste,o ritorna null se ci sono troppe copie del file(255)
 // fare la free di absolut path nella funzione chiamante dopo aver creato il file
     unsigned char copy_number=1;
-    char temp[5],*occurence,*absolute_path,*first_of_the_dot;//temp=="(number)"
+    char temp[5],*occurence,*absolute_path,*first_of_the_dot;//temp=="_number"
     memset(temp,'\0',5);
     if(path_to_filename==NULL){
         handle_error_with_exit("error generate multi copy path_to_filename is NULL\n");
@@ -339,7 +337,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     if(!check_if_file_exist(absolute_path)){
         return absolute_path;
     }
-    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+5));;//6==terminatore+ "(" + ")" +3 cifre per il numero
+    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+5));;//5==terminatore+ "_" + +3 cifre per il numero
     if(first_of_the_dot==NULL){
         handle_error_with_exit("error in malloc\n");
     }
@@ -390,7 +388,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
 }
 
 char seq_is_in_window(int win_base,int window,int seq){
-    //verifica che se un numero di sequenza è dentro la finestra 1 si 0 no
+    //verifica che se un numero di sequenza è dentro la finestra:1 si; 0 no
     if(win_base<0 || window<1 || seq<0){
         handle_error_with_exit("invalid win_base,window or seq in seq_is_in_window\n");
     }
@@ -413,7 +411,7 @@ char seq_is_in_window(int win_base,int window,int seq){
 
 }
 
-char flip_coin(double loss_prob){//ritorna vero se devo trasmettere falso altrimenti
+char flip_coin(double loss_prob){//genera un numero casuale tra 0 e 100 e ritorna vero se devo trasmettere,falso altrimenti
     if(loss_prob<0 || loss_prob>100){
         handle_error_with_exit("error in flip_coin invalid loss_prob\n");
     }
@@ -484,7 +482,7 @@ char* files_in_dir(char* path,int lenght) {
     }
     return (list);
 }
-char*make_list(char*path){
+char*make_list(char*path){//ritorna la lista di file presenti in path
     char*list;
     int lenght;
     if(path==NULL){
@@ -504,7 +502,7 @@ char check_if_file_exist(char*path){//verifica che il file esiste in memoria
     return 0;
 }
 
-int get_file_size(char*path){
+int get_file_size(char*path){//ritorna la dimensione di un file dato un path
     if(path==NULL){
         handle_error_with_exit("error in get_file_size\n");
     }
@@ -516,7 +514,7 @@ int get_file_size(char*path){
     return (int)st.st_size;
 }
 
-void lock_sem(sem_t*sem){
+void lock_sem(sem_t*sem){//lock semaforo
     if(sem==NULL){
         handle_error_with_exit("error in lock_sem sem is NULL\n");
     }
@@ -525,7 +523,7 @@ void lock_sem(sem_t*sem){
     }
     return;
 }
-void unlock_sem(sem_t*sem){
+void unlock_sem(sem_t*sem){//unlock semaforo
     if(sem==NULL){
         handle_error_with_exit("error in unlock_sem sem is NULL\n");
     }
@@ -541,22 +539,23 @@ int get_id_msg_queue(){//funzione che crea la coda di messaggi
     }
     return msgid;
 }
-int get_id_shared_mem(int size){
+int get_id_shared_mem(int size){//funzione che crea la memoria condivisa tra processi
     int shmid;
     if((shmid=shmget(IPC_PRIVATE,(size_t)size,IPC_CREAT | 0666))==-1){
         handle_error_with_exit("error in get_id_shm\n");
     }
     return shmid;
 }
-void*attach_shm(int shmid){
-    void*mtx=shmat(shmid,NULL,0);//VEDI TERZO PARAMETRO MAN_PAGE
+void*attach_shm(int shmid){//funzione che ritorna puntatore all'area di memoria condivisa
+    void*mtx=shmat(shmid,NULL,0);
     if(mtx==(void*)-1){
         handle_error_with_exit("errror in attach_shm\n");
     }
     return mtx;
 }
 
-char* generate_full_pathname(char* filename, char* dir){//ricordarsi di fare la free di path nella funzione chiamante
+char* generate_full_pathname(char* filename, char* dir){//funzione che crea il path assoluto di un file sapendo che sta nella directory dir
+//ricordarsi di fare la free di path nella funzione chiamante
     char* path;
     path=malloc(sizeof(char)*MAXPKTSIZE);
     if(filename ==NULL || dir==NULL){
