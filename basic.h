@@ -28,27 +28,32 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#define MAXCOMMANDLINE 320
-#define MAXFILENAME 255
-#define MAXPKTSIZE 1468//1468==no packet fragmentation //1468
+#define MAXCOMMANDLINE 320//lunghezza massima comando che  inserisce il client
+#define MAXFILENAME 255//lunghezza massima filename
+#define MAXPKTSIZE 1468//1468==no packet fragmentation
 #define MAXLINE 1024
-#define BUFF_RCV_SIZE (208*1024)//(208*1024)//208*1024 max buff_size_without root
-#define SERVER_PORT 5195
-#define ERROR 5
-#define START 4
-#define DIMENSION 6
-#define NOT_A_PKT (-5)
-#define NOT_AN_ACK (-5)
-#define FIN 2
-#define FIN_ACK 3
-#define GET 1
-#define PUT 7
-#define LIST 8
-#define DATA 0
-#define SYN 9
-#define SYN_ACK 10
-#define TIMEOUT 2
-#define TIMER_BASE_ADAPTIVE 10 //in millisecondi
+#define BUFF_RCV_SIZE (208*1024)//buffer ricezione socket 208*1024 max buff_size_without root
+#define SERVER_PORT 5195//porta del server
+
+#define NOT_AN_ACK (-5)//pacchetto non è un ack
+#define NOT_A_PKT (-5) //pacchetto non è un pacchetto ma è un ack
+
+#define DATA 0//comando da inserire nel pacchetto
+#define GET 1//comando da inserire nel pacchetto
+#define FIN 2//comando da inserire nel pacchetto
+#define FIN_ACK 3//comando da inserire nel pacchetto
+#define START 4 //comando da inserire nel pacchetto
+#define ERROR 5//comando da inserire nel pacchetto
+#define DIMENSION 6 //comando da inserire nel pacchetto
+#define PUT 7//comando da inserire nel pacchetto
+#define LIST 8//comando da inserire nel pacchetto
+#define SYN 9//comando da inserire nel pacchetto
+#define SYN_ACK 10//comando da inserire nel pacchetto
+
+#define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
+
+#define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
+
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
 #define YELLOW  "\x1b[33m"
@@ -56,97 +61,103 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN    "\x1b[36m"
 #define RESET   "\x1b[0m"
+
 #define STR_VALUE(val) #val
 #define STR(name) STR_VALUE(name)
-#define PATH_LEN 256
-#define MD5_LEN 32
-#define OVERHEAD (sizeof(int)*3+sizeof(char))
-#define FREE_PROCESS 1
-#define MAX_PROC_JOB 4
+
+#define PATH_LEN 256//massima lunghezza del path
+#define MD5_LEN 32//lunghezza md5
+#define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
+
+#define FREE_PROCESS 1//numero di processi server che devono essere sempre disponibili per una richiesta
+#define MAX_PROC_JOB 4//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
 #ifndef LINE_H
 #define LINE_H
-//pacchetto fuori finestra da mandare ack=not_an_ack seq=not_a_pkt
-struct temp_buffer{
-    int seq;
-    int ack;
-    int lap;
-    char command;
+
+//pacchetto da mandare non selective repeat ack=not_an_ack seq=not_a_pkt
+
+struct temp_buffer{//struttura del pacchetto da inviare
+    int seq;//numero sequenza
+    int ack;//numero ack
+    int lap;//giri di finestra
+    char command;//comando del pacchetto
     char payload[MAXPKTSIZE-OVERHEAD];// dati pacchetto
 };
-struct window_rcv_buf{
-    char received;
-    char command;
+struct window_rcv_buf{//elemento della finestra di ricezione
+    char received;//ricevuto 1==si 0==no
+    char command;//comando
     int lap;
-    char*payload;
+    char*payload;//dati pacchetto
 };
 
-struct window_snd_buf{//struttura per memorizzare info sui pacchetti da inviare
-// se diventa pesante come memoria è meglio allocata nell'heap?
-    char acked;
-    char command;
+struct window_snd_buf{//elemento della finestra di trasmissione
+    char acked;//riscontrato 1==si 0==da riscontrare 2==vuoto
+    char command;//comando
     struct timespec time;//usato per timer adattativo
     int lap;
-    char*payload;
+    char*payload;//dati pacchetto
 };
 
 
-struct addr{
+struct addr{//struttura contentente le informazioni per mandare un pacchetto ad un altro host
     int sockfd;
     struct sockaddr_in dest_addr;
     socklen_t len;
 };
 
-struct select_param{
-    int window;
-    double loss_prob;
-    int timer_ms;
+struct select_param{//parametri di esecuzione
+    int window;//grandezza finestra
+    double loss_prob;//prob perdita
+    int timer_ms;//tempo di ritrasmissione in millisecondi ,se t==0 timer adattativo
 };
 
-struct shm_sel_repeat{//variabili inutilizzate da togliere
-    struct timeval time;//
-    struct addr addr;
-    int pkt_fly;//
-    pthread_mutex_t mtx;//
-    struct window_snd_buf *win_buf_snd;//
-    struct window_rcv_buf *win_buf_rcv;//
-    char md5_sent[MD5_LEN + 1];//dopo l'inizializzazione contiene terminatore di stringa
-    int dimension;
+struct shm_sel_repeat{//struttura condivisa tra i 2 thread necessaria sia per la sincronizzazione
+// sia per svolgere la richiesta(put/get/list) vera e propria
+    struct timeval time;??
+    struct addr addr;//indirizzo dell'host
+    int pkt_fly;//numero pacchetti in volo (va da 0 a w-1)
+    pthread_mutex_t mtx;//mutex
+    struct window_snd_buf *win_buf_snd;//finestra trasmissione (va da 0 a 2w-1)
+    struct window_rcv_buf *win_buf_rcv;//finestra ricezione (va da 0 a 2w-1)
+    char md5_sent[MD5_LEN + 1];//md5
+    int dimension;//dimensione del file/lista
     char*filename;
-    int window_base_rcv;//
-    int window_base_snd;//
-    int seq_to_send;//prossima posizione libera per mandare pacchetto
-    pthread_cond_t list_not_empty;
-    int byte_readed;
-    int byte_written;
-    int byte_sent;
-    char*list;
-    struct select_param param;
-    double est_RTT_ms;
+    int window_base_rcv;//sequenza di inizio finestra ricezione (va da 0 a 2w-1)
+    int window_base_snd;//sequenza di inizio finestra trasmissione (va da 0 a 2w-1)
+    int seq_to_send;//prossimo numero di sequenza da dare al pacchetto (va da 0 a 2w-1)
+    pthread_cond_t list_not_empty;//variabile condizione lista dinamica non vuota
+    int byte_readed;//byte letti e riscontrati lato sender
+    int byte_written;//byte scritti e riscontrati lato receiver
+    int byte_sent;//byte inviati con pacchetti senza contare quelli di ritrasmissione
+    char*list;//puntatore alla lista dei file
+    struct select_param param;//parametri
+    double est_RTT_ms;//estimated RTT necessario per timer adattativo
     double dev_RTT_ms;
-    char adaptive;
-    int fd;
-    pthread_t tid;
-    struct node* head;
-    struct node *tail;
+    char adaptive;//se 1 timer adattativo se 0 timer non adattativo
+    int fd;//file descriptor
+    pthread_t tid;//tid del thread di ritrasmissione,necessario per ucciderlo al termine della richiesta
+    struct node* head;//puntatore alla testa della lista dinamica
+    struct node *tail;//puntatore alla coda della lista dinamica
 };
 
-struct mtx_prefork{
+struct mtx_prefork{//mutex usato dai processi server e dal thread pool handler per tenere traccia dei processi liberi
     sem_t sem;
     int free_process;
 };
-struct msgbuf{
+
+struct msgbuf{//struttura della coda condivisa dei processi per leggere le richieste dei client
     long mtype;
     struct sockaddr_in addr;
 };
 
-struct node  {
+struct node  {//struttura di un nodo della lista dinamica ordianta,la lista tiene traccia delle trasmissioni e delle ritrasmissioni
     int seq;
-    struct timespec tv;
-    int timer_ms;
+    struct timespec tv;//tempo di invio
+    int timer_ms;//timeout attuale
     int lap;
-    struct node* next;
-    struct node* prev;
+    struct node* next;//puntatore al prossimo
+    struct node* prev;//puntatore al precedente
 };
 #endif
 
