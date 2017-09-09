@@ -11,7 +11,7 @@
 #include "communication.h"
 
 
-void move_pointer(char**string,int n){
+void move_pointer(char**string,int n){//sposta un puntatore di n posizioni
     if(string==NULL || *string==NULL){
         handle_error_with_exit("error in move_pointer\n");
     }
@@ -28,7 +28,7 @@ void move_pointer(char**string,int n){
     return;
 }
 
-int skip_space(char**string){
+int skip_space(char**string){//sposta un puntatore finquando trova caratteri uguali allo spazio
     if(*string==NULL || string==NULL){
         handle_error_with_exit("error in move_pointer\n");
     }
@@ -39,7 +39,7 @@ int skip_space(char**string){
     }
     return count;
 }
-char is_blank(char*string){
+char is_blank(char*string){//ritorna vero se la stringa è composta solo da spazi
     if(string==NULL){
         handle_error_with_exit("error in is_blank\n");
     }
@@ -53,7 +53,7 @@ char is_blank(char*string){
     }
     return 1;
 }
-int parse_integer_and_move(char**string) {
+int parse_integer_and_move(char**string) {//fa il parse dell'intero e sposta il puntatore al carattere dopo l'intero
     if(*string==NULL || string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
@@ -97,7 +97,7 @@ double parse_double_and_move(char**string){
     *string=errptr;//sposta il puntatore
     return value;
 }
-long parse_long(char*string) {
+long parse_long(char*string) {//fa il parse per ottenere un long
     if(string==NULL){
         handle_error_with_exit("error in parse_integer\n");
     }
@@ -137,7 +137,8 @@ double parse_double(char*string){
     return value;
 }
 
-void check_and_parse_command(char*command,char*filename){
+void check_and_parse_command(char*command,char*filename){//verifica che i comandi che digita l'utente siano validi
+    //e inizializza command e filename necessari per eseguire il comando
     if(command==NULL || filename==NULL){
         handle_error_with_exit("error in check and parse\n");
     }
