@@ -12,16 +12,16 @@
 #include "communication.h"
 #include "put_client.h"
 
-int great_alarm_client = 0;//se diventa 1 è scattato il timer grande
+int great_alarm_client = 0;//se diventa 1 è scattato il timer globale
 struct select_param param_client;
 char *dir_client;
 
-void add_slash_to_dir_client(char*argument){
+void add_slash_to_dir_client(char*argument){//aggiunge "/" ad un char*path se non presente
     if(argument==NULL){
         handle_error_with_exit("error in add_slah\n");
     }
     if ((argument[strlen(argument) - 1]) != '/') {
-        dir_client = malloc(strlen(argument) + 2);//1 per "/" uno per terminatore
+        dir_client = malloc(strlen(argument) + 2);//2== "/" +terminatore
         if (dir_client == NULL) {
             handle_error_with_exit("error in malloc\n");
         }
@@ -35,24 +35,25 @@ void add_slash_to_dir_client(char*argument){
     return;
 }
 
-void timeout_handler_client(int sig, siginfo_t *si, void *uc){
+void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler del timer globale
     (void)sig;
     (void)si;
     (void)uc;
-    printf("%d tid\n",pthread_self());
+    printf("%d tid\n",pthread_self());//da togliere
     great_alarm_client=1;
     return;
 }
 
 int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
     int byte_written=0;
-    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));//alloca memoria condivisa thread
     if(filename==NULL){
         handle_error_with_exit("error in get_command\n");
     }
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
     }
+    //inizializza memoria condivisa thread
     initialize_mtx(&(shm->mtx));
     initialize_cond(&(shm->list_not_empty));
     shm->fd=-1;
@@ -122,13 +123,13 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     set_max_buff_rcv_size(shm->addr.sockfd);
     get_client(shm);
     byte_written=shm->byte_written;
+    //libera memoria
     for (int i = 0; i < 2 *(param_client.window); i++) {
         free(shm->win_buf_snd[i].payload);
         shm->win_buf_snd[i].payload=NULL;
         free(shm->win_buf_rcv[i].payload);
         shm->win_buf_rcv[i].payload=NULL;
     }
-    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_rcv=NULL;
@@ -140,10 +141,11 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
 
 int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
     int byte_readed=0;
-    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));//alloca memoria condivisa thread
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
     }
+    //inizializza memoria condivisa thread
     initialize_mtx(&(shm->mtx));
     initialize_cond(&(shm->list_not_empty));
     shm->fd=-1;
@@ -209,20 +211,20 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     set_max_buff_rcv_size(shm->addr.sockfd);
     list_client(shm);
     byte_readed=shm->byte_readed;
+    //libera memoria
     for (int i = 0; i < 2 *(param_client.window); i++) {
         free(shm->win_buf_snd[i].payload);
         shm->win_buf_snd[i].payload=NULL;
         free(shm->win_buf_rcv[i].payload);
         shm->win_buf_rcv[i].payload=NULL;
     }
-    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_rcv=NULL;
     shm->win_buf_snd=NULL;
     free(shm);
     shm=NULL;
-    return byte_readed;//fare in modo che byte_readed  venga cambiato dal thread receiver
+    return byte_readed;
 }
 
 int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
@@ -235,10 +237,11 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     if(path==NULL){
         handle_error_with_exit("error in generate full path\n");
     }
-    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
+    struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));//alloca memoria condivisa thread
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
     }
+    //inizializza memoria condivisa thread
     initialize_mtx(&(shm->mtx));
     initialize_cond(&(shm->list_not_empty));
     shm->fd=-1;
@@ -313,24 +316,24 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     put_client(shm);
     byte_readed=shm->byte_readed;
+    //libera memoria
     for (int i = 0; i < 2 *(param_client.window); i++) {
         free(shm->win_buf_snd[i].payload);
         shm->win_buf_snd[i].payload=NULL;
         free(shm->win_buf_rcv[i].payload);
         shm->win_buf_rcv[i].payload=NULL;
     }
-    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_rcv=NULL;
     shm->win_buf_snd=NULL;
     free(shm);
     shm=NULL;
-    return byte_readed;//fare in modo che byte_readed  venga cambiato dal thread receiver
+    return byte_readed;
 }
 
 struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servaddr) {//client manda messaggio syn
-// e server risponde con ack cosi il client sa chi contattare per mandare i messaggi di comando
+// e processo server figlio risponde con ack cosi il client sa chi contattare per eseguire i comandi put,list e get
     char rtx = 0;
     struct sigaction sa;
     socklen_t len = sizeof(main_servaddr);
@@ -369,7 +372,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     return main_servaddr;
 }
 
-void client_list_job() {
+void client_list_job() {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando list
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     printf("client list job\n");
@@ -396,7 +399,7 @@ void client_list_job() {
     exit(EXIT_SUCCESS);
 }
 
-void client_get_job(char *filename) {
+void client_get_job(char *filename) {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando get
     printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
@@ -427,7 +430,7 @@ void client_get_job(char *filename) {
     exit(EXIT_SUCCESS);
 }
 
-void client_put_job(char *filename,int dimension) {//upload e filename già verificato
+void client_put_job(char *filename,int dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
     printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
@@ -456,27 +459,27 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
     exit(EXIT_SUCCESS);
 }
 
-void *thread_job(void *arg) {
+void *thread_job(void *arg) {//thread che esegue waitpid dei processi del client
     (void) arg;
-    //waitpid dei processi del client
+
     pid_t pid;
     block_signal(SIGALRM);
     while (1) {
-        while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
+        while ((pid = waitpid(-1, NULL,WNOHANG)) > 0) {
             printf("pool handler libera risorse del processo %d\n", pid);
         }
     }
     return NULL;
 }
 
-void create_thread_waitpid() {
+void create_thread_waitpid() {//crea il thread che esegue waitpid
     pthread_t tid;
     pthread_create(&tid, 0, thread_job, NULL);
     return;
 }
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {//funzione principale client concorrente
     char *filename, *command, conf_upload[4], *line, localname[80],*my_list;
     //non fare mai la free su filename e command(servono ad ogni richiesta)
     int path_len, fd;
@@ -485,14 +488,15 @@ int main(int argc, char *argv[]) {
         handle_error_with_exit("usage <directory>\n");
     }
     srand(time(NULL));
+    //verifica che il file parameter.txt esista
     check_if_dir_exist(argv[1]);
     add_slash_to_dir_client(argv[1]);
     better_strcpy(localname,"./parameter.txt");
-    fd = open(localname, O_RDONLY);
+    fd = open(localname, O_RDONLY);//apre il file parameter per leggere i parametri di input
     if (fd == -1) {
         handle_error_with_exit("parameter.txt in ./ not found\n");
     }
-    line = malloc(sizeof(char)*MAXLINE);
+    line = malloc(sizeof(char)*MAXLINE);//alloca buffer per leggere dal file parameter.txt
     if(line==NULL){
         handle_error_with_exit("error in malloc\n");
     }
@@ -501,6 +505,7 @@ int main(int argc, char *argv[]) {
     if (readline(fd, line, MAXLINE) <= 0) {
         handle_error_with_exit("error in read line\n");
     }
+    //inizializza i parametri di esecuzione
     if(count_word_in_buf(line)!=3){
         handle_error_with_exit("parameter.txt must contains 3 parameters <W><loss_prob><timer>\n");
     }
@@ -524,7 +529,9 @@ int main(int argc, char *argv[]) {
     }
     free(command);
     line=NULL;
+
     create_thread_waitpid();
+
     if ((command = malloc(sizeof(char) * 8)) == NULL) {//contiene il comando digitato,8==lunghezza massima:my+" "+list\0,list\0,get\0 o put\0
         handle_error_with_exit("error in malloc buffercommand\n");
     }
@@ -532,7 +539,8 @@ int main(int argc, char *argv[]) {
         handle_error_with_exit("error in malloc filename\n");
     }
     printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)my list\n5)exit\n" RESET);
-    for (;;) {
+    for (;;) {//ciclo infinito che associa ad ogni comando che digita l'utente un processo che esegue il comando
+
         check_and_parse_command(command, filename);//inizializza command,filename e size
         if (!is_blank(filename) && (strncmp(command, "put",3) == 0)) {
             char *path = alloca(sizeof(char) * (strlen(filename) + path_len + 1));

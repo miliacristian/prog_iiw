@@ -1,6 +1,7 @@
 #include "dynamic_list.h"
 
-void initialize_timeval(struct timespec *tv,int timer_ms){
+void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i tempi di una struct e di un timer
+// mettendo il risultato dentro la struct
     if(tv==NULL){
         handle_error_with_exit("error in initialize timeval\n");
     }
@@ -15,7 +16,7 @@ void initialize_timeval(struct timespec *tv,int timer_ms){
     //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
     return;
 }
-//Creates a new Node and returns pointer to it.
+//alloca e inizializza un nodo della lista dinamica ordinata
 struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms) {
     if(seq<0 || lap<0 ){
         handle_error_with_exit("error in get_new_node seq or lap invalid\n");
@@ -38,7 +39,7 @@ struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms)
 }
 
 int delete_head(struct node** head, struct node* old_head){
-    //initializza oldhead con il primo nodo della lista
+    //initializza oldhead con il primo nodo della lista e distrugge il primo nodo della lista
     if(head==NULL){
         handle_error_with_exit("error in delete head\n");
     }
@@ -68,7 +69,7 @@ int delete_head(struct node** head, struct node* old_head){
     return 0;
 }
 
-void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {
+void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
     if(head==NULL){
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
     }
@@ -86,7 +87,7 @@ void insert_at_head(struct node* new_node,struct node** head,struct node** tail)
     return;
 }
 
-char first_is_smaller(struct node node1, struct node node2){
+char first_is_smaller(struct node node1, struct node node2){//verifica se il primo nodo contiene tempi più piccoli del secondo nodo
     initialize_timeval(&(node1.tv), node1.timer_ms);
     initialize_timeval(&(node2.tv), node2.timer_ms);
     if(node1.tv.tv_sec>node2.tv.tv_sec){
@@ -106,6 +107,7 @@ char first_is_smaller(struct node node1, struct node node2){
 }
 
 void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struct node** head, struct node** tail){
+    //inserisce ordinatamente un nodo nella lista ordinata per istanti temporali
     struct node* temp = *tail;
     struct node* next_node = NULL;
     struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
@@ -144,7 +146,7 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     return;
 }
 
-void print(struct node* head) {
+void print(struct node* head) {//stampa la lista ordinata partendo dall'inizio
     struct node* temp = head;
     if (temp == NULL) {
         return;
@@ -155,7 +157,7 @@ void print(struct node* head) {
     }
 }
 
-void reverse_print(struct node* head) {
+void reverse_print(struct node* head) {//stampa la lista ordianta partendo dalla fine
     struct node *temp = head;
     if (temp == NULL) {
         return; // empty list, exit
