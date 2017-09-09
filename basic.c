@@ -1,6 +1,5 @@
 #include "basic.h"
 #include "io.h"
-#include "lock_fcntl.h"
 #include "parser.h"
 #include "timer.h"
 #include "Client.h"
@@ -47,6 +46,30 @@ void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono ugual
     else {
         printf(GREEN "file correctly received\n" RESET);
     }
+    return;
+}
+
+double absolute(double value){
+    if (value<0){
+        return ((value)*(-1));
+    }
+    return value;
+}
+
+void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i tempi di una struct e di un timer
+// mettendo il risultato dentro la struct
+    if(tv==NULL){
+        handle_error_with_exit("error in initialize timeval\n");
+    }
+    long temp;
+    temp=tv->tv_nsec+(timer_ms*1000000);
+    if(temp>=1000000000){
+        tv->tv_nsec=temp%1000000000;
+        tv->tv_sec+=(temp-tv->tv_nsec)/1000000000;
+    }else{
+        tv->tv_nsec = temp;
+    }
+    //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
     return;
 }
 void better_strcpy(char*buf1,char*buf2){//strcpy+controllo buffer

@@ -1,7 +1,6 @@
 #include <sys/time.h>
 #include "basic.h"
 #include "io.h"
-#include "lock_fcntl.h"
 #include "parser.h"
 #include "timer.h"
 #include "Server.h"

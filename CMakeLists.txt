@@ -16,7 +16,6 @@ set(SOURCE_FILES
         file_lock.h
         io.c
         io.h
-        lock_fcntl.c
         main.c
         makefile
         parser.c

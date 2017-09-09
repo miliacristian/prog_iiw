@@ -3,7 +3,6 @@
 #include "io.h"
 #include "basic.h"
 #include "io.h"
-#include "lock_fcntl.h"
 #include "parser.h"
 #include "timer.h"
 #include "Client.h"
@@ -14,7 +13,7 @@
 #include "get_server.h"
 #include "communication.h"
 
-ssize_t writen(int fd, void *buf, size_t n){
+ssize_t writen(int fd, void *buf, size_t n){//scrive n byte su un file
     size_t nleft;
     ssize_t nwritten;
     const char *ptr;
@@ -38,7 +37,7 @@ ssize_t writen(int fd, void *buf, size_t n){
     return(n-nleft);
 }
 //
-ssize_t readn(int fd,void *buf, size_t n){
+ssize_t readn(int fd,void *buf, size_t n){//legge n byte da un file
     size_t nleft;
     ssize_t nread;
     char *ptr;
@@ -62,7 +61,7 @@ ssize_t readn(int fd,void *buf, size_t n){
     return(n-nleft);
 }
 
-int readline(int fd, void *vptr, int maxlen)
+int readline(int fd, void *vptr, int maxlen)//legge dal file fino a newline o fino a maxlen byte
 {
     int  n, rc;
     char c, *ptr;

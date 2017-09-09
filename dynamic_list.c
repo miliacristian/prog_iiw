@@ -1,29 +1,15 @@
 #include "dynamic_list.h"
 
-void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i tempi di una struct e di un timer
-// mettendo il risultato dentro la struct
-    if(tv==NULL){
-        handle_error_with_exit("error in initialize timeval\n");
-    }
-    long temp;
-    temp=tv->tv_nsec+(timer_ms*1000000);
-    if(temp>=1000000000){
-        tv->tv_nsec=temp%1000000000;
-        tv->tv_sec+=(temp-tv->tv_nsec)/1000000000;
-    }else{
-        tv->tv_nsec = temp;
-    }
-    //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
-    return;
-}
-void insert_first(struct node *new_node, struct node **head, struct node **tail){
+
+void insert_first(struct node *new_node, struct node **head, struct node **tail){//inserisce il primo nodo
     printf("lista vuota\n");
     //controlli
     *head = new_node;
     *tail = new_node;
     return;
 }
-void insert_at_tail(struct node *new_node,struct node**head,struct node** tail){
+
+void insert_at_tail(struct node *new_node,struct node**head,struct node** tail){//inserisce un nodo in coda
     if(head==NULL){
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
     }

@@ -51,8 +51,8 @@
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
 #define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
-
 #define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
+#define IP "127.0.0.1"
 
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
@@ -171,7 +171,6 @@ void unlock_sem(sem_t*sem);
 int get_id_msg_queue();
 int get_id_shared_mem(int size);
 void*attach_shm(int shmid);
-key_t create_key(char*k,char k1);
 int count_char_dir(char*path);
 char* files_in_dir(char* path,int lenght);
 char seq_is_in_window(int start_win,int window,int seq);
@@ -179,8 +178,6 @@ char check_if_dir_exist(char*dir_path);
 char flip_coin(double loss_prob);
 char* generate_full_pathname(char* filename, char* dir_server);
 void copy_buf2_in_buf1(char*buf1,char*buf2,int dim);
-void*try_to_sleep(void*arg);
-pthread_t create_thread_signal_handler();
 char* generate_multi_copy(char*path_to_filename,char*filename);
 int count_word_in_buf(char*buf);
 void block_signal(int signal);
@@ -205,3 +202,5 @@ void better_strcpy(char*buf1,char*buf2);
 void better_strcat(char*str1,char*str2);
 void better_strncpy(char*buf1,char*buf2,int lenght);
 void unlock_signal(int signal);
+void initialize_timeval(struct timespec *tv,int timer_ms);
+double absolute(double value);
