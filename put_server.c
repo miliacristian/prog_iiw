@@ -44,15 +44,13 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack wait for fin\n");
                     }
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window, &shm->window_base_snd,
-                                      &shm->pkt_fly, shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_fin_put ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                                                      shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff,shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -82,13 +80,9 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
     if (shm->fd != -1) {
-        send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, shm->win_buf_snd,
-                               "START", START, &shm->seq_to_send, shm->param.loss_prob, shm->param.window,
-                               &shm->pkt_fly, shm);
+        send_message_in_window(temp_buff,shm, START,"START");
     } else {
-        send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, shm->win_buf_snd,
-                               "ERROR", ERROR, &shm->seq_to_send, shm->param.loss_prob, shm->param.window,
-                               &shm->pkt_fly, shm);
+        send_message_in_window(temp_buff,shm, ERROR,"ERROR" );
         //chiusura temporizzata,è esagerato mandare solo errore e terminare?
     }
     errno = 0;
@@ -116,22 +110,17 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack rcv_put_file\n");
                     }
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window, &shm->window_base_snd,
-                                      &shm->pkt_fly, shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("rcv put file ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                                                      shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 if (temp_buff.command == DATA) {
-                    rcv_data_send_ack_in_window(shm->addr.sockfd, shm->fd, &shm->addr.dest_addr, shm->addr.len,
-                                                temp_buff, shm->win_buf_rcv, &shm->window_base_rcv,
-                                                shm->param.loss_prob, shm->param.window, shm->dimension,
-                                                &shm->byte_written);
+                    rcv_data_send_ack_in_window(temp_buff, shm);
                     if ((shm->byte_written) == (shm->dimension)) {
                         wait_for_fin_put(shm);
                         return shm->byte_written;
@@ -310,9 +299,7 @@ int execute_put(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
     }
     free(first);
     payload = NULL;
-    rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                                       shm->win_buf_rcv, &shm->window_base_rcv, shm->param.loss_prob,
-                                       shm->param.window);//invio ack della put
+    rcv_msg_send_ack_command_in_window(temp_buff, shm);//invio ack della put
     put_server(shm);
     if (shm->fd != -1) {
         if (close(shm->fd) == -1) {

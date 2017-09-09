@@ -16,10 +16,8 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
                          struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
                          int *pkt_fly, int W, int *byte_written, double loss_prob,struct shm_sel_repeat *shm) {
     printf("close connection\n");
-    send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                           shm->win_buf_snd, "FIN", FIN, &shm->seq_to_send,
-                           shm->param.loss_prob, shm->param.window, &shm->pkt_fly,
-                           shm);//manda messaggio di fin
+    send_message_in_window(temp_buff,
+                           shm, FIN, "FIN");//manda messaggio di fin
     alarm(TIMEOUT);
     errno = 0;
     while (1) {
@@ -46,8 +44,7 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
                         handle_error_with_exit("error in close connection\n");//impossibile ricevere dati dopo aver ricevuto errore
                     }
                     else {
-                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                          &shm->window_base_snd, &shm->pkt_fly, shm);
+                        rcv_ack_in_window(temp_buff, shm);
                     }
                 }
                 else {
@@ -55,8 +52,7 @@ int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct 
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato close connect pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
@@ -84,7 +80,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
     printf("close_put_send_file\n");
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
-    send_message_in_window(shm->addr.sockfd, &(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->win_buf_snd, "FIN", FIN,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly, shm);
+    send_message_in_window(temp_buff, shm, FIN, "FIN");
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &(shm->addr.dest_addr), &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
@@ -122,7 +118,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
                 alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm->window_base_rcv,shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window( temp_buff,shm);
                 alarm(TIMEOUT);
             }
             else {
@@ -151,7 +147,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     while (1) {
         if (((shm->pkt_fly) < (shm->param.window)) && ((shm->byte_sent) < (shm->dimension))) {
-                send_data_in_window(shm->addr.sockfd,shm->fd, &(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->win_buf_snd,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly,&shm->byte_sent,shm->dimension, shm);
+                send_data_in_window(temp_buff, shm);
         }
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
@@ -164,14 +160,14 @@ int send_put_file(struct shm_sel_repeat *shm) {
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
-                        rcv_ack_file_in_window(temp_buff,shm->win_buf_snd, shm->param.window,&shm->window_base_snd,&(shm->pkt_fly),shm->dimension,&(shm->byte_readed), shm);
+                        rcv_ack_file_in_window(temp_buff, shm);
                         if ((shm->byte_readed) ==(shm->dimension)) {
                             close_put_send_file(shm);
                             return shm->byte_readed;
                         }
                     }
                     else{
-                        rcv_ack_in_window(temp_buff,shm->win_buf_snd,shm->param.window,&shm->window_base_snd,&shm->pkt_fly, shm);
+                        rcv_ack_in_window(temp_buff, shm);
                         if ((shm->byte_readed) ==(shm->dimension)) {
                             close_put_send_file(shm);
                             return shm->byte_readed;
@@ -184,7 +180,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd,&(shm->addr.dest_addr),shm->addr.len, temp_buff,shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_put_file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command,temp_buff.lap);
@@ -217,7 +213,7 @@ void *put_client_job(void*arg){
     better_strcat(temp_buff.payload," ");
     better_strcat(temp_buff.payload,shm->filename);
     //invia messaggio put
-    send_message_in_window(shm->addr.sockfd,&(shm->addr.dest_addr),shm->addr.len,temp_buff,shm->win_buf_snd,temp_buff.payload,PUT,&shm->seq_to_send,shm->param.loss_prob,shm->param.window,&shm->pkt_fly, shm);
+    send_message_in_window(temp_buff, shm,PUT,temp_buff.payload);
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//attendo risposta del server
@@ -229,7 +225,7 @@ void *put_client_job(void*arg){
             printf(MAGENTA"pacchetto ricevuto put_client_job con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
             if (temp_buff.command == START) {
                 printf(GREEN"messaggio start ricevuto\n"RESET);
-                rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);
+                rcv_msg_send_ack_command_in_window( temp_buff,shm);
                 path = generate_full_pathname(shm->filename, dir_client);
                 if(path==NULL){
                     handle_error_with_exit("error in generate full path\n");
@@ -246,7 +242,7 @@ void *put_client_job(void*arg){
                 return NULL;
             }
             if(temp_buff.command==ERROR) {
-                rcv_msg_send_ack_command_in_window(shm->addr.sockfd,&shm->addr.dest_addr,shm->addr.len, temp_buff,shm->win_buf_rcv,&shm->window_base_rcv,shm->param.loss_prob,shm->param.window);
+                rcv_msg_send_ack_command_in_window(temp_buff,shm);
                 close_connection_put(temp_buff, &shm->seq_to_send, shm->win_buf_snd,
                                      shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
                                      &shm->window_base_snd, &shm->window_base_rcv,
@@ -255,7 +251,7 @@ void *put_client_job(void*arg){
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff,shm->win_buf_snd,shm->param.window,&shm->window_base_snd,&shm->pkt_fly, shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 }
                 else {
                     printf("put_client_job ack duplicato\n");

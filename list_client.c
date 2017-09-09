@@ -18,10 +18,7 @@ int close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct
                       int *pkt_fly, int W, int *byte_written, double loss_prob,
                       struct shm_sel_repeat *shm) {
     printf("close_connection_list\n");
-    send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                           shm->win_buf_snd, "FIN", FIN, &shm->seq_to_send,
-                           shm->param.loss_prob, shm->param.window, &shm->pkt_fly,
-                           shm);//manda messaggio di fin
+    send_message_in_window(temp_buff,shm, FIN,"FIN");//manda messaggio di fin
     alarm(TIMEOUT);
     errno = 0;
     while (1) {
@@ -48,17 +45,14 @@ int close_connection_list(struct temp_buffer temp_buff, int *seq_to_send, struct
                         handle_error_with_exit("impossibile ricevere dati dopo aver ricevuto messaggio errore\n");
                     }
                     else {
-                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                          &shm->window_base_snd, &shm->pkt_fly,
-                                          shm);
+                        rcv_ack_in_window(temp_buff, shm);
                     }
                 } else {
                     printf("close_connection_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato close connection pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -114,16 +108,13 @@ wait_for_fin_list(struct temp_buffer temp_buff, struct window_snd_buf *win_buf_s
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("error ack wait for fin list\n");
                     }
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly,
-                                      shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_fin_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -151,10 +142,7 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
           char **list, int dimension, double loss_prob, int *window_base_snd, int *window_base_rcv, int *byte_written,
               struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
-    send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                           shm->win_buf_snd, "START", START, &shm->seq_to_send,
-                           shm->param.loss_prob,
-                           shm->param.window, &shm->pkt_fly, shm);
+    send_message_in_window(temp_buff,shm, START,"START" );
     printf("messaggio start inviato\n");
     printf("rcv list\n");
     errno = 0;
@@ -175,26 +163,17 @@ int rcv_list(int sockfd, struct sockaddr_in serv_addr, socklen_t len, struct tem
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore ack in rcv_list\n");
                     }
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly,
-                                      shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("rcv_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 if (temp_buff.command == DATA) {
-                    rcv_list_send_ack_in_window(shm->addr.sockfd, &shm->list,
-                                                &shm->addr.dest_addr,
-                                                shm->addr.len, temp_buff, shm->win_buf_rcv,
-                                                &shm->window_base_rcv,
-                                                shm->param.loss_prob, shm->param.window,
-                                                shm->dimension,
-                                                &shm->byte_written,shm);
+                    rcv_list_send_ack_in_window(temp_buff, shm);
                     if (shm->byte_written == shm->dimension) {
                         wait_for_fin_list(temp_buff, shm->win_buf_snd, shm->addr.sockfd,
                                           shm->addr.dest_addr, shm->addr.len,
@@ -238,10 +217,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
     errno = 0;
     char *first;
     better_strcpy(temp_buff.payload, "list");
-    send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                           shm->win_buf_snd, temp_buff.payload, LIST, &shm->seq_to_send,
-                           shm->param.loss_prob,
-                           shm->param.window, &shm->pkt_fly, shm);//manda messaggio get
+    send_message_in_window(temp_buff,shm , LIST,temp_buff.payload);//manda messaggio get
     alarm(TIMEOUT);
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
@@ -256,11 +232,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                 alarm(0);
             }
             if (temp_buff.command == ERROR) {
-                rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                   shm->addr.len, temp_buff, shm->win_buf_rcv,
-                                                   &shm->window_base_rcv,
-                                                   shm->param.loss_prob,
-                                                   shm->param.window);
+                rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 close_connection_list(temp_buff, &shm->seq_to_send, shm->win_buf_snd,
                                       shm->addr.sockfd,
                                       shm->addr.dest_addr, shm->addr.len,
@@ -270,11 +242,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                                       shm->param.loss_prob, shm);
             }
             else if (temp_buff.command == DIMENSION) {
-                rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                   shm->addr.len, temp_buff, shm->win_buf_rcv,
-                                                   &shm->window_base_rcv,
-                                                   shm->param.loss_prob,
-                                                   shm->param.window);
+                rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 shm->dimension = parse_integer(temp_buff.payload);
                 printf("dimensione ricevuta %d\n", shm->dimension);
                 shm->list = malloc(sizeof(char) * shm->dimension);
@@ -303,9 +271,7 @@ wait_for_list_dimension(int sockfd, struct sockaddr_in serv_addr, socklen_t len,
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack wait for list dim\n");
                     }
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                      &shm->window_base_snd, &shm->pkt_fly,
-                                      shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_list_dim ack duplicato\n");
                 }

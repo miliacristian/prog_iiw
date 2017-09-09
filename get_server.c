@@ -33,11 +33,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     alarm(TIMEOUT);
     while (1) {
         if (shm->pkt_fly < shm->param.window && (shm->byte_sent) < shm->dimension) {
-            send_data_in_window(shm->addr.sockfd, shm->fd,
-                                &shm->addr.dest_addr, shm->addr.len,
-                                temp_buff, shm->win_buf_snd, &shm->seq_to_send,
-                                shm->param.loss_prob, shm->param.window, &shm->pkt_fly, &shm->byte_sent,
-                                shm->dimension, shm);
+            send_data_in_window(temp_buff, shm);
         }
         while (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr,
                         &shm->addr.len) !=
@@ -52,9 +48,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
                     if (temp_buff.command == DATA) {
-                        rcv_ack_file_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                               &shm->window_base_snd, &shm->pkt_fly, shm->dimension,
-                                               &shm->byte_readed, shm);
+                        rcv_ack_file_in_window(temp_buff, shm);
                         printf("byte readed %d ack dup %d\n", shm->byte_readed, ack_dup);
                         if (shm->byte_readed == shm->dimension) {
                             close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
@@ -65,8 +59,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                             pthread_exit(NULL);
                         }
                     } else {
-                        rcv_ack_in_window(temp_buff, shm->win_buf_snd, shm->param.window,
-                                          &shm->window_base_snd, &shm->pkt_fly, shm);
+                        rcv_ack_in_window(temp_buff, shm);
                         if (shm->byte_readed == shm->dimension) {
                             close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
                                                 temp_buff, shm->win_buf_snd, shm->param.window,
@@ -81,9 +74,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd,
-                                                      &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -131,16 +122,9 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
         better_strcat(temp_buff.payload, " ");
         better_strcat(temp_buff.payload, shm->md5_sent);
         free(path);
-        send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len,
-                               temp_buff, shm->win_buf_snd, dim_string, DIMENSION,
-                               &shm->seq_to_send, shm->param.loss_prob,
-                               shm->param.window, &shm->pkt_fly, shm);
+        send_message_in_window(temp_buff,shm, DIMENSION,dim_string);
     } else {
-        send_message_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                               shm->addr.len, temp_buff, shm->win_buf_snd,
-                               "il file non esiste", ERROR, &shm->seq_to_send,
-                               shm->param.loss_prob, shm->param.window,
-                               &shm->pkt_fly, shm);
+        send_message_in_window(temp_buff,shm, ERROR,"il file non esiste");
     }
     errno = 0;
     alarm(TIMEOUT);
@@ -164,9 +148,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                   shm->addr.len, temp_buff, shm->win_buf_rcv,
-                                                   &shm->window_base_rcv, shm->param.loss_prob, shm->param.window);
+                rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
                           &shm->seq_to_send, &shm->window_base_snd, &shm->window_base_rcv,
                           shm->param.window, &shm->pkt_fly, temp_buff, shm->win_buf_snd,
@@ -181,16 +163,13 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
-                    rcv_ack_in_window(temp_buff, shm->win_buf_snd,
-                                      shm->param.window, &shm->window_base_snd,
-                                      &shm->pkt_fly, shm);
+                    rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_start_get ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr,
-                                                      shm->addr.len, temp_buff, shm->param.loss_prob);
+                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             }  else {
                 printf("ignorato pacchetto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -336,9 +315,7 @@ int execute_get(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
     if (shm->filename == NULL) {
         handle_error_with_exit("error in malloc\n");
     }
-    rcv_msg_send_ack_command_in_window(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
-                                       shm->win_buf_rcv, &shm->window_base_rcv, shm->param.loss_prob,
-                                       shm->param.window);
+    rcv_msg_send_ack_command_in_window(temp_buff, shm);
     better_strcpy(shm->filename, temp_buff.payload + 4);
     get_server(shm);
     if (shm->fd != -1) {
