@@ -14,8 +14,6 @@
 #include "put_server.h"
 #include "dynamic_list.h"
 
-int rtx = 0;
-
 int wait_for_fin_put(struct shm_sel_repeat *shm) {
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
@@ -212,7 +210,6 @@ void *put_server_rtx_job(void *arg) {
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
-                rtx++;
                 if(clock_gettime(CLOCK_MONOTONIC, &rtx_time)!=0){
                     handle_error_with_exit("error in get_time\n");
                 }
@@ -238,7 +235,6 @@ void *put_server_rtx_job(void *arg) {
                 copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
                 temp_buff.command=shm->win_buf_snd[node->seq].command;
                 resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
-                rtx++;
                 if(clock_gettime(CLOCK_MONOTONIC, &rtx_time)!=0){
                     handle_error_with_exit("error in get_time\n");
                 }

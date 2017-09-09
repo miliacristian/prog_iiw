@@ -12,8 +12,6 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
-int rtx_list_server = 0;
-
 int close_list(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff,
                struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,
                struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi

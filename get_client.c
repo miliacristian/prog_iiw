@@ -12,8 +12,6 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
-int rtx_get_client = 0;
-
 int close_connection_get(struct temp_buffer temp_buff, int *seq_to_send, struct window_snd_buf *win_buf_snd, int sockfd,
                          struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
                          int *pkt_fly, int W, int *byte_written, double loss_prob,struct shm_sel_repeat *shm) {
