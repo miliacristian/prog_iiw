@@ -50,7 +50,7 @@
 #define SYN 9//comando da inserire nel pacchetto
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
-#define TIMEOUT 2//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
+#define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
 
 #define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
 

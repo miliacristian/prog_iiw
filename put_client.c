@@ -145,7 +145,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     while (1) {
         if (((shm->pkt_fly) < (shm->param.window)) && ((shm->byte_sent) < (shm->dimension))) {
-                send_data_in_window(temp_buff, shm);
+            send_data_in_window(temp_buff, shm);
         }
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);

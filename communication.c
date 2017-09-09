@@ -160,7 +160,6 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     insert_ordered(shm->seq_to_send, shm->win_buf_snd[shm->seq_to_send].lap, shm->win_buf_snd[shm->seq_to_send].time, shm->param.timer_ms,
                    &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
-
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &(shm->addr.dest_addr), shm->addr.len) ==
             -1) {//manda richiesta del client al server
@@ -245,7 +244,7 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
             //ignora pacchetto
-            //handle_error_with_exit("pacchetto vecchia finestra\n");
+            handle_error_with_exit("pacchetto vecchia finestra\n");
         }
     }
     ack_buff.ack = temp_buff.seq;
@@ -295,7 +294,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
                               (MAXPKTSIZE - OVERHEAD));//è giusto copiarli tutti e eventualmente scriverne solo alcuni?
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            //handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
+            handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
             //ignora pacchetto
         }
     }
@@ -349,7 +348,7 @@ void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_
             better_strcpy(shm->win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            //handle_error_with_exit("pacchetto vecchia finestra\n");
+            handle_error_with_exit("pacchetto vecchia finestra\n");
             //ignora pacchetto
         }
     }
@@ -386,6 +385,7 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == shm->win_buf_snd[temp_buff.ack].lap) {
         if(shm->win_buf_snd[temp_buff.ack].acked==1){
+            handle_error_with_exit("acked dup finestra\n");
             unlock_mtx(&(shm->mtx));
             return;
         }
@@ -398,8 +398,8 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
             }
             //printf("timer %d\n", shm->param.timer_ms);
             shm-> win_buf_snd[temp_buff.ack].acked = 1;
-            shm->win_buf_snd[shm->window_base_snd].time.tv_nsec = 0;
-            shm-> win_buf_snd[shm->window_base_snd].time.tv_sec = 0;
+            shm->win_buf_snd[temp_buff.ack].time.tv_nsec = 0;
+            shm-> win_buf_snd[temp_buff.ack].time.tv_sec = 0;
             if (temp_buff.ack == shm->window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
                 while (shm->win_buf_snd[shm->window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
                     //avanzo la finestra
@@ -447,8 +447,8 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             }
             //printf("timer %d\n", shm->param.timer_ms);
             shm-> win_buf_snd[temp_buff.ack].acked = 1;
-            shm->win_buf_snd[shm->window_base_snd].time.tv_nsec = 0;
-            shm->win_buf_snd[shm->window_base_snd].time.tv_sec = 0;
+            shm->win_buf_snd[temp_buff.ack ].time.tv_nsec = 0;
+            shm->win_buf_snd[temp_buff.ack].time.tv_sec = 0;
             if (temp_buff.ack == shm->window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
                 while (shm->win_buf_snd[shm->window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
                     //avanzo la finestra
@@ -490,8 +490,8 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             }
             //printf("timer %d\n", shm->param.timer_ms);
             shm->win_buf_snd[temp_buff.ack].acked = 1;
-            shm->win_buf_snd[shm->window_base_snd].time.tv_nsec = 0;
-            shm->win_buf_snd[shm->window_base_snd].time.tv_sec = 0;
+            shm->win_buf_snd[temp_buff.ack].time.tv_nsec = 0;
+            shm->win_buf_snd[temp_buff.ack].time.tv_sec = 0;
             if (temp_buff.ack == shm->window_base_snd) {//ricevuto ack del primo pacchetto non riscontrato->avanzo finestra
                 while (shm->win_buf_snd[shm->window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
                     //avanzo la finestra

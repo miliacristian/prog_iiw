@@ -16,6 +16,30 @@ void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i
     //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
     return;
 }
+void insert_first(struct node *new_node, struct node **head, struct node **tail){
+    printf("lista vuota\n");
+    //controlli
+    *head = new_node;
+    *tail = new_node;
+    return;
+}
+void insert_at_tail(struct node *new_node,struct node**head,struct node** tail){
+    if(head==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
+    if(tail==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
+    if(*head == NULL) {
+        insert_first(new_node, head, tail);
+        return;
+    }
+    (*tail)->next = new_node;
+    new_node->prev = *tail;
+    *tail = new_node;
+}
+
+
 //alloca e inizializza un nodo della lista dinamica ordinata
 struct node* get_new_node(int seq,int lap,struct timespec timespec,int timer_ms) {
     if(seq<0 || lap<0 ){
@@ -69,7 +93,7 @@ int delete_head(struct node** head, struct node* old_head){
     return 0;
 }
 
-void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
+/*void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
     if(head==NULL){
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
     }
@@ -85,7 +109,24 @@ void insert_at_head(struct node* new_node,struct node** head,struct node** tail)
     new_node->next = *head;
     *head = new_node;
     return;
+}*/
+void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
+    if(head==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
+    if(tail==NULL){
+        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+    }
+    if(*head == NULL) {
+        insert_first(new_node, head, tail);
+        return;
+    }
+    (*head)->prev = new_node;
+    new_node->next = *head;
+    *head = new_node;
+    return;
 }
+
 
 char first_is_smaller(struct node node1, struct node node2){//verifica se il primo nodo contiene tempi più piccoli del secondo nodo
     initialize_timeval(&(node1.tv), node1.timer_ms);
@@ -115,14 +156,11 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
         handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
     }
     if(*head == NULL) {
-        *head = new_node;
-        *tail = new_node;
+        insert_first(new_node, head, tail);
         return;
     }
     if(first_is_smaller((**tail),*new_node)){
-        (*tail)->next = new_node;
-        new_node->prev = *tail;
-        *tail = new_node;
+        insert_at_tail(new_node,head, tail);
     }else{
         while(!first_is_smaller(*temp,*new_node)){
             if(temp->prev != NULL){
@@ -133,13 +171,47 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
             }
         }
         next_node = temp->next;
-        new_node->prev = next_node;
-        new_node->next = temp->next;
-        temp->next = new_node;
         new_node->prev = temp;
+        new_node->next = next_node;
+        temp->next = new_node;
+        next_node->prev = new_node;
     }
     return;
 }
+/*void insert_ordered2(int seq, struct node** head, struct node** tail){
+    //inserisce ordinatamente un nodo nella lista ordinata per istanti temporali
+    struct node* temp = *tail;
+    struct node* next_node = NULL;
+    struct node* new_node = get_new_node(seq);
+    if(head==NULL || tail==NULL){
+        handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
+    }
+    if(*head == NULL) {//se la lista è vuota
+        insert_first(new_node, head, tail);
+        return;
+    }
+    if(first_is_smaller((**tail),*new_node)){//se l'ultimo nodo è più piccolo del nodo passato come parametro
+        insert_at_tail(new_node,head, tail);
+    }
+    else{
+        while(!first_is_smaller(*temp,*new_node)){
+            if(temp->prev != NULL){
+                temp = temp->prev;
+            }
+            else{
+                insert_at_head(new_node,head,tail);
+                return;
+            }
+        }
+        next_node = temp->next;
+        new_node->prev = temp;
+        new_node->next = next_node;
+        temp->next = new_node;
+        next_node->prev = new_node;
+    }
+    return;
+}*/
+
 
 /*void print(struct node* head) {//stampa la lista ordinata partendo dall'inizio
     struct node* temp = head;
@@ -167,3 +239,6 @@ void reverse_print(struct node* head) {//stampa la lista ordianta partendo dalla
         temp = temp->prev;
     }
 }*/
+
+
+
