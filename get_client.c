@@ -132,7 +132,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct window_snd_buf *win_bu
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
-            printf("il server non sta mandando più nulla o errore interno\n");
+            printf(BLUE"FIN non ricevuto\n"RESET);
             great_alarm_client = 0;
             alarm(0);
             check_md5(path, shm->md5_sent);
@@ -356,7 +356,7 @@ void *get_client_rtx_job(void *arg) {
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
             }
             else{
-                if(!to_resend2(shm, *node)){
+                if(!to_resend(shm, *node)){
                     //printf("pkt non da ritrasmettere\n");
                     continue;
                 }
@@ -370,7 +370,7 @@ void *get_client_rtx_job(void *arg) {
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend2(shm, *node);
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 //printf("no rtx immediata\n");
@@ -396,7 +396,7 @@ void *get_client_rtx_job(void *arg) {
             sleep_struct(&sleep_time, timer_ns_left);
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend2(shm, *node);
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 continue;

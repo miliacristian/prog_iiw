@@ -50,7 +50,7 @@
 #define SYN 9//comando da inserire nel pacchetto
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
-#define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
+#define TIMEOUT 2//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
 
 #define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
 
@@ -114,7 +114,7 @@ struct select_param{//parametri di esecuzione
 
 struct shm_sel_repeat{//struttura condivisa tra i 2 thread necessaria sia per la sincronizzazione
 // sia per svolgere la richiesta(put/get/list) vera e propria
-    struct timeval time;??
+    //struct timeval time;
     struct addr addr;//indirizzo dell'host
     int pkt_fly;//numero pacchetti in volo (va da 0 a w-1)
     pthread_mutex_t mtx;//mutex
@@ -193,8 +193,8 @@ void initialize_cond(pthread_cond_t*cond);
 void destroy_cond(pthread_cond_t*cond);
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
+//char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
-char to_resend2(struct shm_sel_repeat *shm, struct node node);
 char calc_file_MD5(char *file_name, char *md5_sum);
 void check_md5(char*filename,char*md5_to_check);
 void print_double_buff_rcv_size(int sockfd);

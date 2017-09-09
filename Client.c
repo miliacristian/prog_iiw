@@ -529,7 +529,6 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     }
     free(command);
     line=NULL;
-
     create_thread_waitpid();
 
     if ((command = malloc(sizeof(char) * 8)) == NULL) {//contiene il comando digitato,8==lunghezza massima:my+" "+list\0,list\0,get\0 o put\0

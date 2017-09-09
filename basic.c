@@ -45,7 +45,7 @@ void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono ugual
         printf(RED "file corrupted\n" RESET);
     }
     else {
-        printf(GREEN "file rightly received\n" RESET);
+        printf(GREEN "file correctly received\n" RESET);
     }
     return;
 }

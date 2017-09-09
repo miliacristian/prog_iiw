@@ -67,8 +67,11 @@ int readline(int fd, void *vptr, int maxlen)
     int  n, rc;
     char c, *ptr;
     ptr = vptr;
+    if (maxlen<=0){
+	handle_error_with_exit("error in readline\n");
+    }
     if(vptr==NULL){
-        handle_error_with_exit("error in readline\n");
+        handle_error_with_exit("error2 in readline\n");
     }
     for (n = 1; n < maxlen; n++) {
         if ((rc = (int)read(fd, &c, 1)) == 1) {

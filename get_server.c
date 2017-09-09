@@ -241,7 +241,7 @@ void *get_server_rtx_job(void *arg) {
                 wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
             }
             else{
-                if(!to_resend2(shm, *node)){
+                if(!to_resend(shm, *node)){
                     //printf("pkt non da ritrasmettere\n");
                     continue;
                 }
@@ -255,7 +255,7 @@ void *get_server_rtx_job(void *arg) {
         timer_ns_left=calculate_time_left(*node);
         if(timer_ns_left<=0){
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend2(shm, *node);
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 //printf("no rtx immediata\n");
@@ -281,7 +281,7 @@ void *get_server_rtx_job(void *arg) {
             sleep_struct(&sleep_time, timer_ns_left);
             nanosleep(&sleep_time , NULL);
             lock_mtx(&(shm->mtx));
-            to_rtx = to_resend2(shm, *node);
+            to_rtx = to_resend(shm, *node);
             unlock_mtx(&(shm->mtx));
             if(!to_rtx){
                 continue;

@@ -92,6 +92,7 @@ send_list_in_window(int sockfd, char **list, struct sockaddr_in *serv_addr, sock
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
+    lock_mtx(&(shm->mtx));
     win_buf_snd[*seq_to_send].acked = 0;
     if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         copy_buf2_in_buf1(temp_buff.payload, shm->list, MAXPKTSIZE - OVERHEAD);
@@ -105,7 +106,6 @@ send_list_in_window(int sockfd, char **list, struct sockaddr_in *serv_addr, sock
         shm->list += (MAXPKTSIZE - OVERHEAD);
     }
     win_buf_snd[*seq_to_send].command = DATA;
-    lock_mtx(&(shm->mtx));
     (win_buf_snd[*seq_to_send].lap) += 1;
     temp_buff.lap = (win_buf_snd[*seq_to_send].lap);
     if (clock_gettime(CLOCK_MONOTONIC, &(shm->win_buf_snd[*seq_to_send].time)) != 0) {
@@ -114,7 +114,7 @@ send_list_in_window(int sockfd, char **list, struct sockaddr_in *serv_addr, sock
     insert_ordered(*seq_to_send, win_buf_snd[*seq_to_send].lap, shm->win_buf_snd[*seq_to_send].time, shm->param.timer_ms,
                    &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
-    unlock_mtx(&(shm->mtx));
+
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
@@ -128,6 +128,7 @@ send_list_in_window(int sockfd, char **list, struct sockaddr_in *serv_addr, sock
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
+    unlock_mtx(&(shm->mtx));
     return;
 }
 
@@ -138,6 +139,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
+    lock_mtx(&(shm->mtx));
     win_buf_snd[*seq_to_send].acked = 0;
     if ((dim - (*byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         readed = readn(fd, temp_buff.payload, (size_t) (dim - (*byte_sent)));
@@ -154,7 +156,6 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     }
     copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
     win_buf_snd[*seq_to_send].command = DATA;
-    lock_mtx(&(shm->mtx));
     (win_buf_snd[*seq_to_send].lap) += 1;
     temp_buff.lap = (win_buf_snd[*seq_to_send].lap);
     if (clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time)) != 0) {
@@ -163,7 +164,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     insert_ordered(*seq_to_send, win_buf_snd[*seq_to_send].lap, win_buf_snd[*seq_to_send].time, shm->param.timer_ms,
                    &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
-    unlock_mtx(&(shm->mtx));
+
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) ==
             -1) {//manda richiesta del client al server
@@ -177,6 +178,7 @@ void send_data_in_window(int sockfd, int fd, struct sockaddr_in *serv_addr, sock
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
+    unlock_mtx(&(shm->mtx));
     return;
 }
 
@@ -187,10 +189,10 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = *seq_to_send;
     better_strcpy(temp_buff.payload, message);
+    lock_mtx(&(shm->mtx));
     copy_buf2_in_buf1(win_buf_snd[*seq_to_send].payload, temp_buff.payload, MAXPKTSIZE - OVERHEAD);
     win_buf_snd[*seq_to_send].command = command;
     win_buf_snd[*seq_to_send].acked = 0;
-    lock_mtx(&(shm->mtx));
     if (clock_gettime(CLOCK_MONOTONIC, &(win_buf_snd[*seq_to_send].time)) != 0) {
         handle_error_with_exit("error in get_time\n");
     }
@@ -199,7 +201,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     insert_ordered(*seq_to_send, win_buf_snd[*seq_to_send].lap, win_buf_snd[*seq_to_send].time, shm->param.timer_ms,
                    &(shm->head), &(shm->tail));
     unlock_thread_on_a_condition(&(shm->list_not_empty));
-    unlock_mtx(&(shm->mtx));
+
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) cli_addr, len) ==
             -1) {
@@ -213,6 +215,7 @@ void send_message_in_window(int sockfd, struct sockaddr_in *cli_addr, socklen_t 
     }
     *seq_to_send = ((*seq_to_send) + 1) % (2 * W);
     (*pkt_fly)++;
+    unlock_mtx(&(shm->mtx));
     return;
 }
 
@@ -251,7 +254,7 @@ void rcv_list_send_ack_in_window(int sockfd, char **list, struct sockaddr_in *se
             win_buf_rcv[temp_buff.seq].received = 1;
         } else {
             //ignora pacchetto
-            handle_error_with_exit("pacchetto vecchia finestra\n");
+            //handle_error_with_exit("pacchetto vecchia finestra\n");
         }
     }
     ack_buff.ack = temp_buff.seq;
@@ -303,7 +306,7 @@ void rcv_data_send_ack_in_window(int sockfd, int fd, struct sockaddr_in *serv_ad
                               (MAXPKTSIZE - OVERHEAD));//è giusto copiarli tutti e eventualmente scriverne solo alcuni?
             win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
+            //handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
             //ignora pacchetto
         }
     }
@@ -359,7 +362,7 @@ void rcv_msg_send_ack_command_in_window(int sockfd, struct sockaddr_in *serv_add
             better_strcpy(win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
             win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            handle_error_with_exit("pacchetto vecchia finestra\n");
+            //handle_error_with_exit("pacchetto vecchia finestra\n");
             //ignora pacchetto
         }
     }
@@ -397,6 +400,7 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if(win_buf_snd[temp_buff.ack].acked==1){
+            unlock_mtx(&(shm->mtx));
             return;
         }
         if (win_buf_snd[temp_buff.ack].acked==0) {
@@ -418,19 +422,19 @@ void rcv_ack_in_window(struct temp_buffer temp_buff, struct window_snd_buf *win_
                             shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
                             printf("byte readed %d\n", shm->byte_readed);
                         } else {
-                            printf(RED"ultimo pacchetto\n"RESET);
                             shm->byte_readed += shm->dimension - shm->byte_readed;
                             printf("byte readed %d\n", shm->byte_readed);
                         }
                     }
                     win_buf_snd[*window_base_snd].acked = 2;//resetta quando scorri finestra
-                    win_buf_snd[*window_base_snd].time.tv_nsec = 0;
-                    win_buf_snd[*window_base_snd].time.tv_sec = 0;
+                    //win_buf_snd[*window_base_snd].time.tv_nsec = 0;
+                    //win_buf_snd[*window_base_snd].time.tv_sec = 0;
                     *window_base_snd = ((*window_base_snd) + 1) % (2 * W);//avanza la finestra
                     (*pkt_fly)--;
                 }
             }
-        } else {
+        }
+        else {
             handle_error_with_exit("error in rcv ack window\n");
         }
     }
@@ -446,6 +450,7 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if(win_buf_snd[temp_buff.ack].acked==1){
+            unlock_mtx(&(shm->mtx));
             return;
         }
         if (win_buf_snd[temp_buff.ack].acked == 0) {
@@ -469,7 +474,6 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
                         *byte_readed += (MAXPKTSIZE - OVERHEAD);
                         printf("byte readed %d\n", *byte_readed);
                     } else {
-                        printf(RED"ultimo pacchetto\n"RESET);
                         *byte_readed += dim - *byte_readed;
                         printf("byte readed %d\n", *byte_readed);
                     }
@@ -492,6 +496,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff, struct window_snd_buf 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == win_buf_snd[temp_buff.ack].lap) {
         if(win_buf_snd[temp_buff.ack].acked==1){
+            unlock_mtx(&(shm->mtx));
             return;
         }
         if (win_buf_snd[temp_buff.ack].acked == 0) {

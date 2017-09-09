@@ -31,7 +31,7 @@ long  calculate_time_left(struct node node){
 }
 
 int calculate_sample_RTT(struct timespec tx_time){
-    if (tx_time.tv_sec == 0 && tx_time.tv_nsec == 0){
+    if ((tx_time.tv_sec == 0) && (tx_time.tv_nsec == 0)){
         handle_error_with_exit("sample_RTT di pacchetto già riscontrato \n");
     }
     struct timespec time_current;
@@ -103,6 +103,7 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){
     if(shm==NULL || seq<0 || seq>(shm->param.window*2-1)){
         handle_error_with_exit("error in adaptive_timer\n");
     }
+    printf("sec %ld nsec %ld acked %d\n", (shm->win_buf_snd[seq].time).tv_sec,(shm->win_buf_snd[seq].time).tv_nsec, (shm->win_buf_snd[seq].acked));
     sample= calculate_sample_RTT((shm->win_buf_snd[seq].time));
     printf("timer in finestra sec %ld nsec %ld\n", shm->win_buf_snd[seq].time.tv_sec, shm->win_buf_snd[seq].time.tv_nsec);
     printf("sample %d\n", sample);
