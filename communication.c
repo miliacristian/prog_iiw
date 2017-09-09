@@ -92,7 +92,7 @@ send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     temp_buff.seq = shm->seq_to_send;
     lock_mtx(&(shm->mtx));
     shm->win_buf_snd[shm->seq_to_send].acked = 0;
-    if ((shm->dimension - (shm->byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
+    if ((shm->dimension - (shm->byte_sent)) < (int)(MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         copy_buf2_in_buf1(temp_buff.payload, shm->list, MAXPKTSIZE - OVERHEAD);
         copy_buf2_in_buf1(shm->win_buf_snd[shm->seq_to_send].payload, shm->list, MAXPKTSIZE - OVERHEAD);
         shm->byte_sent += (shm->dimension - (shm->byte_sent));
@@ -137,7 +137,7 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     temp_buff.seq = shm->seq_to_send;
     lock_mtx(&(shm->mtx));
     shm->win_buf_snd[shm->seq_to_send].acked = 0;
-    if ((shm->dimension - (shm->byte_sent)) < (MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
+    if ((shm->dimension - (shm->byte_sent)) < (int)(MAXPKTSIZE - OVERHEAD)) {//byte mancanti da inviare
         readed = readn(shm->fd, temp_buff.payload, (size_t) (shm->dimension - (shm->byte_sent)));
         if (readed < shm->dimension - (shm->byte_sent)) {
             handle_error_with_exit("error in read 2\n");
@@ -145,7 +145,7 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
         shm->byte_sent += (shm->dimension - (shm->byte_sent));
     } else {
         readed = readn(shm->fd, temp_buff.payload, (MAXPKTSIZE - OVERHEAD));
-        if (readed < (MAXPKTSIZE - OVERHEAD)) {
+        if (readed < (int)(MAXPKTSIZE - OVERHEAD)) {
             handle_error_with_exit("error in read 3\n");
         }
         shm->byte_sent += (MAXPKTSIZE - OVERHEAD);
@@ -267,7 +267,7 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (shm->win_buf_rcv[shm->window_base_rcv].received == 1) {
-            if (shm->dimension - shm->byte_written >= (MAXPKTSIZE - OVERHEAD)) {
+            if (shm->dimension - shm->byte_written >= (int)(MAXPKTSIZE - OVERHEAD)) {
                 copy_buf2_in_buf1(shm->list, temp_buff.payload,
                                   (MAXPKTSIZE - OVERHEAD));//scrivo in list la parte di lista
                 shm->byte_written += (MAXPKTSIZE - OVERHEAD);
@@ -318,9 +318,9 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
         while (shm->win_buf_rcv[shm->window_base_rcv].received == 1) {
-            if (shm->dimension - shm->byte_written >= (MAXPKTSIZE - OVERHEAD)) {
+            if (shm->dimension - shm->byte_written >= (int)(MAXPKTSIZE - OVERHEAD)) {
                 written = (int) writen(shm->fd, shm->win_buf_rcv[shm->window_base_rcv].payload, (MAXPKTSIZE - OVERHEAD));
-                if (written < (MAXPKTSIZE - OVERHEAD)) {
+                if (written < (int)(MAXPKTSIZE - OVERHEAD)) {
                     handle_error_with_exit("error in write\n");
                 }
                 shm->byte_written += (MAXPKTSIZE - OVERHEAD);
@@ -404,7 +404,7 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
                 while (shm->win_buf_snd[shm->window_base_snd].acked == 1) {//finquando ho pacchetti riscontrati
                     //avanzo la finestra
                     if (shm->win_buf_snd[shm->window_base_snd].command == DATA) {
-                        if (shm->dimension - shm->byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                        if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                             shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
                             printf("byte readed %d\n", shm->byte_readed);
                         } else {
@@ -455,7 +455,7 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     shm->win_buf_snd[shm->window_base_snd].acked = 2;//resetta quando scorri finestra
                     shm->window_base_snd = ((shm->window_base_snd) + 1) % (2 * shm->param.window);//avanza la finestra
                     (shm->pkt_fly)--;
-                    if (shm->dimension - shm->byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                    if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                         shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
                         printf("byte readed %d\n", shm->byte_readed);
                     } else {
@@ -498,7 +498,7 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     shm-> win_buf_snd[shm->window_base_snd].acked = 2;//resetta quando scorri finestra
                     shm->window_base_snd = ((shm->window_base_snd) + 1) % (2 * shm->param.window);//avanza la finestra
                     (shm->pkt_fly)--;
-                    if (shm->dimension - shm->byte_readed >= (MAXPKTSIZE - OVERHEAD)) {
+                    if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                         shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
                         printf("byte readed %d\n", shm->byte_readed);
                     } else {

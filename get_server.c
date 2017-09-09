@@ -12,9 +12,7 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
-int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, struct temp_buffer temp_buff,
-                        struct window_snd_buf *win_buf_snd, int W, double loss_prob, int *byte_readed,
-                        struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
+int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
@@ -24,10 +22,7 @@ int close_get_send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, 
     pthread_exit(NULL);
 }
 
-int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_to_send, int *window_base_snd,
-              int *window_base_rcv, int W, int *pkt_fly, struct temp_buffer temp_buff,
-              struct window_snd_buf *win_buf_snd, int fd, int *byte_readed, int dim, double loss_prob,
-              struct shm_sel_repeat *shm) {
+int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("send_file\n");
     int ack_dup = 0;
     alarm(TIMEOUT);
@@ -35,7 +30,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
         if (shm->pkt_fly < shm->param.window && (shm->byte_sent) < shm->dimension) {
             send_data_in_window(temp_buff, shm);
         }
-        while (recvfrom(sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr,
+        while (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr,
                         &shm->addr.len) !=
                -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
             printf("pacchetto ricevuto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
@@ -51,9 +46,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                         rcv_ack_file_in_window(temp_buff, shm);
                         printf("byte readed %d ack dup %d\n", shm->byte_readed, ack_dup);
                         if (shm->byte_readed == shm->dimension) {
-                            close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
-                                                temp_buff, shm->win_buf_snd, shm->param.window,
-                                                shm->param.loss_prob, &shm->byte_readed, shm);
+                            close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
                             printf("thread cancel send_file\n");
                             pthread_exit(NULL);
@@ -61,9 +54,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
                     } else {
                         rcv_ack_in_window(temp_buff, shm);
                         if (shm->byte_readed == shm->dimension) {
-                            close_get_send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
-                                                temp_buff, shm->win_buf_snd, shm->param.window,
-                                                shm->param.loss_prob, &shm->byte_readed, shm);
+                            close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
                             printf("thread cancel send_file\n");
                             pthread_exit(NULL);
@@ -98,10 +89,7 @@ int send_file(int sockfd, struct sockaddr_in cli_addr, socklen_t len, int *seq_t
     }
 }
 
-int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, char *filename, int *byte_written,
-                       int *seq_to_send, int *window_base_snd, int *window_base_rcv, int W, int *pkt_fly,
-                       struct temp_buffer temp_buff, struct window_rcv_buf *win_buf_rcv,
-                       struct window_snd_buf *win_buf_snd, struct shm_sel_repeat *shm) {
+int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     char *path, dim_string[11];
     path = generate_full_pathname(shm->filename, dir_server);
     printf("path %s\n", path);
@@ -149,11 +137,7 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
             } else if (temp_buff.command == START) {
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
-                send_file(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
-                          &shm->seq_to_send, &shm->window_base_snd, &shm->window_base_rcv,
-                          shm->param.window, &shm->pkt_fly, temp_buff, shm->win_buf_snd,
-                          shm->fd, &shm->byte_readed, shm->dimension, shm->param.loss_prob,
-                          shm);
+                send_file(temp_buff,shm);
                 if (close(shm->fd) == -1) {
                     handle_error_with_exit("error in close file\n");
                 }
@@ -195,16 +179,12 @@ int wait_for_start_get(int sockfd, struct sockaddr_in cli_addr, socklen_t len, c
 void *get_server_job(void *arg) {
     struct shm_sel_repeat *shm = arg;
     struct temp_buffer temp_buff;
-    wait_for_start_get(shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len, shm->filename,
-                       &shm->byte_written, &shm->seq_to_send, &shm->window_base_snd,
-                       &shm->window_base_rcv, shm->param.window, &shm->pkt_fly, temp_buff,
-                       shm->win_buf_rcv, shm->win_buf_snd, shm);
+    wait_for_start_get(temp_buff,shm);
     return NULL;
 }
 
 void *get_server_rtx_job(void *arg) {
     printf("thread rtx creato\n");
-    int byte_left;
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -291,13 +271,13 @@ void get_server(struct shm_sel_repeat *shm) {
     if (pthread_create(&tid_rtx, NULL, get_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_rtx\n");
     }
-    printf("%d tid_rtx\n", tid_rtx);
+    printf("%lu tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_server_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_\n");
     }
-    printf("%d tid_snd\n", tid_snd);
+    printf("%lu tid_snd\n", tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if (pthread_join(tid_snd, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
@@ -309,7 +289,7 @@ void get_server(struct shm_sel_repeat *shm) {
     return;
 }
 
-int execute_get(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
+int execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     shm->filename = malloc(sizeof(char) * (MAXPKTSIZE - OVERHEAD));
     if (shm->filename == NULL) {

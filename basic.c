@@ -79,12 +79,6 @@ void better_strcat(char*str1,char*str2){//strcat+controllo buffer
     strcat(str1,str2);
     return;
 }
-void better_strcmp(char*str1,char*str2){//strncmp+controllo buffer
-    return;
-}
-void better_strncmp(char*str1,char*str2){//strncmp+controllo buffer
-    return;
-}
 void set_max_buff_rcv_size(int sockfd){//imposta il buffer ricezione della socket al massimo possibile(senza root)
     int buff_size=BUFF_RCV_SIZE;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
@@ -92,7 +86,7 @@ void set_max_buff_rcv_size(int sockfd){//imposta il buffer ricezione della socke
     }
     return;
 }
-void set_buff_rcv_size(int sockfd,int size){//imposta il buffer ricezione della socket al valore definito come parametro
+/*void set_buff_rcv_size(int sockfd,int size){//imposta il buffer ricezione della socket al valore definito come parametro
     int buff_size=size;
     if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
         handle_error_with_exit("error in setsockopt\n");
@@ -106,7 +100,7 @@ void print_double_buff_rcv_size(int sockfd){//stampa il doppio del valore del bu
         handle_error_with_exit("error in setsockopt\n");
     }
     printf("buffer size %d\n",get_size);
-}
+}*/
 /*char to_resend(struct shm_sel_repeat *shm, struct node node){
     if(shm==NULL){
         handle_error_with_exit("error in to_resend shm is NULL\n");
@@ -213,7 +207,7 @@ void initialize_cond(pthread_cond_t*cond){//inizializza variabile condizione
         handle_error_with_exit("error in initialize cond\n");
     }
 }
-void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
+/*void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
     if(cond==NULL){
         handle_error_with_exit("error in destroy_cond cond is NULL\n");
     }
@@ -221,7 +215,7 @@ void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
         handle_error_with_exit("error in destroy cond\n");
     }
     return;
-}
+}*/
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){//il thread chiamante aspetta che la condizione diventi vera
     if(mtx==NULL){
         handle_error_with_exit("error in wait condition mtx is NULL\n");
@@ -359,7 +353,7 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     }
     while(check_if_file_exist(absolute_path)){
         copy_number+=1;
-        if(copy_number>255){
+        if(copy_number>=255){
             return NULL;
         }
         if(occurence==NULL) {//aggiungi alla fine del filename le parentesi e il numero
@@ -510,7 +504,7 @@ int get_file_size(char*path){//ritorna la dimensione di un file dato un path
     if(stat(path,&st)==-1){
         handle_error_with_exit("error get file_status\n");
     }
-    printf("size %d\n",st.st_size);
+    printf("size %ld\n",st.st_size);
     return (int)st.st_size;
 }
 

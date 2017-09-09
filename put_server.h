@@ -31,4 +31,4 @@
 #define PROG_IIW_PUT_SERVER_H
 
 #endif //PROG_IIW_PUT_SERVER_H
-int execute_put(struct shm_sel_repeat *shm,struct temp_buffer temp_buff);
+int execute_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm);

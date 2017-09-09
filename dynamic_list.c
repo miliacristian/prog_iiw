@@ -111,28 +111,24 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     struct node* temp = *tail;
     struct node* next_node = NULL;
     struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
-    //printf("aggiungo alla lista %d\n", new_node->lap);
     if(head==NULL || tail==NULL){
         handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
     }
     if(*head == NULL) {
         *head = new_node;
         *tail = new_node;
-        //Print(*head);
         return;
     }
     if(first_is_smaller((**tail),*new_node)){
         (*tail)->next = new_node;
         new_node->prev = *tail;
         *tail = new_node;
-        //Print(*head);
     }else{
         while(!first_is_smaller(*temp,*new_node)){
             if(temp->prev != NULL){
                 temp = temp->prev;
             }else{
                 insert_at_head(new_node, head, tail);
-                //Print(*head);
                 return;
             }
         }
@@ -141,12 +137,11 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
         new_node->next = temp->next;
         temp->next = new_node;
         new_node->prev = temp;
-        //Print(*head);
     }
     return;
 }
 
-void print(struct node* head) {//stampa la lista ordinata partendo dall'inizio
+/*void print(struct node* head) {//stampa la lista ordinata partendo dall'inizio
     struct node* temp = head;
     if (temp == NULL) {
         return;
@@ -171,4 +166,4 @@ void reverse_print(struct node* head) {//stampa la lista ordianta partendo dalla
         printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
         temp = temp->prev;
     }
-}
+}*/

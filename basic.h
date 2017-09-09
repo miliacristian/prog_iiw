@@ -114,7 +114,7 @@ struct select_param{//parametri di esecuzione
 
 struct shm_sel_repeat{//struttura condivisa tra i 2 thread necessaria sia per la sincronizzazione
 // sia per svolgere la richiesta(put/get/list) vera e propria
-    //struct timeval time;
+
     struct addr addr;//indirizzo dell'host
     int pkt_fly;//numero pacchetti in volo (va da 0 a w-1)
     pthread_mutex_t mtx;//mutex

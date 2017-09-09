@@ -39,7 +39,7 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler d
     (void)sig;
     (void)si;
     (void)uc;
-    printf("%d tid\n",pthread_self());//da togliere
+    printf("%lu tid\n",pthread_self());//da togliere
     great_alarm_client=1;
     return;
 }
@@ -347,7 +347,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         handle_error_with_exit("error in sigaction\n");
     }
     errno=0;
-    while (rtx < 500000 ) {//parametro da cambiare
+    while (rtx < 5 ) {//parametro da cambiare
         send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), 0);  //mando syn al processo server principale  //da cambiare loss prob
         printf("mi metto in ricezione del syn_ack\n");
         alarm(2);

@@ -154,7 +154,6 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
 
 void *put_server_rtx_job(void *arg) {
     printf("thread rtx creato\n");
-    int byte_left;
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -247,12 +246,12 @@ void put_server(struct shm_sel_repeat *shm) {
     if (pthread_create(&tid_rtx, NULL, put_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread put_server_rtx\n");
     }
-    printf("%d tid_rtx\n", tid_rtx);
+    printf("%lu tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     if (pthread_create(&tid_snd, NULL, put_server_job, shm) != 0) {
         handle_error_with_exit("error in create thread put_server\n");
     }
-    printf("%d tid_snd\n", tid_snd);
+    printf("%lu tid_snd\n", tid_snd);
     block_signal(
             SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if (pthread_join(tid_snd, NULL) != 0) {
@@ -266,7 +265,7 @@ void put_server(struct shm_sel_repeat *shm) {
 }
 
 //ricevuto pacchetto con put dimensione e filename
-int execute_put(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
+int execute_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char *path, *first, *payload;
     payload = malloc(sizeof(char) * (MAXPKTSIZE - OVERHEAD));

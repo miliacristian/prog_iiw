@@ -142,19 +142,19 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         printf(GREEN"comando %s ricevuto connessione instaurata\n"RESET,temp_buff.payload);
         great_alarm_serv=0;
         if(temp_buff.command==LIST){
-            execute_list(shm,temp_buff);
+            execute_list(temp_buff,shm);
             printf("comando list finito\n");
         }
         else if(temp_buff.command==PUT){
             set_max_buff_rcv_size(shm->addr.sockfd);
-            execute_put(shm,temp_buff);
+            execute_put(temp_buff,shm);
             printf("comando put finito\n");
             if(close(shm->addr.sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
         }
         else if(temp_buff.command==GET){
-            execute_get(shm,temp_buff);
+            execute_get(temp_buff,shm);
             printf("comando get finito\n");
             if(close(shm->addr.sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");

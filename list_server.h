@@ -27,4 +27,4 @@
 #include <wchar.h>
 #include <signal.h>
 #include "basic.h"
-int execute_list(struct shm_sel_repeat *shm,struct temp_buffer temp_buff);
+int execute_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm);

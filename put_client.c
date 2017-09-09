@@ -12,9 +12,7 @@
 #include "communication.h"
 #include "put_client.h"
 #include "dynamic_list.h"
-int close_connection_put(struct temp_buffer temp_buff, int *seq_to_send, struct window_snd_buf *win_buf_snd, int sockfd,
-                         struct sockaddr_in serv_addr, socklen_t len, int *window_base_snd, int *window_base_rcv,
-                         int *pkt_fly, int W, int *byte_written, double loss_prob,struct shm_sel_repeat *shm) {
+int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("close connection\n");
     send_message_in_window(temp_buff,
                            shm, FIN, "FIN");//manda messaggio di fin
@@ -243,11 +241,7 @@ void *put_client_job(void*arg){
             }
             if(temp_buff.command==ERROR) {
                 rcv_msg_send_ack_command_in_window(temp_buff,shm);
-                close_connection_put(temp_buff, &shm->seq_to_send, shm->win_buf_snd,
-                                     shm->addr.sockfd, shm->addr.dest_addr, shm->addr.len,
-                                     &shm->window_base_snd, &shm->window_base_rcv,
-                                     &shm->pkt_fly, shm->param.window, &shm->byte_written,
-                                     shm->param.loss_prob, shm);
+                close_connection_put(temp_buff, shm);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
                 if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
@@ -282,7 +276,6 @@ void *put_client_job(void*arg){
 }
 void *put_client_rtx_job(void*arg){
     printf("thread rtx creato\n");
-    int byte_left;
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -368,12 +361,12 @@ void put_client(struct shm_sel_repeat *shm){
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put_client_rtx\n");
     }
-    printf("%d tid_rtx\n",tid_rtx);
+    printf("%lu tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,put_client_job,shm)!=0){
         handle_error_with_exit("error in create thread put_client\n");
     }
-    printf("%d tid_snd\n",tid_snd);
+    printf("%lu tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
