@@ -6,7 +6,7 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
-
+//dopo aver ricevuto messaggio di errore manda fin e aspetta fin_ack cosi puoi chiudere la trasmissione
 int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     printf("close_connection_list\n");
     send_message_in_window(temp_buff,shm, FIN,"FIN");//manda messaggio di fin
@@ -22,15 +22,15 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN_ACK) {
+            if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina i 2 thread e la trasmissione
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf(RED "list is empty\n" RESET);
                 printf("thread cancel close_connection_list\n");
                 pthread_exit(NULL);
             }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         handle_error_with_exit("impossibile ricevere dati dopo aver ricevuto messaggio errore\n");
                     }
@@ -42,6 +42,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è un ack e non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
@@ -82,15 +83,14 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin ritorna al chiamante
                 printf(GREEN "FIN ricevuto\n" RESET);
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait_for_fin_list\n");
                 return shm->byte_written;
-                //non terminare il thread fallo ritornare al chiamante che termina lui
-            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("error ack wait for fin list\n");
                     }
@@ -100,6 +100,7 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è un akc e se non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
@@ -122,7 +123,7 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//ricevuta dimensione della lista,manda messaggio di start per far capire al sender che è pronto a ricevere i dati
 int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     send_message_in_window(temp_buff,shm, START,"START" );
@@ -140,8 +141,8 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore ack in rcv_list\n");
                     }
@@ -151,9 +152,11 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è un ack e se non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è un ack e è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_list_send_ack_in_window(temp_buff, shm);
                     if (shm->byte_written == shm->dimension) {
@@ -185,9 +188,8 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         }
     }
 }
-
-int
-wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+//manda messaggio get e aspetta messaggio contentente la dimensione della lista
+int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     errno = 0;
     char *first;
     better_strcpy(temp_buff.payload, "list");
@@ -204,11 +206,11 @@ wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm)
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == ERROR) {
+            if (temp_buff.command == ERROR) {//se ricevi errore vai in chiusura connessione
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 close_connection_list(temp_buff,shm);
             }
-            else if (temp_buff.command == DIMENSION) {
+            else if (temp_buff.command == DIMENSION) {//se ricevi dimensione del file vai in rcv_list
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 shm->dimension = parse_integer(temp_buff.payload);
                 printf("dimensione ricevuta %d\n", shm->dimension);

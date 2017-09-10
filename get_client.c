@@ -125,7 +125,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//ricevuta dimensione del file,manda messaggio di start per far capire al sender che è pronto a ricevere i dati
 int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     send_message_in_window(temp_buff, shm, START, "START");
@@ -188,7 +188,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//manda messaggio get e aspetta messaggio contentente la dimensione del file
 int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     errno = 0;
     char *path, *first, *payload;
