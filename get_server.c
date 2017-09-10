@@ -59,7 +59,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -127,7 +127,7 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {//se ricevi start vai nello stato di send_file
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 send_file(temp_buff,shm);
                 if (close(shm->fd) == -1) {
                     handle_error_with_exit("error in close file\n");
@@ -144,7 +144,7 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se è non akc e non in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             }  else {
                 printf("ignorato pacchetto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -290,7 +290,7 @@ int execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     if (shm->filename == NULL) {
         handle_error_with_exit("error in malloc\n");
     }
-    rcv_msg_send_ack_command_in_window(temp_buff, shm);
+    rcv_msg_send_ack_in_window(temp_buff, shm);
     better_strcpy(shm->filename, temp_buff.payload + 4);
     get_server(shm);
     if (shm->fd != -1) {

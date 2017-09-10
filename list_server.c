@@ -5,7 +5,9 @@
 #include "communication.h"
 #include "dynamic_list.h"
 
-int close_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
+int close_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+//dopo aver riscontrato tutti i pacchetti manda fin non in finestra
+// senza sequenza e ack e chiudi
     alarm(0);
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
@@ -13,7 +15,7 @@ int close_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda
     printf("thread cancel close list\n");
     pthread_exit(NULL);
 }
-
+//messaggio start ricevuto,thread pronto alla trasmissione
 int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     printf("send_list\n");
     char *temp_list;//creare la lista e poi inviarla in parti
@@ -47,6 +49,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                     } else {//se è un messaggio speciale
                         rcv_ack_in_window(temp_buff, shm);
                         if(shm->byte_readed==shm->dimension){
+                            //se tutti i pacchetti sono stati riscontrati vai in chiusura della trasmissione
                             close_list(temp_buff,shm);
                             free(temp_list);//liberazione memoria della lista,il puntatore di list è stato spostato per ricevere la lista
                             shm->list = NULL;
@@ -58,7 +61,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_list con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -83,7 +86,6 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
 }
 
 int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
-    //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     char dim[11];
     shm->dimension = count_char_dir(dir_server);
     if (shm->dimension != 0) {
@@ -106,7 +108,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                 printf("alarm stoppato\n");
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin manda fin_ack e chiudi
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len,
                              temp_buff, "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
@@ -114,9 +116,9 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                 printf("thread cancel wait_for_start_list\n");
                 pthread_exit(NULL);
             }
-            else if (temp_buff.command == START) {
+            else if (temp_buff.command == START) {//se ricevi start vai in send_list
                 printf("messaggio start ricevuto\n");
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 send_list(temp_buff,shm);
                 if (shm->byte_readed == shm->dimension) {
                     printf("lista correttamente inviata\n");
@@ -125,15 +127,16 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                 }
                 return shm->byte_readed;
             }
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_start_list ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                //se non è un ack e non è in finestra
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             }  else {
                 printf("ignorato pacchetto wait_for_start_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
@@ -276,7 +279,7 @@ int execute_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //verifica che il file (con filename scritto dentro temp_buffer esiste)
     // ,manda la dimensione, aspetta lo start e inizia a mandare il file,
     // temp_buff contiene il pacchetto con comando get+filename
-    rcv_msg_send_ack_command_in_window(temp_buff, shm);
+    rcv_msg_send_ack_in_window(temp_buff, shm);
     list_server(shm);
     return shm->byte_readed;
 }

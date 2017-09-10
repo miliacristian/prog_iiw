@@ -43,7 +43,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è un ack e non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato close connection pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -101,7 +101,7 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è un akc e se non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -153,7 +153,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è un ack e se non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è un ack e è in finestra
@@ -207,11 +207,11 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
                 alarm(0);
             }
             if (temp_buff.command == ERROR) {//se ricevi errore vai in chiusura connessione
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 close_connection_list(temp_buff,shm);
             }
             else if (temp_buff.command == DIMENSION) {//se ricevi dimensione del file vai in rcv_list
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 shm->dimension = parse_integer(temp_buff.payload);
                 printf("dimensione ricevuta %d\n", shm->dimension);
                 shm->list = malloc(sizeof(char) * shm->dimension);

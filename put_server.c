@@ -41,7 +41,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff,shm);
+                rcv_msg_re_send_ack_in_window(temp_buff,shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -107,7 +107,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è ack e non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se non è ack ed è in finestra
                 if (temp_buff.command == DATA) {
@@ -293,7 +293,7 @@ int execute_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     }
     free(first);
     payload = NULL;
-    rcv_msg_send_ack_command_in_window(temp_buff, shm);//invio ack della put
+    rcv_msg_send_ack_in_window(temp_buff, shm);//invio ack della put
     put_server(shm);
     if (shm->fd != -1) {
         if (close(shm->fd) == -1) {

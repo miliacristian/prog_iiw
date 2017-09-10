@@ -42,7 +42,7 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato close connect pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
@@ -108,7 +108,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
             }
             else if (!seq_is_in_window(shm->window_base_rcv,shm->param.window, temp_buff.seq)) {
                 //se ènon ack non in finestra
-                rcv_msg_re_send_ack_command_in_window( temp_buff,shm);
+                rcv_msg_re_send_ack_in_window( temp_buff,shm);
                 alarm(TIMEOUT);
             }
             else {
@@ -173,7 +173,7 @@ int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selec
             }
             else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è ack ed è fuori finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato pacchetto send_put_file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,temp_buff.command,temp_buff.lap);
@@ -219,7 +219,7 @@ void *put_client_job(void*arg){
             print_rcv_message(temp_buff);
             if (temp_buff.command == START) {//se riceve start va nello stato di send_file
                 printf(GREEN"messaggio start ricevuto\n"RESET);
-                rcv_msg_send_ack_command_in_window( temp_buff,shm);
+                rcv_msg_send_ack_in_window( temp_buff,shm);
                 path = generate_full_pathname(shm->filename, dir_client);
                 if(path==NULL){
                     handle_error_with_exit("error in generate full path\n");
@@ -236,7 +236,7 @@ void *put_client_job(void*arg){
                 return NULL;
             }
             if(temp_buff.command==ERROR) {//se riceve errore va nello stato di fine connessione
-                rcv_msg_send_ack_command_in_window(temp_buff,shm);
+                rcv_msg_send_ack_in_window(temp_buff,shm);
                 close_connection_put(temp_buff, shm);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {

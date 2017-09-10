@@ -271,7 +271,7 @@ void send_message_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
 }
 
 //riceve un messaggio già ricevuto rimanda semplicemente l'ack del messaggio
-void rcv_msg_re_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+void rcv_msg_re_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //il messaggio era già memorizzato in finestra,rinvia ack
     temp_buff.ack = temp_buff.seq;
     temp_buff.seq = NOT_A_PKT;
@@ -394,7 +394,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
 
 //riceve messaggio e manda ack del messaggio.
 //segna messaggio in finestra,segna che è stato ricevuto e verifica se la finestra può essere traslata
-void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
     if (shm->win_buf_rcv[temp_buff.seq].received == 0) {
         if ((shm->win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {

@@ -40,7 +40,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è un ack e se non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato close_connect_get pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -102,7 +102,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è ack e non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
                 printf("ignorato wait for fin pacchetto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
@@ -151,7 +151,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se non è ack e non è in finestra
-                rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
                 //se nonè ack ed è in finestra
@@ -208,7 +208,7 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                 alarm(0);
             }
             if (temp_buff.command == ERROR) {//se ricevi errore vai nello stato di chiusura connessione
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 close_connection_get(temp_buff, shm);
             } else if (temp_buff.command == DIMENSION) {//se ricevi dimensione del file vai nello stato di rcv_file
                 path = generate_multi_copy(dir_client, shm->filename);
@@ -230,7 +230,7 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                 payload++;
                 better_strncpy(shm->md5_sent, payload, MD5_LEN);
                 shm->md5_sent[MD5_LEN] = '\0';
-                rcv_msg_send_ack_command_in_window(temp_buff, shm);
+                rcv_msg_send_ack_in_window(temp_buff, shm);
                 free(first);
                 rcv_get_file(temp_buff, shm);
                 if (close(shm->fd) == -1) {
