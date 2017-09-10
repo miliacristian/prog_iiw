@@ -53,7 +53,6 @@ char* add_slash_to_dir(char*argument){
         better_strcpy(dir,argument);
         better_strcat(dir,"/");
         dir[strlen(argument)+1]='\0';
-        printf("dir %s\n",dir);
     }
     else {
         dir=malloc(strlen(argument)+1);//1 per "/" uno per terminatore
