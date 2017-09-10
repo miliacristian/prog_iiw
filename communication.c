@@ -6,7 +6,25 @@
 #include "Client.h"
 #include "communication.h"
 #include "dynamic_list.h"
+//commentare il primo o secondo blocco di funzioni print
+// in modo tale da avere o non avere le stampe relative all'invio o alla ricezione dei pacchetti
 
+
+/*void print_rcv_message(struct temp_buffer temp_buff){
+    return;
+}
+void print_msg_sended(struct temp_buffer temp_buff){
+    return;
+}
+void print_msg_resended(struct temp_buffer temp_buff){
+    return;
+}
+void print_msg_sended_and_lost(struct temp_buffer temp_buff){
+    return;
+}
+void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
+    return;
+}*/
 void print_rcv_message(struct temp_buffer temp_buff){
     printf("pacchetto ricevuto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
            temp_buff.seq,
@@ -28,11 +46,12 @@ void print_msg_sended_and_lost(struct temp_buffer temp_buff){
            temp_buff.command, temp_buff.lap);
     return;
 }
-void print_msg__resendend_and_lost(struct temp_buffer temp_buff){
+void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
     printf(YELLOW"pacchetto ritrasmesso con ack %d, seq %d command %d lap %d perso\n" RESET, temp_buff.ack,
            temp_buff.seq, temp_buff.command, temp_buff.lap);
     return;
 }
+
 //funzioni per la comunicazione tra 2 host senza protocollo selective repeat
 
 //inizializza pacchetto e manda messaggio
@@ -64,7 +83,7 @@ void resend_message(int sockfd, struct temp_buffer *temp_buff, struct sockaddr_i
         }
         print_msg_resended(*temp_buff);
     } else {
-       print_msg__resendend_and_lost(*temp_buff);
+       print_msg_resendend_and_lost(*temp_buff);
     }
     return;
 }
