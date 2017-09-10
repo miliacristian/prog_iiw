@@ -52,7 +52,7 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server  non è in ascolto\n");
             great_alarm_client = 0;
             alarm(0);
@@ -119,7 +119,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
         if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_client = 0;
             printf(BLUE "FIN_ACK non ricevuto\n"RESET);
             alarm(0);
@@ -179,7 +179,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_client = 0;
             printf("il server non è in ascolto send_put_file\n");
             alarm(0);
@@ -190,6 +190,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
     }
 }
 
+//thread trasmettitore e ricevitore
 void *put_client_job(void*arg){
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
@@ -211,7 +212,7 @@ void *put_client_job(void*arg){
                 alarm(0);
             }
             print_rcv_message(temp_buff);
-            if (temp_buff.command == START) {
+            if (temp_buff.command == START) {//se riceve start va nello stato di send_file
                 printf(GREEN"messaggio start ricevuto\n"RESET);
                 rcv_msg_send_ack_command_in_window( temp_buff,shm);
                 path = generate_full_pathname(shm->filename, dir_client);
@@ -229,7 +230,7 @@ void *put_client_job(void*arg){
                 }
                 return NULL;
             }
-            if(temp_buff.command==ERROR) {
+            if(temp_buff.command==ERROR) {//se riceve errore va nello stato di fine connessione
                 rcv_msg_send_ack_command_in_window(temp_buff,shm);
                 close_connection_put(temp_buff, shm);
             }
@@ -253,7 +254,7 @@ void *put_client_job(void*arg){
         if (errno != EINTR && errno != 0 && errno!=EAGAIN && errno!=EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non è in ascolto put_client_job\n");
             great_alarm_client = 0;
             alarm(0);
@@ -349,8 +350,9 @@ void *put_client_rtx_job(void*arg){
     }
     return NULL;
 }
-void put_client(struct shm_sel_repeat *shm){
-    //initialize_cond();inizializza tutte le cond
+void put_client(struct shm_sel_repeat *shm){//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put_client_rtx\n");
@@ -361,7 +363,8 @@ void put_client(struct shm_sel_repeat *shm){
         handle_error_with_exit("error in create thread put_client\n");
     }
     printf("%lu tid_snd\n",tid_snd);
-    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }

@@ -54,7 +54,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
@@ -109,7 +109,7 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
-        } else if (errno != EINTR) {
+        } else if (errno != EINTR) {//se è scaduto il timer termina i 2 thread della trasmissione
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
@@ -175,7 +175,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         } else if (errno != EINTR && errno!=0 ) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
@@ -247,7 +247,7 @@ wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm)
         } else if (errno != EINTR && errno!=0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
@@ -257,14 +257,14 @@ wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm)
         }
     }
 }
-
+//thread trasmettitore e ricevitore
 void *list_client_job(void *arg) {
     struct shm_sel_repeat *shm = arg;
     struct temp_buffer temp_buff;
     wait_for_list_dimension(temp_buff,shm);
     return NULL;
 }
-
+//thread ritrasmettitore
 void *list_client_rtx_job(void *arg) {
     printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
@@ -349,8 +349,9 @@ void *list_client_rtx_job(void *arg) {
     return NULL;
 }
 
-void list_client(struct shm_sel_repeat *shm) {
-    //initialize_cond();inizializza tutte le cond
+void list_client(struct shm_sel_repeat *shm) {//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,list_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread list_client_rtx\n");
@@ -361,7 +362,8 @@ void list_client(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread list_client\n");
     }
     printf("%lu tid_snd\n",tid_snd);
-    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }

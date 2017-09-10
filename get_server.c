@@ -70,7 +70,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_serv == 1) {
+        if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_serv = 0;
             printf("il client non è in ascolto send file\n");
             alarm(0);
@@ -150,7 +150,7 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
-        } else if (errno != EINTR && errno != 0) {
+        } else if (errno != EINTR && errno != 0) {//se è scaduto il timer termina i 2 thread della trasmissione
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {
@@ -163,14 +163,14 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
         }
     }
 }
-
+//thread trasmettitore e ricevitore
 void *get_server_job(void *arg) {
     struct shm_sel_repeat *shm = arg;
     struct temp_buffer temp_buff;
     wait_for_start_get(temp_buff,shm);
     return NULL;
 }
-
+//thread ritrasmettitore
 void *get_server_rtx_job(void *arg) {
     printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
@@ -255,8 +255,9 @@ void *get_server_rtx_job(void *arg) {
     return NULL;
 }
 
-void get_server(struct shm_sel_repeat *shm) {
-    //initialize_cond();inizializza tutte le cond
+void get_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd, tid_rtx;
     if (pthread_create(&tid_rtx, NULL, get_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_rtx\n");
@@ -268,7 +269,8 @@ void get_server(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread get_server_\n");
     }
     printf("%lu tid_snd\n", tid_snd);
-    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
     }
@@ -278,7 +280,7 @@ void get_server(struct shm_sel_repeat *shm) {
     unlock_signal(SIGALRM);
     return;
 }
-
+//ricevuto messaggio get filename
 int execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     shm->filename = malloc(sizeof(char) * (MAXPKTSIZE - OVERHEAD));

@@ -51,7 +51,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
@@ -112,7 +112,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         } else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf(BLUE"FIN non ricevuto\n"RESET);
             great_alarm_client = 0;
             alarm(0);
@@ -174,7 +174,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         } else if (errno != EINTR && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_client == 1) {
+        if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il server non sta mandando più nulla o errore interno\n");
             great_alarm_client = 0;
             alarm(0);
@@ -197,9 +197,7 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
-            printf("pacchetto ricevuto wait_get_dim con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                   temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -228,7 +226,6 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                 payload++;
                 better_strncpy(shm->md5_sent, payload, MD5_LEN);
                 shm->md5_sent[MD5_LEN] = '\0';
-                printf("md5 %s\n", shm->md5_sent);
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 free(first);
                 rcv_get_file(temp_buff, shm);
@@ -255,7 +252,7 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                 printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
                 handle_error_with_exit("");
             }
-        } else if (errno != EINTR) {
+        } else if (errno != EINTR) {//se è scaduto il timer termina i 2 thread della trasmissione
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {
@@ -269,13 +266,14 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
     }
 }
 
+//thread trasmettitore e ricevitore
 void *get_client_job(void *arg) {
     struct shm_sel_repeat *shm = arg;
     struct temp_buffer temp_buff;
     wait_for_get_dimension(temp_buff, shm);
     return NULL;
 }
-
+//thread ritrasmettitore
 void *get_client_rtx_job(void *arg) {
     printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
@@ -360,8 +358,9 @@ void *get_client_rtx_job(void *arg) {
     return NULL;
 }
 
-void get_client(struct shm_sel_repeat *shm) {
-    //initialize_cond();inizializza tutte le cond
+void get_client(struct shm_sel_repeat *shm) {//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd, tid_rtx;
     if (pthread_create(&tid_rtx, NULL, get_client_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_client_rtx\n");
@@ -373,8 +372,8 @@ void get_client(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread get_client\n");
     }
     printf("%lu tid_snd\n", tid_snd);
-    block_signal(
-            SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
     }

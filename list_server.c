@@ -71,7 +71,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_serv == 1) {
+        if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_serv = 0;
             printf("il client non è in ascolto send file\n");
             alarm(0);
@@ -145,7 +145,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
          else if (errno != EINTR) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if(great_alarm_serv == 1){
+        if(great_alarm_serv == 1){//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_serv = 0;
             printf("il client non è in ascolto wait_for_start_list\n");
             alarm(0);
@@ -155,7 +155,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
         }
     }
 }
-
+//thread ritrasmettitore
 void *list_server_rtx_job(void *arg) {
     printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
@@ -239,7 +239,7 @@ void *list_server_rtx_job(void *arg) {
     }
     return NULL;
 }
-
+//thread trasmettitore e ricevitore
 void *list_server_job(void *arg) {
     struct shm_sel_repeat *shm= arg;
     struct temp_buffer temp_buff;
@@ -247,8 +247,9 @@ void *list_server_job(void *arg) {
     return NULL;
 }
 
-void list_server(struct shm_sel_repeat *shm) {
-    //initialize_cond();inizializza tutte le cond
+void list_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd,tid_rtx;
     if(pthread_create(&tid_rtx,NULL,list_server_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread list_server_rtx\n");
@@ -259,7 +260,8 @@ void list_server(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread list_server\n");
     }
     printf("%lu tid_snd\n",tid_snd);
-    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){
         handle_error_with_exit("error in pthread_join\n");
     }
@@ -271,7 +273,9 @@ void list_server(struct shm_sel_repeat *shm) {
 }
 
 int execute_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
+    //verifica che il file (con filename scritto dentro temp_buffer esiste)
+    // ,manda la dimensione, aspetta lo start e inizia a mandare il file,
+    // temp_buff contiene il pacchetto con comando get+filename
     rcv_msg_send_ack_command_in_window(temp_buff, shm);
     list_server(shm);
     return shm->byte_readed;

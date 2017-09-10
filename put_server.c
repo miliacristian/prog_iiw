@@ -54,7 +54,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
         if (errno != EINTR && errno != 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_serv == 1) {
+        if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il client non sta mandando più nulla o errore interno\n");
             great_alarm_serv = 0;
             alarm(0);
@@ -131,7 +131,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
         if (errno != EINTR && errno != 0) {//aggiungere altri controlli
             handle_error_with_exit("error in recvfrom\n");
         }
-        if (great_alarm_serv == 1) {
+        if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             printf("il client non sta mandando più nulla o errore interno\n");
             great_alarm_serv = 0;
             alarm(0);
@@ -141,7 +141,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//thread ritrasmettitore
 void *put_server_rtx_job(void *arg) {
     printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
@@ -225,15 +225,16 @@ void *put_server_rtx_job(void *arg) {
     }
     return NULL;
 }
-
+//thread trasmettitore e ricevitore
 void *put_server_job(void *arg) {
     struct shm_sel_repeat *shm = arg;
     rcv_put_file(shm);
     return NULL;
 }
 
-void put_server(struct shm_sel_repeat *shm) {
-    //initialize_cond();inizializza tutte le cond
+void put_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
+    //trasmettitore,ricevitore;
+    //ritrasmettitore
     pthread_t tid_snd, tid_rtx;
     if (pthread_create(&tid_rtx, NULL, put_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread put_server_rtx\n");
@@ -244,8 +245,8 @@ void put_server(struct shm_sel_repeat *shm) {
         handle_error_with_exit("error in create thread put_server\n");
     }
     printf("%lu tid_snd\n", tid_snd);
-    block_signal(
-            SIGALRM);//il thread principale non viene interrotto dal segnale di timeout,ci sono altri thread?(waitpid ecc?)
+    block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
+    //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {
         handle_error_with_exit("error in pthread_join\n");
     }
@@ -258,12 +259,14 @@ void put_server(struct shm_sel_repeat *shm) {
 
 //ricevuto pacchetto con put dimensione e filename
 int execute_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
+    //verifica prima che il file esiste(con filename dentro temp_buffer)
+    // ,manda start e si mette in ricezione del file,
     char *path, *first, *payload;
     payload = malloc(sizeof(char) * (MAXPKTSIZE - OVERHEAD));
     if (payload == NULL) {
         handle_error_with_exit("error in payload\n");
     }
+    //estrai dal pacchetto filename e dimensione
     better_strcpy(payload, temp_buff.payload);
     first = payload;
     shm->dimension = parse_integer_and_move(&payload);
