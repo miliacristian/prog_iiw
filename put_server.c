@@ -21,7 +21,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin manda fin_ack solo una volta e termina sia i thread sia la trasmissione
                 alarm(0);
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN_ACK", FIN_ACK,
                              shm->param.loss_prob);
@@ -30,8 +30,8 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait_for_fin_put\n");
                 pthread_exit(NULL);
-            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack wait for fin\n");
                     }
@@ -40,7 +40,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                     printf("wait_for_fin_put ack duplicato\n");
                 }
                 alarm(TIMEOUT);
-            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff,shm);
                 alarm(TIMEOUT);
             } else {
@@ -71,10 +71,9 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
     if (shm->fd != -1) {
-        send_message_in_window(temp_buff,shm, START,"START");
+        send_message_in_window(temp_buff,shm, START,"START");//invia start
     } else {
-        send_message_in_window(temp_buff,shm, ERROR,"ERROR" );
-        //chiusura temporizzata,è esagerato mandare solo errore e terminare?
+        send_message_in_window(temp_buff,shm, ERROR,"ERROR" );//invia errore
     }
     errno = 0;
     while (1) {
@@ -87,7 +86,8 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin manda fin_ack solo una volta
+                // e termina sia thread sia trasmissione
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
@@ -95,8 +95,8 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                 printf("thread cancel rcv_put_file\n");
                 pthread_exit(NULL);
             }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack rcv_put_file\n");
                     }
@@ -106,9 +106,10 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è ack e non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
-            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se non è ack ed è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_data_send_ack_in_window(temp_buff, shm);
                     if ((shm->byte_written) == (shm->dimension)) {

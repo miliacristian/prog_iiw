@@ -4,6 +4,7 @@
 #include "communication.h"
 #include "put_client.h"
 #include "dynamic_list.h"
+//entra qui dopo aver ricevuto il messaggio di errore
 int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("close connection\n");
     send_message_in_window(temp_buff,
@@ -20,15 +21,15 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN_ACK) {
+            if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina thread e trasmissione
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf("thread cancel close_connection_put\n");
                 printf(RED "il server ha troppe copie del file %s\n"RESET,shm->filename);
                 pthread_exit(NULL);
             }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("error in close connection\n");//impossibile ricevere dati dopo aver ricevuto errore
                     }
@@ -63,7 +64,7 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
         }
     }
 }
-
+//entra qui quando hai riscontrato tutti i pacchetti
 int close_put_send_file(struct shm_sel_repeat *shm){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
     printf("close_put_send_file\n");
@@ -80,15 +81,15 @@ int close_put_send_file(struct shm_sel_repeat *shm){
             else{
                 alarm(0);
             }
-            if (temp_buff.command == FIN_ACK) {
+            if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina i 2 thread e l'intera trasmissione
                 alarm(0);
                 printf(GREEN"FIN_ACK ricevuto\n"RESET);
                 pthread_cancel(shm->tid);
                 printf("thread cancel close_put_send_file\n");
                 pthread_exit(NULL);
             }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         printf("errore close_put_send_file ack file in finestra\n");
                         printf("winbase snd %d winbase rcv %d\n",shm->window_base_snd,shm->window_base_rcv);
@@ -106,6 +107,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
                 alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm->window_base_rcv,shm->param.window, temp_buff.seq)) {
+                //se ènon ack non in finestra
                 rcv_msg_re_send_ack_command_in_window( temp_buff,shm);
                 alarm(TIMEOUT);
             }
@@ -129,11 +131,13 @@ int close_put_send_file(struct shm_sel_repeat *shm){
         }
     }
 }
-int send_put_file(struct shm_sel_repeat *shm) {
+int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selective repeat,
+// quando riesce a riscontrare tutto va nello stato di chiusura
     struct temp_buffer temp_buff;
     printf("send_put_file\n");
     alarm(TIMEOUT);
     while (1) {
+        //finquando pkt_fly <W e byte_sent <dimensione del file puoi mandare  un pacchetto file
         if (((shm->pkt_fly) < (shm->param.window)) && ((shm->byte_sent) < (shm->dimension))) {
             send_data_in_window(temp_buff, shm);
         }
@@ -146,7 +150,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 alarm(0);
             }
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
-                if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {
+                if (seq_is_in_window(shm->window_base_snd,shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff, shm);
                         if ((shm->byte_readed) ==(shm->dimension)) {
@@ -168,6 +172,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
                 alarm(TIMEOUT);
             }
             else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è ack ed è fuori finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {

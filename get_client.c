@@ -5,7 +5,7 @@
 #include "get_client.h"
 #include "communication.h"
 #include "dynamic_list.h"
-
+//dopo aver ricevuto messaggio di errore aspetta messaggio di fin_ack
 int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     printf("close connection_get\n");
     send_message_in_window(temp_buff, shm, FIN, "FIN");//manda messaggio di fin
@@ -21,14 +21,14 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN_ACK) {
+            if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina i 2 thread
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf("thread cancel close connection\n");
                 printf(RED "file not exist\n" RESET);
                 pthread_exit(NULL);
-            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         handle_error_with_exit("impossibile ricevere dati dopo aver ricevuto messaggio errore\n");
                     } else {
@@ -39,6 +39,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è un ack e se non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
@@ -83,14 +84,14 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin termina i 2 thread
                 alarm(0);
                 check_md5(path, shm->md5_sent);
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait for fin\n");
                 pthread_exit(NULL);
-            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         handle_error_with_exit("errore ack wait for fin\n");
                     }
@@ -100,6 +101,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è ack e non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
@@ -140,17 +142,19 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
             } else {
                 alarm(0);
             }
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("rcv_get_file ack duplicato\n");
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se non è ack e non è in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+                //se nonè ack ed è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_data_send_ack_in_window(temp_buff, shm);
                     if (shm->byte_written == shm->dimension) {
@@ -203,10 +207,10 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == ERROR) {
+            if (temp_buff.command == ERROR) {//se ricevi errore vai nello stato di chiusura connessione
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 close_connection_get(temp_buff, shm);
-            } else if (temp_buff.command == DIMENSION) {
+            } else if (temp_buff.command == DIMENSION) {//se ricevi dimensione del file vai nello stato di rcv_file
                 path = generate_multi_copy(dir_client, shm->filename);
                 if (path == NULL) {
                     handle_error_with_exit("error:there are too much copies of the file\n");
@@ -235,8 +239,8 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait_for_get_dimension\n");
                 pthread_exit(NULL);
-            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         handle_error_with_exit("error ack wait for get dimension\n");
                     }

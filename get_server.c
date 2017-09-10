@@ -7,6 +7,7 @@
 
 int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
+    //manda fin
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
     printf("close_get_send_file\n");
@@ -33,10 +34,10 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 alarm(0);
             }
             if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff, shm);
-                        printf("byte readed %d ack dup %d\n", shm->byte_readed, ack_dup);
+                        printf("byte readed %d\n", shm->byte_readed);
                         if (shm->byte_readed == shm->dimension) {
                             close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
@@ -46,6 +47,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                     } else {
                         rcv_ack_in_window(temp_buff, shm);
                         if (shm->byte_readed == shm->dimension) {
+                            //se tutti i byte sono stati riscontrati vai in chiusura
                             close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
                             printf("thread cancel send_file\n");
@@ -56,7 +58,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                     printf("send_file ack duplicato\n");
                 }
                 alarm(TIMEOUT);
-            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
@@ -87,6 +89,7 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
     if (path == NULL) {
         handle_error_with_exit("error in generate full path\n");
     }
+    //ottieni la dimensione del file da inviare e inseriscila insieme all'MD5 dentro il pacchetto da inviare al client
     if (check_if_file_exist(path)) {
         shm->dimension = get_file_size(path);
         sprintf(dim_string, "%d", shm->dimension);
@@ -99,9 +102,9 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
         better_strcat(temp_buff.payload, " ");
         better_strcat(temp_buff.payload, shm->md5_sent);
         free(path);
-        send_message_in_window(temp_buff,shm, DIMENSION,dim_string);
+        send_message_in_window(temp_buff,shm, DIMENSION,dim_string);//manda pacchetto dimension
     } else {
-        send_message_in_window(temp_buff,shm, ERROR,"il file non esiste");
+        send_message_in_window(temp_buff,shm, ERROR,"il file non esiste");//manda pacchetto errore
     }
     errno = 0;
     alarm(TIMEOUT);
@@ -115,14 +118,14 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
             } else {
                 alarm(0);
             }
-            if (temp_buff.command == FIN) {
+            if (temp_buff.command == FIN) {//se ricevi fin manda fin_ack e termina i 2 thread
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf("thread cancel wait_for_start_get\n");
                 pthread_exit(NULL);
-            } else if (temp_buff.command == START) {
+            } else if (temp_buff.command == START) {//se ricevi start vai nello stato di send_file
                 printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_command_in_window(temp_buff, shm);
                 send_file(temp_buff,shm);
@@ -133,14 +136,14 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 printf("thread cancel wait_for_start_get \n");
                 pthread_exit(NULL);
             }
-            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
                     printf("wait_for_start_get ack duplicato\n");
                 }
                 alarm(TIMEOUT);
-            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
+            } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se è non akc e non in finestra
                 rcv_msg_re_send_ack_command_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             }  else {
