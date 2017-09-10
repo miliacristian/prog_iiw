@@ -69,7 +69,7 @@
 #define MD5_LEN 32//lunghezza md5
 #define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
 
-#define FREE_PROCESS 1//numero di processi server che devono essere sempre disponibili per una richiesta
+#define NUM_FREE_PROCESS 1//numero di processi server che devono essere sempre disponibili per una richiesta
 #define MAX_PROC_JOB 4//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
 #ifndef LINE_H

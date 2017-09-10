@@ -79,23 +79,6 @@ int delete_head(struct node** head, struct node* old_head){
     return 0;
 }
 
-/*void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
-    if(head==NULL){
-        handle_error_with_exit("error in insert_at_head **head is NULL\n");
-    }
-    if(tail==NULL){
-        handle_error_with_exit("error in insert_at_head **head is NULL\n");
-    }
-    if(*head == NULL) {
-        *head = new_node;
-        *tail = new_node;
-        return;
-    }
-    (*head)->prev = new_node;
-    new_node->next = *head;
-    *head = new_node;
-    return;
-}*/
 void insert_at_head(struct node* new_node,struct node** head,struct node** tail) {//inserisce un nodo in testa alla lista
     if(head==NULL){
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
@@ -164,67 +147,7 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     }
     return;
 }
-/*void insert_ordered2(int seq, struct node** head, struct node** tail){
-    //inserisce ordinatamente un nodo nella lista ordinata per istanti temporali
-    struct node* temp = *tail;
-    struct node* next_node = NULL;
-    struct node* new_node = get_new_node(seq);
-    if(head==NULL || tail==NULL){
-        handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
-    }
-    if(*head == NULL) {//se la lista è vuota
-        insert_first(new_node, head, tail);
-        return;
-    }
-    if(first_is_smaller((**tail),*new_node)){//se l'ultimo nodo è più piccolo del nodo passato come parametro
-        insert_at_tail(new_node,head, tail);
-    }
-    else{
-        while(!first_is_smaller(*temp,*new_node)){
-            if(temp->prev != NULL){
-                temp = temp->prev;
-            }
-            else{
-                insert_at_head(new_node,head,tail);
-                return;
-            }
-        }
-        next_node = temp->next;
-        new_node->prev = temp;
-        new_node->next = next_node;
-        temp->next = new_node;
-        next_node->prev = new_node;
-    }
-    return;
-}*/
 
-
-/*void print(struct node* head) {//stampa la lista ordinata partendo dall'inizio
-    struct node* temp = head;
-    if (temp == NULL) {
-        return;
-    }
-    while(temp != NULL) {
-        printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
-        temp = temp->next;
-    }
-}
-
-void reverse_print(struct node* head) {//stampa la lista ordianta partendo dalla fine
-    struct node *temp = head;
-    if (temp == NULL) {
-        return; // empty list, exit
-    // Going to last Node
-    }
-    while(temp->next != NULL) {
-        temp = temp->next;
-    }
-    // Traversing backward using prev pointer
-    while(temp != NULL) {
-        printf("seq %d sec %d usec %d\n",temp->seq,temp->tv.tv_sec,temp->tv.tv_nsec);
-        temp = temp->prev;
-    }
-}*/
 
 
 

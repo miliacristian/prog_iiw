@@ -25,6 +25,7 @@ void print_msg_sended_and_lost(struct temp_buffer temp_buff){
 void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
     return;
 }*/
+
 void print_rcv_message(struct temp_buffer temp_buff){
     printf("pacchetto ricevuto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
            temp_buff.seq,
