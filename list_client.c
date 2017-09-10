@@ -230,8 +230,8 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
                 shm->list = NULL;
                 return shm->byte_written;
             }
-            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {
-                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {
+            if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
+                if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if(temp_buff.command==DATA){
                         handle_error_with_exit("errore in ack wait for list dim\n");
                     }
