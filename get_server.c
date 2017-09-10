@@ -26,8 +26,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         while (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr,
                         &shm->addr.len) !=
                -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
-            printf("pacchetto ricevuto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -85,15 +84,12 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
 int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     char *path, dim_string[11];
     path = generate_full_pathname(shm->filename, dir_server);
-    printf("path %s\n", path);
     if (path == NULL) {
         handle_error_with_exit("error in generate full path\n");
     }
     if (check_if_file_exist(path)) {
         shm->dimension = get_file_size(path);
-        printf("file size %d\n", shm->dimension);
         sprintf(dim_string, "%d", shm->dimension);
-        printf("dim string %s\n", dim_string);
         shm->fd = open(path, O_RDONLY);
         if (shm->fd == -1) {
             handle_error_with_exit("error in open\n");
@@ -113,8 +109,7 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *)
                 &shm->addr.dest_addr, &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            printf("pacchetto ricevuto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {

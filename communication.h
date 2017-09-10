@@ -48,3 +48,4 @@ void send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
 void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm);
 void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm);
 void rcv_msg_re_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm);
+void print_rcv_message(struct temp_buffer temp_buff);

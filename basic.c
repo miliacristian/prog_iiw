@@ -39,7 +39,33 @@ void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono ugual
     }
     return;
 }
-
+char* add_slash_to_dir(char*argument){
+    char*dir;
+    if(argument==NULL){
+        handle_error_with_exit("error in add_slash argument is NULL\n");
+    }
+    if((argument[strlen(argument)-1])!='/'){
+        dir=malloc(sizeof(char)*(strlen(argument)+2));//1 per "/" uno per terminatore
+        if(dir==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir,'\0',strlen(argument)+2);
+        better_strcpy(dir,argument);
+        better_strcat(dir,"/");
+        dir[strlen(argument)+1]='\0';
+        printf("dir %s\n",dir);
+    }
+    else {
+        dir=malloc(strlen(argument)+1);//1 per "/" uno per terminatore
+        if(dir==NULL){
+            handle_error_with_exit("error in malloc\n");
+        }
+        memset(dir,'\0',strlen(argument)+1);
+        better_strcpy(dir,argument);
+        dir[strlen(argument)]='\0';
+    }
+    return dir;
+}
 double absolute(double value){
     if (value<0){
         return ((value)*(-1));

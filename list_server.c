@@ -27,8 +27,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
-            printf("pacchetto ricevuto send_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -100,8 +99,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            printf("pacchetto ricevuto wait_for_start_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {

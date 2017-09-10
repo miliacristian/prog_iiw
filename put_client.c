@@ -14,8 +14,7 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo fin_ack dal server
-            printf("pacchetto ricevuto close_conn put con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {//
                 continue;//ignora pacchetto
             } else {
@@ -74,8 +73,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE,0, (struct sockaddr *) &(shm->addr.dest_addr), &shm->addr.len) != -1) {//attendo risposta del client,
             // aspetto finquando non arriva la risposta o scade il timeout
-            printf(MAGENTA"pacchetto ricevuto close_put_send_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -140,7 +138,7 @@ int send_put_file(struct shm_sel_repeat *shm) {
             send_data_in_window(temp_buff, shm);
         }
         while(recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, MSG_DONTWAIT, (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) != -1) {//non devo bloccarmi sulla ricezione,se ne trovo uno leggo finquando posso
-            printf(MAGENTA"pacchetto ricevuto send_put_file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if(temp_buff.command==SYN || temp_buff.command==SYN_ACK){
                 continue;//ignora pacchetto
             }
@@ -212,7 +210,7 @@ void *put_client_job(void*arg){
             } else {
                 alarm(0);
             }
-            printf(MAGENTA"pacchetto ricevuto put_client_job con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq, temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == START) {
                 printf(GREEN"messaggio start ricevuto\n"RESET);
                 rcv_msg_send_ack_command_in_window( temp_buff,shm);

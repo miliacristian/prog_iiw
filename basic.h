@@ -204,3 +204,4 @@ void better_strncpy(char*buf1,char*buf2,int lenght);
 void unlock_signal(int signal);
 void initialize_timeval(struct timespec *tv,int timer_ms);
 double absolute(double value);
+char* add_slash_to_dir(char*argument);

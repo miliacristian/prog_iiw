@@ -16,8 +16,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo fin_ack dal server
-            printf("pacchetto ricevuto close connection list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -77,8 +76,7 @@ wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
-            printf("pacchetto ricevuto wait_for_fin_list con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -136,8 +134,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//bloccati finquando non ricevi file
             // o altri messaggi
-            printf("pacchetto ricevuto rcv_list con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                   temp_buff.seq, temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -201,8 +198,7 @@ wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *shm)
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo risposta del server
             //mi blocco sulla risposta del server
-            printf("pacchetto ricevuto wait for list_dim con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
-                   temp_buff.command,temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {

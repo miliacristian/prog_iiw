@@ -15,9 +15,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0,
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo fin_ack dal server
-            printf("pacchetto ricevuto close_conn get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                   temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {//
                 continue;//ignora pacchetto
             } else {
@@ -79,9 +77,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo
-            printf("pacchetto ricevuto wait for fin_get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                   temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -138,9 +134,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                      (struct sockaddr *) &shm->addr.dest_addr, &shm->addr.len) !=
             -1) {//bloccati finquando non ricevi file
             // o altri messaggi
-            printf("pacchetto ricevuto rcv_get_file con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                   temp_buff.seq,
-                   temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {

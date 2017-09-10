@@ -15,8 +15,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE,0, (struct sockaddr *) &shm->addr.dest_addr,
                      &shm->addr.len) != -1) {//attendo messaggio di fin,
             // aspetto finquando non lo ricevo,bloccante o non bloccante??
-            printf(MAGENTA"pacchetto ricevuto wait for fin put con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack,
-                   temp_buff.seq, temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -82,8 +81,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
         if (recvfrom(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &shm->addr.dest_addr,
                      &shm->addr.len) != -1) {
             //bloccante o non bloccante??
-            printf(MAGENTA"pacchetto ricevuto rcv put file con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack,
-                   temp_buff.seq, temp_buff.command, temp_buff.lap);
+            print_rcv_message(temp_buff);
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
@@ -270,7 +268,6 @@ int execute_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     payload++;
     better_strncpy(shm->md5_sent, payload, MD5_LEN);
     shm->md5_sent[MD5_LEN] = '\0';
-    printf("md5 %s\n", shm->md5_sent);
     payload += MD5_LEN;
     payload++;
     path = generate_multi_copy(dir_server, payload);

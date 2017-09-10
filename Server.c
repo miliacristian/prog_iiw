@@ -12,31 +12,11 @@ int main_sockfd,msgid,child_mtx_id,mtx_prefork_id,great_alarm_serv=0;//dopo le f
 struct select_param param_serv;
 char*dir_server;
 
-void add_slash_to_dir_serv(char*argument){
-    if(argument==NULL){
-        handle_error_with_exit("error in add_slash argument is NULL\n");
-    }
-    if((argument[strlen(argument)-1])!='/'){
-        dir_server=malloc(strlen(argument)+2);//1 per "/" uno per terminatore
-        if(dir_server==NULL){
-            handle_error_with_exit("error in malloc\n");
-        }
-        memset(dir_server,'\0',strlen(argument)+2);
-        better_strcpy(dir_server,argument);
-        better_strcat(dir_server,"/");
-        dir_server[strlen(argument)+2]='\0';
-    }
-    else {
-        dir_server = argument;
-    }
-    return;
-}
-
 void timeout_handler_serv(int sig, siginfo_t *si, void *uc){
     (void)sig;
     (void)si;
     (void)uc;
-    printf("segnale ricevuto\n");
+    printf("segnale ricevuto dal thread %lu\n",pthread_self());
     great_alarm_serv=1;
 }
 
@@ -85,8 +65,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         shm->dev_RTT_ms=0;
         shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
     }
-    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
-    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->param.loss_prob=param_serv.loss_prob;
     shm->head=NULL;
     shm->tail=NULL;
@@ -134,24 +112,21 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
         alarm(0);
-        printf(MAGENTA"pacchetto ricevuto con ack %d seq %d command %d dati %s:\n"RESET,temp_buff.ack,temp_buff.seq,temp_buff.command, temp_buff.payload);
+        print_rcv_message(temp_buff);
         printf(GREEN"comando %s ricevuto connessione instaurata\n"RESET,temp_buff.payload);
         great_alarm_serv=0;
         if(temp_buff.command==LIST){
             execute_list(temp_buff,shm);
-            printf("comando list finito\n");
         }
         else if(temp_buff.command==PUT){
             set_max_buff_rcv_size(shm->addr.sockfd);
             execute_put(temp_buff,shm);
-            printf("comando put finito\n");
             if(close(shm->addr.sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
         }
         else if(temp_buff.command==GET){
             execute_get(temp_buff,shm);
-            printf("comando get finito\n");
             if(close(shm->addr.sockfd)==-1){
                 handle_error_with_exit("error in close socket child process\n");
             }
@@ -180,9 +155,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         free(shm->win_buf_rcv[i].payload);
         shm->win_buf_rcv[i].payload=NULL;
     }
-    //destroy_cond(&shm->list_not_empty);
-    //destroy_mtx(&shm->mtx);
-    //ricorda di distruggere cond e rilasciare mtx
     free(shm->win_buf_rcv);
     free(shm->win_buf_snd);
     shm->win_buf_snd=NULL;
@@ -193,7 +165,6 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
 }
 
 void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_request,satisfy request
-    printf("pid %d\n",getpid());
     struct msgbuf request;//contiene comando e indirizzi del client
     int value;
     char done_jobs=0;
@@ -214,32 +185,31 @@ void child_job(){//lavoro che deve svolgere il processo,loop infinito su get_req
     }//
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
-        printf("pid %d in attesa della richiesta\n",getpid());
         if(mtx_prefork->free_process>=FREE_PROCESS){
-            printf("suicidio del pid %d\n",getpid());
+            printf("troppi processi liberi,suicidio del processo %d\n",getpid());
             unlock_sem(&(mtx_prefork->sem));
             exit(EXIT_SUCCESS);
         }
         mtx_prefork->free_process+=1;
         unlock_sem(&(mtx_prefork->sem));
         lock_sem(mtx);
-        printf("processo %d disponibile per una nuova richiesta\n",getpid());
+        printf("processo %d disponibile e in attesa\n",getpid());
         value=msgrcv(msgid,&request,sizeof(struct msgbuf)-sizeof(long),0,0);
         unlock_sem(mtx);//non è un problema prendere il mutex e bloccarsi in coda
         if(value==-1){//errore msgrcv
             lock_sem(&(mtx_prefork->sem));
             mtx_prefork->free_process-=1;
             unlock_sem(&(mtx_prefork->sem));
-            handle_error_with_exit("an external error occured\n");
+            handle_error_with_exit("errore in msgrcv\n");
         }
         lock_sem(&(mtx_prefork->sem));
-        printf("ho trovato una richiesta in coda\n");
+        printf("processo %d svolge la richiesta presa dalla coda\n",getpid());
         mtx_prefork->free_process-=1;
         unlock_sem(&(mtx_prefork->sem));
         reply_to_syn_and_execute_command(request);
         done_jobs++;
         if(done_jobs>MAX_PROC_JOB){
-            printf("pid %d\n ha fatto molto lavoro!\n",getpid());
+            printf("processo %d ha fatto molto lavoro e non svolgerà più richieste\n",getpid());
             exit(EXIT_SUCCESS);
         }
     }
@@ -261,7 +231,7 @@ void create_pool(int num_child){//crea il pool di processi,ogni processo ha il c
     return;//il padre ritorna dopo aver creato i processi
 }
 void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del client
-    printf("pool handler\n");
+    printf("thread pool handler creato\n");
     struct mtx_prefork*mtx_prefork=arg;
     int left_process;
     pid_t pid;
@@ -280,7 +250,7 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
             unlock_sem(&(mtx_prefork->sem));
         }
         while((pid=waitpid(-1,NULL,WNOHANG))>0) {
-            printf("thread libera risorse pid %d\n", pid);
+            printf("thread libera risorse del processo %d\n", pid);
         }
     }
     return NULL;
@@ -315,7 +285,8 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
     }
     srand(time(NULL));
     check_if_dir_exist(argv[1]);
-    add_slash_to_dir_serv(argv[1]);
+    dir_server=add_slash_to_dir(argv[1]);
+    handle_error_with_exit("");
     better_strcpy(localname,"./parameter.txt");
     fd=open(localname,O_RDONLY);
     if(fd==-1){
@@ -375,15 +346,15 @@ int main(int argc,char*argv[]) {//i processi figli ereditano disposizione dei se
         handle_error_with_exit("error in bind\n");
     }
 
-    create_pool(FREE_PROCESS);//da cambiare
-    //create_thread_pool_handler(mtx_prefork);//da decommentare
+    create_pool(FREE_PROCESS);
+    create_thread_pool_handler(mtx_prefork);
     while(1) {
         len=sizeof(cliaddr);
         if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {
             handle_error_with_exit("error in recvcommand");//scrive nella struct le info del client
             // e nel buffer il comando ricevuto dal client
         }
-        printf(GREEN"richiesta ricevuta server\n"RESET);
+        printf(GREEN"è stata inviata una richiesta al processo centrale\n"RESET);
         msgbuf.addr=cliaddr;//inizializza la struct con addr e commandBuffer
         msgbuf.mtype=1;
         if(msgsnd(msgid,&msgbuf,sizeof(struct msgbuf)-sizeof(long),0)==-1){

@@ -12,30 +12,12 @@ int great_alarm_client = 0;//se diventa 1 è scattato il timer globale
 struct select_param param_client;
 char *dir_client;
 
-void add_slash_to_dir_client(char*argument){//aggiunge "/" ad un char*path se non presente
-    if(argument==NULL){
-        handle_error_with_exit("error in add_slah\n");
-    }
-    if ((argument[strlen(argument) - 1]) != '/') {
-        dir_client = malloc(strlen(argument) + 2);//2== "/" +terminatore
-        if (dir_client == NULL) {
-            handle_error_with_exit("error in malloc\n");
-        }
-        memset(dir_client, '\0', strlen(argument) + 2);
-        better_strcpy(dir_client, argument);
-        better_strcat(dir_client, "/");
-        dir_client[strlen(argument) + 2] = '\0';
-    } else {
-        dir_client = argument;
-    }
-    return;
-}
 
 void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler del timer globale
     (void)sig;
     (void)si;
     (void)uc;
-    printf("%lu tid\n",pthread_self());//da togliere
+    printf("segnale ricevuto dal thread %lu\n",pthread_self());
     great_alarm_client=1;
     return;
 }
@@ -74,8 +56,6 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
         shm->dev_RTT_ms=0;
         shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
     }
-    printf("dev_RTT %f est_RTT %f\n", shm->dev_RTT_ms, shm->est_RTT_ms);
-    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=-1;
@@ -166,8 +146,6 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
         shm->dev_RTT_ms=0;
         shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
     }
-    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
-    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=-1;
@@ -262,8 +240,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
         shm->dev_RTT_ms=0;
         shm->est_RTT_ms=TIMER_BASE_ADAPTIVE;
     }
-    printf("dev_RTT %f est_RTT %f", shm->dev_RTT_ms, shm->est_RTT_ms);
-    printf("timer iniziale %d\n", shm->param.timer_ms);
     shm->addr.sockfd=sockfd;
     shm->addr.dest_addr=serv_addr;
     shm->dimension=dimension;
@@ -280,7 +256,6 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
     }
     free(path);
     path=NULL;
-    printf("md5 %s\n",shm->md5_sent);
     shm->win_buf_rcv=malloc(sizeof(struct window_rcv_buf)*(2*param_client.window));
     if(shm->win_buf_rcv==NULL){
         handle_error_with_exit("error in malloc win buf rcv\n");
@@ -483,7 +458,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     srand(time(NULL));
     //verifica che il file parameter.txt esista
     check_if_dir_exist(argv[1]);
-    add_slash_to_dir_client(argv[1]);
+    dir_client=add_slash_to_dir(argv[1]);
     better_strcpy(localname,"./parameter.txt");
     fd = open(localname, O_RDONLY);//apre il file parameter per leggere i parametri di input
     if (fd == -1) {
@@ -545,7 +520,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                 printf("file not exist\n");
                 continue;
             } else {
-                printf("file size is %d bytes\n", get_file_size(path));
+                printf("file size is %d bytes,", get_file_size(path));
                 while (1) {
                     printf("confirm upload file %s [y/n]\n", filename);
                     if (fgets(conf_upload, MAXLINE, stdin) == NULL) {
