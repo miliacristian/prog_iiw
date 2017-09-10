@@ -6,7 +6,9 @@
 #include "Client.h"
 #include "communication.h"
 #include "dynamic_list.h"
+//funzioni per la comunicazione tra 2 host senza protocollo selective repeat
 
+//inizializza pacchetto e manda messaggio
 void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct temp_buffer temp_buff, char *data,
                   char command, double loss_prob) {
     better_strcpy(temp_buff.payload, data);
@@ -17,8 +19,8 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
     //niente ack e sequenza
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) addr, len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
                temp_buff.command, temp_buff.lap);
@@ -28,13 +30,12 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
     }
     return;
 }
-
-void
-resend_message(int sockfd, struct temp_buffer *temp_buff, struct sockaddr_in *addr, socklen_t len, double loss_prob) {
+//ritrasmetti messaggio precedentemente inviato
+void resend_message(int sockfd, struct temp_buffer *temp_buff, struct sockaddr_in *addr, socklen_t len, double loss_prob) {
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) addr, len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(YELLOW"pacchetto ritrasmesso con ack %d seq %d command %d lap %d\n"RESET, temp_buff->ack, temp_buff->seq,
                temp_buff->command, temp_buff->lap);
@@ -44,18 +45,18 @@ resend_message(int sockfd, struct temp_buffer *temp_buff, struct sockaddr_in *ad
     }
     return;
 }
-
+//manda messaggio di syn
 void send_syn(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, double loss_prob) {
     struct temp_buffer temp_buff;
-    temp_buff.seq = NOT_AN_ACK;
+    temp_buff.seq = NOT_A_PKT;
     temp_buff.command = SYN;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.lap = NO_LAP;
     better_strcpy(temp_buff.payload, "SYN");
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in syn sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in syn sendto\n");
         }
         printf("pacchetto syn mandato\n");
     } else {
@@ -64,17 +65,18 @@ void send_syn(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, double l
     return;
 }
 
+//manda messaggio di syn ack
 void send_syn_ack(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, double loss_prob) {
     struct temp_buffer temp_buff;
-    temp_buff.seq = NOT_AN_ACK;
+    temp_buff.seq = NOT_A_PKT;
     temp_buff.command = SYN_ACK;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.lap = NO_LAP;
     better_strcpy(temp_buff.payload, "SYN_ACK");
     if (flip_coin(loss_prob)) {
         if (sendto(sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) serv_addr, len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf("pacchetto syn ack mandato\n");
     } else {
@@ -83,8 +85,16 @@ void send_syn_ack(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, doub
     return;
 }
 
-void
-send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+//funzioni per la comunicazione tra 2 host con protocollo selective repeat
+
+//manda parte di lista al receiver usando protocollo selective repeat:
+//imposta riscontrato =0;
+//incrementa pkt_fly(pkt fly deve essere sempre compreso tra 0 e w-1)
+//salva la lista in finestra (per poi eventualmente ritrasmetterla)
+//aumenta byte_sent(byte sent deve essere <=dimensione lista)
+//inserisci le informazioni del pacchetto in una lista dinamica,
+// cosi il thread ritrasmettitore sa quanto aspettare e se ritrasmettere
+void send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     temp_buff.command = DATA;
     temp_buff.ack = NOT_AN_ACK;
     temp_buff.seq = shm->seq_to_send;
@@ -113,8 +123,8 @@ send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
 
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &(shm->addr.dest_addr), shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf("pacchetto inviato con ack %d seq %d command %d lap %d\n", temp_buff.ack, temp_buff.seq,
                temp_buff.command, temp_buff.lap);
@@ -127,7 +137,13 @@ send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     unlock_mtx(&(shm->mtx));
     return;
 }
-
+//manda parte di file al receiver usando protocollo selective repeat
+//imposta riscontrato =0;
+//incrementa pkt_fly(pkt fly deve essere sempre compreso tra 0 e w-1)
+//salva il file in finestra (per poi eventualmente ritrasmetterla)
+//aumenta byte_sent(byte sent deve essere <=dimensione lista)
+//inserisci le informazioni del pacchetto in una lista dinamica,
+// cosi il thread ritrasmettitore sa quanto aspettare e se ritrasmettere
 void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     ssize_t readed = 0;
     temp_buff.command = DATA;
@@ -160,8 +176,8 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     unlock_thread_on_a_condition(&(shm->list_not_empty));
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &(shm->addr.dest_addr), shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n" RESET, temp_buff.ack, temp_buff.seq,
                temp_buff.command, temp_buff.lap);
@@ -175,6 +191,13 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     return;
 }
 
+//manda messaggio(non list non file)al receiver usando protocollo selective repeat
+//imposta riscontrato =0;
+//incrementa pkt_fly(pkt fly deve essere sempre compreso tra 0 e w-1)
+//salva il messaggio in finestra (per poi eventualmente ritrasmetterla)
+//aumenta byte_sent(byte sent deve essere <=dimensione lista)
+//inserisci le informazioni del pacchetto in una lista dinamica,
+// cosi il thread ritrasmettitore sa quanto aspettare e se ritrasmettere
 void send_message_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm,char command,char*message) {
     temp_buff.command = command;
     temp_buff.ack = NOT_AN_ACK;
@@ -210,17 +233,17 @@ void send_message_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
     return;
 }
 
-
+//riceve un messaggio già ricevuto rimanda semplicemente l'ack del messaggio
 void rcv_msg_re_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    //già memorizzato in finestra
+    //il messaggio era già memorizzato in finestra,rinvia ack
     temp_buff.ack = temp_buff.seq;
     temp_buff.seq = NOT_A_PKT;
     better_strcpy(temp_buff.payload, "ACK");
     //lascia invariato il tipo di comando e il lap
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &temp_buff, MAXPKTSIZE, 0, (struct sockaddr *) &shm->addr.dest_addr, shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
                temp_buff.command, temp_buff.lap);
@@ -231,8 +254,8 @@ void rcv_msg_re_send_ack_command_in_window(struct temp_buffer temp_buff,struct s
     return;
 }
 
+//riceve parte di lista e invia il corrispondente ack
 void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    //ricevi parte di lista e invia ack
     struct temp_buffer ack_buff;
     if (shm->win_buf_rcv[temp_buff.seq].received == 0) {
         if ((shm->win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
@@ -252,8 +275,8 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     ack_buff.lap = temp_buff.lap;
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &ack_buff, MAXPKTSIZE, 0, (struct sockaddr *) &shm->addr.dest_addr, shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN "pacchetto inviato con ack %d seq %d command %d\n" RESET, ack_buff.ack, ack_buff.seq,
                ack_buff.command);
@@ -281,6 +304,8 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     return;
 }
 
+//riceve parte di file e invia il corrispondente ack
+//segna file in finestra,segna che è stato ricevuto e verifica se la finestra può essere traslata
 void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
     int written = 0;
@@ -289,7 +314,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             shm->win_buf_rcv[temp_buff.seq].lap = temp_buff.lap;
             shm->win_buf_rcv[temp_buff.seq].command = temp_buff.command;
             copy_buf2_in_buf1(shm->win_buf_rcv[temp_buff.seq].payload, temp_buff.payload,
-                              (MAXPKTSIZE - OVERHEAD));//è giusto copiarli tutti e eventualmente scriverne solo alcuni?
+                              (MAXPKTSIZE - OVERHEAD));
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
             handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
@@ -303,8 +328,8 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     ack_buff.lap = temp_buff.lap;
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &ack_buff, MAXPKTSIZE, 0, (struct sockaddr *) &(shm->addr.dest_addr), shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN"pacchetto inviato con ack %d seq %d command %d \n"RESET, ack_buff.ack, ack_buff.seq,
                ack_buff.command);
@@ -336,14 +361,15 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
     return;
 }
 
-//chiamata dopo aver ricevuto un messaggio per riscontrarlo segnarlo in finestra ricezione
+//riceve messaggio e manda ack del messaggio.
+//segna messaggio in finestra,segna che è stato ricevuto e verifica se la finestra può essere traslata
 void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
     if (shm->win_buf_rcv[temp_buff.seq].received == 0) {
         if ((shm->win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             shm-> win_buf_rcv[temp_buff.seq].lap = temp_buff.lap;
             shm->win_buf_rcv[temp_buff.seq].command = temp_buff.command;
-            better_strcpy(shm->win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);//meglio copybuf al posto di strcpy?
+            better_strcpy(shm->win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
             handle_error_with_exit("pacchetto vecchia finestra\n");
@@ -357,8 +383,8 @@ void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_
     ack_buff.lap = temp_buff.lap;
     if (flip_coin(shm->param.loss_prob)) {
         if (sendto(shm->addr.sockfd, &ack_buff, MAXPKTSIZE, 0, (struct sockaddr *) &(shm->addr.dest_addr), shm->addr.len) ==
-            -1) {//manda richiesta del client al server
-            handle_error_with_exit("error in sendto\n");//pkt num sequenza zero mandato
+            -1) {
+            handle_error_with_exit("error in sendto\n");
         }
         printf(CYAN"pacchetto inviato con ack %d seq %d command %d\n"RESET, ack_buff.ack, ack_buff.seq,
                ack_buff.command);
@@ -379,6 +405,8 @@ void rcv_msg_send_ack_command_in_window(struct temp_buffer temp_buff,struct shm_
     return;
 }
 
+//ricevi ack,segna quel messaggio come riscontrato e verifica se puoi traslare la finestra
+// diminuendo cosi pkt_fly
 void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == shm->win_buf_snd[temp_buff.ack].lap) {
@@ -388,13 +416,9 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
             return;
         }
         if (shm->win_buf_snd[temp_buff.ack].acked==0) {
-            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                 //  win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
-            //printf("seq %d\n", temp_buff.ack);
             if (shm->adaptive) {
                 adaptive_timer(shm, temp_buff.ack);
             }
-            //printf("timer %d\n", shm->param.timer_ms);
             shm-> win_buf_snd[temp_buff.ack].acked = 1;
             shm->win_buf_snd[temp_buff.ack].time.tv_nsec = 0;
             shm-> win_buf_snd[temp_buff.ack].time.tv_sec = 0;
@@ -411,8 +435,6 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
                         }
                     }
                     shm->win_buf_snd[shm->window_base_snd].acked = 2;//resetta quando scorri finestra
-                    //win_buf_snd[*window_base_snd].time.tv_nsec = 0;
-                    //win_buf_snd[*window_base_snd].time.tv_sec = 0;
                     shm->window_base_snd = ((shm->window_base_snd) + 1) % (2 * shm->param.window);//avanza la finestra
                     (shm->pkt_fly)--;
                 }
@@ -428,6 +450,9 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
     unlock_mtx(&(shm->mtx));
 }
 
+//ricevi ack di un pacchetto contentente parte di file.
+// Segna quel messaggio come riscontrato e verifica se puoi traslare la finestra
+// diminuendo cosi pkt_fly
 void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
@@ -437,13 +462,9 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             return;
         }
         if (shm->win_buf_snd[temp_buff.ack].acked == 0) {
-            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                   //win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
-            //printf("seq %d\n", temp_buff.ack);
             if (shm->adaptive) {
                 adaptive_timer(shm, temp_buff.ack);
             }
-            //printf("timer %d\n", shm->param.timer_ms);
             shm-> win_buf_snd[temp_buff.ack].acked = 1;
             shm->win_buf_snd[temp_buff.ack ].time.tv_nsec = 0;
             shm->win_buf_snd[temp_buff.ack].time.tv_sec = 0;
@@ -472,6 +493,9 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
     return;
 }
 
+//ricevi ack di un pacchetto contentente parte di lista.
+// Segna quel messaggio come riscontrato e verifica se puoi traslare la finestra
+// diminuendo cosi pkt_fly
 void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//ack di un messaggio contenente
     // parte di lista,tempbuff.command deve essere uguale a data
     lock_mtx(&(shm->mtx));
@@ -481,12 +505,9 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             return;
         }
         if (shm->win_buf_snd[temp_buff.ack].acked == 0) {
-            //printf("timer %d est %f dev %f sec %ld nsec %ld\n", shm->param.timer_ms, shm->est_RTT_ms, shm->dev_RTT_ms,
-                  // win_buf_snd[temp_buff.ack].time.tv_sec, win_buf_snd[temp_buff.ack].time.tv_nsec);
             if (shm->adaptive) {
                 adaptive_timer(shm, temp_buff.ack);
             }
-            //printf("timer %d\n", shm->param.timer_ms);
             shm->win_buf_snd[temp_buff.ack].acked = 1;
             shm->win_buf_snd[temp_buff.ack].time.tv_nsec = 0;
             shm->win_buf_snd[temp_buff.ack].time.tv_sec = 0;
