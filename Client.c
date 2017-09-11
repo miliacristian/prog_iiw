@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
-    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(kills all client)\n" RESET);
+    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(kills all clients)\n" RESET);
     for (;;) {//ciclo infinito che associa ad ogni comando che digita l'utente un processo che esegue il comando
 
         check_and_parse_command(command, filename);//inizializza command,filename e size
@@ -515,14 +515,12 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
             move_pointer(&path, path_len);
             better_strcpy(path, filename);
             path = path - path_len;
-            printf("%s\n", path);
             if (!check_if_file_exist(path)) {
-                printf("file not exist\n");
+                printf("file %s not exist\n",path);
                 continue;
             } else {
-                printf("file size is %d bytes,", get_file_size(path));
+                printf("file %s has size %d bytes,confirm upload [y/n]\n",filename, get_file_size(path));
                 while (1) {
-                    printf("confirm upload file %s [y/n]\n", filename);
                     if (fgets(conf_upload, MAXLINE, stdin) == NULL) {
                         handle_error_with_exit("error in fgets\n");
                     }
@@ -561,7 +559,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                 client_list_job();//i figli non ritornano mai
             }
         }
-        else if(strncmp(command,"local list",10) == 0){//comando my_list
+        else if(strncmp(command,"local list",10) == 0){//comando local_list
             my_list=make_list(dir_client);
             printf(GREEN "%s" RESET,my_list);
             free(my_list);

@@ -24,7 +24,6 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
             if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina thread e trasmissione
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel close_connection_put\n");
                 printf(RED "il server ha troppe copie del file %s\n"RESET,shm->filename);
                 pthread_exit(NULL);
             }
@@ -54,11 +53,9 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il server  non è in ascolto\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel close connection\n");
             printf(RED "il server ha troppe copie del file %s\n"RESET,shm->filename);
             pthread_exit(NULL);
         }
@@ -85,7 +82,6 @@ int close_put_send_file(struct shm_sel_repeat *shm){
                 alarm(0);
                 printf(GREEN"FIN_ACK ricevuto\n"RESET);
                 pthread_cancel(shm->tid);
-                printf("thread cancel close_put_send_file\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
@@ -126,7 +122,6 @@ int close_put_send_file(struct shm_sel_repeat *shm){
             printf(BLUE "FIN_ACK non ricevuto\n"RESET);
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel close_put_send_file\n");
             pthread_exit(NULL);
         }
     }
@@ -189,7 +184,6 @@ int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selec
             printf("il server non è in ascolto send_put_file\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel send_put_file\n");
             pthread_exit(NULL);
         }
     }
@@ -264,7 +258,6 @@ void *put_client_job(void*arg){
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel put_client_job\n");
             pthread_exit(NULL);
         }
     }
@@ -273,7 +266,6 @@ void *put_client_job(void*arg){
 
 //thread ritrasmettitore
 void *put_client_rtx_job(void*arg){
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -362,12 +354,10 @@ void put_client(struct shm_sel_repeat *shm){//crea i 2 thread:
     if(pthread_create(&tid_rtx,NULL,put_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread put_client_rtx\n");
     }
-    printf("%lu tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,put_client_job,shm)!=0){
         handle_error_with_exit("error in create thread put_client\n");
     }
-    printf("%lu tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){

@@ -543,7 +543,6 @@ int get_file_size(char*path){//ritorna la dimensione di un file dato un path
     if(stat(path,&st)==-1){
         handle_error_with_exit("error get file_status\n");
     }
-    printf("size %ld\n",st.st_size);
     return (int)st.st_size;
 }
 

@@ -18,7 +18,6 @@ int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm
 //dopo aver ricevuto start inizia a mandare il file
 int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("send_file\n");
-    int ack_dup = 0;
     alarm(TIMEOUT);
     while (1) {
         if (shm->pkt_fly < shm->param.window && (shm->byte_sent) < shm->dimension) {

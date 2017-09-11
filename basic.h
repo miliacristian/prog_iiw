@@ -33,7 +33,11 @@
 #define MAXPKTSIZE 1468//1468==no packet fragmentation
 #define MAXLINE 1024
 #define BUFF_RCV_SIZE (208*1024)//buffer ricezione socket 208*1024 max buff_size_without root
+#define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
+#define PATH_LEN 256//massima lunghezza del path
+
 #define SERVER_PORT 5195//porta del server
+#define IP "127.0.0.1"
 
 #define NOT_AN_ACK (-5)//pacchetto non è un ack
 #define NOT_A_PKT (-5) //pacchetto non è un pacchetto ma è un ack
@@ -52,7 +56,7 @@
 
 #define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
 #define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
-#define IP "127.0.0.1"
+
 
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
@@ -65,9 +69,8 @@
 #define STR_VALUE(val) #val
 #define STR(name) STR_VALUE(name)
 
-#define PATH_LEN 256//massima lunghezza del path
 #define MD5_LEN 32//lunghezza md5
-#define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
+
 
 #define NUM_FREE_PROCESS 1//numero di processi server che devono essere sempre disponibili per una richiesta
 #define MAX_PROC_JOB 4//numero di richieste che un processo server può eseguire prima di morire

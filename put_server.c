@@ -28,7 +28,6 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                 printf(GREEN "FIN ricevuto\n" RESET);
                 check_md5(shm->filename, shm->md5_sent);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait_for_fin_put\n");
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
@@ -60,7 +59,6 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
             alarm(0);
             check_md5(shm->filename, shm->md5_sent);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait_for_fin_put\n");
             pthread_exit(NULL);
         }
     }
@@ -92,7 +90,6 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel rcv_put_file\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
@@ -137,14 +134,12 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             great_alarm_serv = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel rcv_put_file\n");
             pthread_exit(NULL);
         }
     }
 }
 //thread ritrasmettitore
 void *put_server_rtx_job(void *arg) {
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -240,12 +235,10 @@ void put_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
     if (pthread_create(&tid_rtx, NULL, put_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread put_server_rtx\n");
     }
-    printf("%lu tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     if (pthread_create(&tid_snd, NULL, put_server_job, shm) != 0) {
         handle_error_with_exit("error in create thread put_server\n");
     }
-    printf("%lu tid_snd\n", tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {

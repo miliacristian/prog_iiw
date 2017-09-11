@@ -12,12 +12,10 @@ int close_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
     pthread_cancel(shm->tid);
-    printf("thread cancel close list\n");
     pthread_exit(NULL);
 }
 //messaggio start ricevuto,thread pronto alla trasmissione
 int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
-    printf("send_list\n");
     char *temp_list;//creare la lista e poi inviarla in parti
     shm->list = files_in_dir(dir_server, shm->dimension);
     temp_list = shm->list;
@@ -105,7 +103,6 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
             if (temp_buff.command == SYN || temp_buff.command == SYN_ACK) {
                 continue;//ignora pacchetto
             } else {
-                printf("alarm stoppato\n");
                 alarm(0);
             }
             if (temp_buff.command == FIN) {//se ricevi fin manda fin_ack e chiudi
@@ -113,7 +110,6 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                              temp_buff, "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait_for_start_list\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.command == START) {//se ricevi start vai in send_list
@@ -257,12 +253,10 @@ void list_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
     if(pthread_create(&tid_rtx,NULL,list_server_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread list_server_rtx\n");
     }
-    printf("%lu tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,list_server_job,shm)!=0){
         handle_error_with_exit("error in create thread list_server\n");
     }
-    printf("%lu tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){
