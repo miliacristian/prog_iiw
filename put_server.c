@@ -5,7 +5,7 @@
 #include "communication.h"
 #include "put_server.h"
 #include "dynamic_list.h"
-
+//dopo aver ricevuto tutto il file mettiti in ricezione del fin,manda fin_ack e termina i 2 thread
 int wait_for_fin_put(struct shm_sel_repeat *shm) {
     printf("wait for fin\n");
     struct temp_buffer temp_buff;
@@ -67,7 +67,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
 }
 
 int rcv_put_file(struct shm_sel_repeat *shm) {
-    //in questo stato posso ricevere put(fuori finestra),ack start(in finestra),parti di file
+    //dopo aver ricevuto messaggio di put manda messaggio di start e si mette in ricezione dello start
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
     if (shm->fd != -1) {
@@ -112,7 +112,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             } else if (seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se non è ack ed è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_data_send_ack_in_window(temp_buff, shm);
-                    if ((shm->byte_written) == (shm->dimension)) {
+                    if ((shm->byte_written) == (shm->dimension)) {//dopo aver ricevuto tutto il file aspetta il fin
                         wait_for_fin_put(shm);
                         return shm->byte_written;
                     }

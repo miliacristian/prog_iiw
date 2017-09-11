@@ -66,9 +66,8 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
         }
     }
 }
-
-int
-wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+//è stata ricevuta tutta la lista aspetta il fin dal server per chiudere la trasmissione
+int wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("wait for fin list\n");
     alarm(TIMEOUT);//chiusura temporizzata
     errno = 0;
@@ -159,7 +158,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 //se non è un ack e è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_list_send_ack_in_window(temp_buff, shm);
-                    if (shm->byte_written == shm->dimension) {
+                    if (shm->byte_written == shm->dimension) {//dopo aver ricevuto tutta la lista aspetta il fin
                         wait_for_fin_list(temp_buff,shm);
                         return shm->byte_written;
                     }

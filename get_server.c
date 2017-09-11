@@ -4,7 +4,7 @@
 #include "get_server.h"
 #include "communication.h"
 #include "dynamic_list.h"
-
+//è stato riscontrato tutto manda il fin e termina trasmissione
 int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
     //manda fin
@@ -15,7 +15,7 @@ int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     printf("thread cancel close_get_send_file\n");
     pthread_exit(NULL);
 }
-
+//dopo aver ricevuto start inizia a mandare il file
 int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     printf("send_file\n");
     int ack_dup = 0;
@@ -39,6 +39,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                         rcv_ack_file_in_window(temp_buff, shm);
                         printf("byte readed %d\n", shm->byte_readed);
                         if (shm->byte_readed == shm->dimension) {
+                            //se è stato riscontrato tutto vai nello stato di chiusura connessione
                             close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
                             printf("thread cancel send_file\n");
@@ -82,7 +83,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//dopo aver ricevuto il comando get manda dimensione del file e aspetta start
 int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     char *path, dim_string[11];
     path = generate_full_pathname(shm->filename, dir_server);

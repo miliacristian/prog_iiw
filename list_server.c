@@ -84,7 +84,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         }
     }
 }
-
+//dopo aver ricevuto messaggio list manda la dimensione della lista e aspetta start
 int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff) {
     char dim[11];
     shm->dimension = count_char_dir(dir_server);

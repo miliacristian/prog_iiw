@@ -63,7 +63,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
         }
     }
 }
-
+//è stato ricevuto tutto il file aspetta il fin per chiudere la connessione
 int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     char *path;
     printf("wait for fin\n");
@@ -157,7 +157,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 //se nonè ack ed è in finestra
                 if (temp_buff.command == DATA) {
                     rcv_data_send_ack_in_window(temp_buff, shm);
-                    if (shm->byte_written == shm->dimension) {
+                    if (shm->byte_written == shm->dimension) {//dopo aver ricevuto tutto il file aspetta il fin
                         wait_for_fin_get(temp_buff, shm);
                         printf("return rcv file 1\n");
                         return shm->byte_written;
