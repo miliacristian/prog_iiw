@@ -401,6 +401,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
 //segna messaggio in finestra,segna che è stato ricevuto e verifica se la finestra può essere traslata
 void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     struct temp_buffer ack_buff;
+    int written;
     if (shm->win_buf_rcv[temp_buff.seq].received == 0) {
         if ((shm->win_buf_rcv[temp_buff.seq].lap) == (temp_buff.lap - 1)) {
             shm-> win_buf_rcv[temp_buff.seq].lap = temp_buff.lap;
@@ -430,7 +431,19 @@ void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repe
         // scorro la finestra fino al primo ancora non ricevuto
         while (shm->win_buf_rcv[shm->window_base_rcv].received == 1) {
             if (shm->win_buf_rcv[shm->window_base_rcv].command == DATA) {
-                handle_error_with_exit("ricevuto dati senza aumentare byte_written rcv_message_send_ack\n");
+                if (shm->dimension - shm->byte_written >= (int)(MAXPKTSIZE - OVERHEAD)) {
+                    written = (int) writen(shm->fd, shm->win_buf_rcv[shm->window_base_rcv].payload, (MAXPKTSIZE - OVERHEAD));
+                    if (written < (int)(MAXPKTSIZE - OVERHEAD)) {
+                        handle_error_with_exit("error in write\n");
+                    }
+                    shm->byte_written += (MAXPKTSIZE - OVERHEAD);
+                } else {
+                    written = (int) writen(shm->fd, shm->win_buf_rcv[shm->window_base_rcv].payload, (size_t) shm->dimension - shm->byte_written);
+                    if (written < shm->dimension - shm->byte_written) {
+                        handle_error_with_exit("error in write\n");
+                    }
+                    shm->byte_written += shm->dimension - shm->byte_written;
+                }
             }
             shm->win_buf_rcv[shm->window_base_rcv].received = 0;//segna pacchetto come non ricevuto
             shm->window_base_rcv = ((shm->window_base_rcv) + 1) % (2 * shm->param.window);//avanza la finestra con modulo di 2W
@@ -445,7 +458,6 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
     lock_mtx(&(shm->mtx));
     if (temp_buff.lap == shm->win_buf_snd[temp_buff.ack].lap) {
         if(shm->win_buf_snd[temp_buff.ack].acked==1){
-            handle_error_with_exit("acked dup finestra\n");
             unlock_mtx(&(shm->mtx));
             return;
         }
@@ -475,11 +487,11 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
             }
         }
         else {
-            handle_error_with_exit("error in rcv ack window\n");
+            //handle_error_with_exit("error in rcv ack window\n");
         }
     }
     else {
-        handle_error_with_exit("ack vecchia finestra\n");
+        //handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
 }
@@ -517,10 +529,10 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                 }
             }
         } else {
-            handle_error_with_exit("error rcv ack file in window\n");
+            //handle_error_with_exit("error rcv ack file in window\n");
         }
     } else {
-        handle_error_with_exit("ack vecchia finestra\n");
+        //handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
     return;
@@ -561,11 +573,11 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             }
         }
         else {
-            handle_error_with_exit("error rcv ack list\n");
+            //handle_error_with_exit("error rcv ack list\n");
         }
     }
     else {
-        handle_error_with_exit("ack vecchia finestra\n");
+        //handle_error_with_exit("ack vecchia finestra\n");
     }
     unlock_mtx(&(shm->mtx));
     return;
