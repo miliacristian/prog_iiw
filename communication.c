@@ -483,7 +483,6 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
     }
     unlock_mtx(&(shm->mtx));
 }
-
 //ricevi ack di un pacchetto contentente parte di file.
 // Segna quel messaggio come riscontrato e verifica se puoi traslare la finestra
 // diminuendo cosi pkt_fly
