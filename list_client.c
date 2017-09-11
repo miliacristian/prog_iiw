@@ -86,7 +86,6 @@ int wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 printf(GREEN "FIN ricevuto\n" RESET);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait_for_fin_list\n");
                 return shm->byte_written;
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
@@ -117,7 +116,6 @@ int wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait_for_fin_list\n");
             return shm->byte_written;
         }
     }
@@ -127,7 +125,6 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     send_message_in_window(temp_buff,shm, START,"START" );
     printf("messaggio start inviato\n");
-    printf("rcv list\n");
     errno = 0;
     while (1) {
         if (recvfrom(shm->addr.sockfd, &temp_buff,MAXPKTSIZE, 0,
@@ -182,7 +179,6 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel rcv_list\n");
             pthread_exit(NULL);
         }
     }
@@ -212,7 +208,6 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
             else if (temp_buff.command == DIMENSION) {//se ricevi dimensione del file vai in rcv_list
                 rcv_msg_send_ack_in_window(temp_buff, shm);
                 shm->dimension = parse_integer(temp_buff.payload);
-                printf("dimensione ricevuta %d\n", shm->dimension);
                 shm->list = malloc(sizeof(char) * shm->dimension);
                 if (shm->list == NULL) {
                     handle_error_with_exit("error in malloc\n");
@@ -253,7 +248,6 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait for list dimension\n");
             pthread_exit(NULL);
         }
     }
@@ -267,7 +261,6 @@ void *list_client_job(void *arg) {
 }
 //thread ritrasmettitore
 void *list_client_rtx_job(void *arg) {
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -357,12 +350,10 @@ void list_client(struct shm_sel_repeat *shm) {//crea i 2 thread:
     if(pthread_create(&tid_rtx,NULL,list_client_rtx_job,shm)!=0){
         handle_error_with_exit("error in create thread list_client_rtx\n");
     }
-    printf("%lu tid_rtx\n",tid_rtx);
     shm->tid=tid_rtx;
     if(pthread_create(&tid_snd,NULL,list_client_job,shm)!=0){
         handle_error_with_exit("error in create thread list_client\n");
     }
-    printf("%lu tid_snd\n",tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if(pthread_join(tid_snd,NULL)!=0){

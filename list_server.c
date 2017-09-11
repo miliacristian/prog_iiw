@@ -77,7 +77,6 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
             printf("il client non è in ascolto send file\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel send list\n");
             pthread_exit(NULL);
         }
     }
@@ -149,14 +148,12 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
             printf("il client non è in ascolto wait_for_start_list\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait for start list\n");
             pthread_exit(NULL);
         }
     }
 }
 //thread ritrasmettitore
 void *list_server_rtx_job(void *arg) {
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;

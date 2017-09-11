@@ -10,14 +10,11 @@ int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm
     //manda fin
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
-    printf("close_get_send_file\n");
     pthread_cancel(shm->tid);
-    printf("thread cancel close_get_send_file\n");
     pthread_exit(NULL);
 }
 //dopo aver ricevuto start inizia a mandare il file
 int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    printf("send_file\n");
     alarm(TIMEOUT);
     while (1) {
         if (shm->pkt_fly < shm->param.window && (shm->byte_sent) < shm->dimension) {
@@ -41,7 +38,6 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                             //se è stato riscontrato tutto vai nello stato di chiusura connessione
                             close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
-                            printf("thread cancel send_file\n");
                             pthread_exit(NULL);
                         }
                     } else {
@@ -50,7 +46,6 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                             //se tutti i byte sono stati riscontrati vai in chiusura
                             close_get_send_file(temp_buff, shm);
                             pthread_cancel(shm->tid);
-                            printf("thread cancel send_file\n");
                             pthread_exit(NULL);
                         }
                     }
@@ -77,7 +72,6 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             printf("il client non è in ascolto send file\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel send_file\n");
             pthread_exit(NULL);
         }
     }
@@ -123,7 +117,6 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait_for_start_get\n");
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {//se ricevi start vai nello stato di send_file
                 printf("messaggio start ricevuto\n");
@@ -161,7 +154,6 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
             printf("il client non è in ascolto wait_for_start_get\n");
             alarm(0);
             pthread_cancel(shm->tid);
-            printf("thread cancel wait_for_start_get\n");
             pthread_exit(NULL);
         }
     }
@@ -175,7 +167,6 @@ void *get_server_job(void *arg) {
 }
 //thread ritrasmettitore
 void *get_server_rtx_job(void *arg) {
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -265,13 +256,11 @@ void get_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
     if (pthread_create(&tid_rtx, NULL, get_server_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_rtx\n");
     }
-    printf("%lu tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_server_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_\n");
     }
-    printf("%lu tid_snd\n", tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {
