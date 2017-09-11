@@ -53,7 +53,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il client non sta mandando più nulla o errore interno\n");
+            printf("il client non sta mandando più nulla\n");
             great_alarm_serv = 0;
             alarm(0);
             check_md5(shm->filename, shm->md5_sent);
@@ -129,7 +129,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il client non sta mandando più nulla o errore interno\n");
+            printf("il client non sta mandando più nulla\n");
             great_alarm_serv = 0;
             alarm(0);
             pthread_cancel(shm->tid);

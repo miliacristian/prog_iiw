@@ -430,7 +430,7 @@ void *thread_job(void *arg) {//thread che esegue waitpid dei processi del client
     block_signal(SIGALRM);
     while (1) {
         while ((pid = waitpid(-1, NULL,WNOHANG)) > 0) {
-            printf("pool handler libera risorse del processo %d\n", pid);
+            //printf("thread  libera risorse del processo %d\n", pid);
         }
     }
     return NULL;

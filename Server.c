@@ -200,7 +200,7 @@ void child_job() {//lavoro che deve svolgere il processo.
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
         if(mtx_prefork->free_process>=NUM_FREE_PROCESS){
-            printf("troppi processi liberi,suicidio del processo %d\n",getpid());
+            //printf("troppi processi liberi,suicidio del processo %d\n",getpid());
             unlock_sem(&(mtx_prefork->sem));
             exit(EXIT_SUCCESS);
         }

@@ -54,7 +54,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il server non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
@@ -172,7 +172,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il server non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
@@ -241,7 +241,7 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
-            printf("il server non sta mandando più nulla o errore interno\n");
+            printf("il server non sta mandando più nulla\n");
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
