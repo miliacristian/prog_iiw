@@ -14,19 +14,19 @@ void print_rcv_message(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
-void print_msg_sended(struct temp_buffer temp_buff){
+void print_msg_sent(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
-void print_msg_resended(struct temp_buffer temp_buff){
+void print_msg_resent(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
-void print_msg_sended_and_lost(struct temp_buffer temp_buff){
+void print_msg_sent_and_lost(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
-void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
+void print_msg_resent_and_lost(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
@@ -37,22 +37,22 @@ void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
            temp_buff.command, temp_buff.lap);
     return;
 }
-void print_msg_sended(struct temp_buffer temp_buff){
+void print_msg_sent(struct temp_buffer temp_buff){
     printf(CYAN"pacchetto inviato con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
            temp_buff.command, temp_buff.lap);
     return;
 }
-void print_msg_resended(struct temp_buffer temp_buff){
+void print_msg_resent(struct temp_buffer temp_buff){
     printf(YELLOW"pacchetto ritrasmesso con ack %d seq %d command %d lap %d\n"RESET, temp_buff.ack, temp_buff.seq,
            temp_buff.command, temp_buff.lap);
     return;
 }
-void print_msg_sended_and_lost(struct temp_buffer temp_buff){
+void print_msg_sent_and_lost(struct temp_buffer temp_buff){
     printf(BLUE"pacchetto con ack %d, seq %d command %d lap %d perso\n"RESET, temp_buff.ack, temp_buff.seq,
            temp_buff.command, temp_buff.lap);
     return;
 }
-void print_msg_resendend_and_lost(struct temp_buffer temp_buff){
+void print_msg_resent_and_lost(struct temp_buffer temp_buff){
     printf(YELLOW"pacchetto ritrasmesso con ack %d, seq %d command %d lap %d perso\n" RESET, temp_buff.ack,
            temp_buff.seq, temp_buff.command, temp_buff.lap);
     return;
@@ -74,9 +74,9 @@ void send_message(int sockfd, struct sockaddr_in *addr, socklen_t len, struct te
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     return;
 }
@@ -87,9 +87,9 @@ void resend_message(int sockfd, struct temp_buffer *temp_buff, struct sockaddr_i
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_resended(*temp_buff);
+        print_msg_resent(*temp_buff);
     } else {
-       print_msg_resendend_and_lost(*temp_buff);
+       print_msg_resent_and_lost(*temp_buff);
     }
     return;
 }
@@ -174,9 +174,9 @@ void send_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     shm->seq_to_send = ((shm->seq_to_send) + 1) % (2 * shm->param.window);
     (shm->pkt_fly)++;
@@ -225,9 +225,9 @@ void send_data_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     shm->seq_to_send = ((shm->seq_to_send) + 1) % (2 * shm->param.window);
     (shm->pkt_fly)++;
@@ -265,9 +265,9 @@ void send_message_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     shm->seq_to_send = ((shm->seq_to_send) + 1) % (2 *shm->param.window);
     (shm->pkt_fly)++;
@@ -287,9 +287,9 @@ void rcv_msg_re_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_r
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     return;
 }
@@ -318,9 +318,9 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
@@ -369,9 +369,9 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
@@ -422,9 +422,9 @@ void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repe
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sended(temp_buff);
+        print_msg_sent(temp_buff);
     } else {
-        print_msg_sended_and_lost(temp_buff);
+        print_msg_sent_and_lost(temp_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
