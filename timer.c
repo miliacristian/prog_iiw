@@ -35,7 +35,6 @@ int calculate_sample_RTT(struct timespec tx_time){//calcola il sample_rtt
     }
     time_ms_cur=(time_current.tv_nsec/1000000)+(time_current.tv_sec*1000);
     time_ms_tx=(tx_time.tv_nsec/1000000)+(tx_time.tv_sec*1000);
-    printf("time_cur %ld time_tx %ld\n", time_ms_cur, time_ms_tx);
     sample_RTT =time_ms_cur - time_ms_tx;
     if ( sample_RTT == 0){
         return 1;
@@ -86,13 +85,12 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){//dopo aver ricevuto l'
     if(shm==NULL || seq<0 || seq>(shm->param.window*2-1)){
         handle_error_with_exit("error in adaptive_timer\n");
     }
-    //printf("timer in finestra sec %ld nsec %ld acked %d\n", (shm->win_buf_snd[seq].time).tv_sec,(shm->win_buf_snd[seq].time).tv_nsec, (shm->win_buf_snd[seq].acked));
     sample= calculate_sample_RTT((shm->win_buf_snd[seq].time));
-    //printf("sample %d\n", sample);
+    printf("sample %d\n", sample);
     shm->est_RTT_ms = calculate_est_RTT(shm->est_RTT_ms, sample);
     shm->dev_RTT_ms=calculate_dev_RTT(shm->est_RTT_ms,sample,shm->dev_RTT_ms);
     timeout = calculate_timeout(shm->est_RTT_ms,shm->dev_RTT_ms);
-    //printf("timeout %d\n", timeout);
+    printf("timeout %d\n", timeout);
     shm->param.timer_ms = timeout;
     return;
 }

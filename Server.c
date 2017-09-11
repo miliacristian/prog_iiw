@@ -18,7 +18,6 @@ void timeout_handler_serv(int sig, siginfo_t *si, void *uc){//gestione del segna
     (void)sig;
     (void)si;
     (void)uc;
-    printf("segnale ricevuto dal thread %lu\n",pthread_self());
     great_alarm_serv=1;
 }
 
@@ -256,7 +255,7 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
         lock_sem(&(mtx_prefork->sem));
         if(mtx_prefork->free_process<NUM_FREE_PROCESS){
             left_process=NUM_FREE_PROCESS-mtx_prefork->free_process;
-            printf("thread crea %d processi\n",left_process);
+            //printf("thread crea %d processi\n",left_process);
             unlock_sem(&(mtx_prefork->sem));
             create_pool(left_process);//crea i processi rimanenti per arrivare a NUM_FREE_PROCESS
         }
@@ -264,7 +263,7 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
             unlock_sem(&(mtx_prefork->sem));
         }
         while((pid=waitpid(-1,NULL,WNOHANG))>0) {
-            printf("thread libera risorse del processo %d\n", pid);
+            //printf("thread libera risorse del processo %d\n", pid);
         }
     }
     return NULL;

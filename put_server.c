@@ -7,7 +7,6 @@
 #include "dynamic_list.h"
 //dopo aver ricevuto tutto il file mettiti in ricezione del fin,manda fin_ack e termina i 2 thread
 int wait_for_fin_put(struct shm_sel_repeat *shm) {
-    printf("wait for fin\n");
     struct temp_buffer temp_buff;
     alarm(2);//chiusura temporizzata
     errno = 0;
@@ -36,7 +35,7 @@ int wait_for_fin_put(struct shm_sel_repeat *shm) {
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait_for_fin_put ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
@@ -99,7 +98,7 @@ int rcv_put_file(struct shm_sel_repeat *shm) {
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("rcv put file ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
