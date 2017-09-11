@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
-    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit\n" RESET);
+    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(kills all client)\n" RESET);
     for (;;) {//ciclo infinito che associa ad ogni comando che digita l'utente un processo che esegue il comando
 
         check_and_parse_command(command, filename);//inizializza command,filename e size
@@ -567,7 +567,9 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
             free(my_list);
         }
         else if(strncmp(command,"exit",4) == 0){
-            exit(EXIT_SUCCESS);
+            if(kill(0,SIGKILL)!=0){
+                printf("errore in kill,segnale SIGKILL non inviato\n");
+            }
         }
         else{
             handle_error_with_exit("comando errato\n");
