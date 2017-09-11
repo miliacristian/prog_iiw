@@ -8,7 +8,6 @@
 
 //dopo aver ricevuto messaggio di errore manda fin e aspetta fin_ack cosi puoi chiudere la trasmissione
 int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
-    printf("close_connection_list\n");
     send_message_in_window(temp_buff,shm, FIN,"FIN");//manda messaggio di fin
     alarm(TIMEOUT);
     errno = 0;
@@ -26,7 +25,6 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
                 alarm(0);
                 pthread_cancel(shm->tid);
                 printf(RED "list is empty\n" RESET);
-                printf("thread cancel close_connection_list\n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
@@ -38,7 +36,7 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
                         rcv_ack_in_window(temp_buff, shm);
                     }
                 } else {
-                    printf("close_connection_list ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -61,14 +59,13 @@ int close_connection_list(struct temp_buffer temp_buff, struct shm_sel_repeat *s
             alarm(0);
             pthread_cancel(shm->tid);
             printf(RED "list is empty\n" RESET);
-            printf("thread cancel close_connection_list\n");
+
             pthread_exit(NULL);
         }
     }
 }
 //è stata ricevuta tutta la lista aspetta il fin dal server per chiudere la trasmissione
 int wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    printf("wait for fin list\n");
     alarm(TIMEOUT);//chiusura temporizzata
     errno = 0;
     while (1) {
@@ -94,7 +91,7 @@ int wait_for_fin_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait_for_fin_list ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -144,7 +141,7 @@ int rcv_list(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("rcv_list ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -231,7 +228,7 @@ int wait_for_list_dimension(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait_for_list_dim ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             }  else {

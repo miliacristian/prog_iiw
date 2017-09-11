@@ -6,7 +6,6 @@
 #include "dynamic_list.h"
 //entra qui dopo aver ricevuto il messaggio di errore
 int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
-    printf("close connection\n");
     send_message_in_window(temp_buff,
                            shm, FIN, "FIN");//manda messaggio di fin
     alarm(TIMEOUT);
@@ -37,7 +36,7 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
                     }
                 }
                 else {
-                    printf("close connect put ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             }  else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -64,7 +63,6 @@ int close_connection_put(struct temp_buffer temp_buff,struct shm_sel_repeat *shm
 //entra qui quando hai riscontrato tutti i pacchetti
 int close_put_send_file(struct shm_sel_repeat *shm){
     //in questo stato ho ricevuto tutti gli ack (compreso l'ack della put),posso ricevere ack duplicati,FIN_ACK,start(fuori finestra)
-    printf("close_put_send_file\n");
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);
     send_message_in_window(temp_buff, shm, FIN, "FIN");
@@ -98,7 +96,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
                     }
                 }
                 else {
-                    printf("close_put_send_file ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             }
@@ -129,7 +127,6 @@ int close_put_send_file(struct shm_sel_repeat *shm){
 int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selective repeat,
 // quando riesce a riscontrare tutto va nello stato di chiusura
     struct temp_buffer temp_buff;
-    printf("send_put_file\n");
     alarm(TIMEOUT);
     while (1) {
         //finquando pkt_fly <W e byte_sent <dimensione del file puoi mandare  un pacchetto file
@@ -162,7 +159,7 @@ int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selec
                     }
                 }
                 else {
-                    printf("send_put_file ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             }
@@ -238,7 +235,7 @@ void *put_client_job(void*arg){
                     rcv_ack_in_window(temp_buff, shm);
                 }
                 else {
-                    printf("put_client_job ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else {

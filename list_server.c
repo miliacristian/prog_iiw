@@ -55,7 +55,7 @@ int send_list( struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                         }
                     }
                 } else {
-                    printf("send_list ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -126,7 +126,7 @@ int wait_for_start_list(struct shm_sel_repeat *shm, struct temp_buffer temp_buff
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait_for_start_list ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
