@@ -5,7 +5,7 @@ char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
     if(filename==NULL || md5_sum==NULL){
         handle_error_with_exit("error in calc md5\n");
     }
-    printf("making md5...\n");
+    //printf("making md5...\n");
 #define MD5SUM_CMD_FMT "md5sum %." STR(PATH_LEN) "s 2>/dev/null"
     char cmd[PATH_LEN + sizeof (MD5SUM_CMD_FMT)];
     sprintf(cmd, MD5SUM_CMD_FMT, filename);
@@ -22,20 +22,20 @@ char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
 }
 void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono uguali
     char md5[MD5_LEN + 1];
-    printf("checking md5...\n");
+    //printf("checking md5...\n");
     if(filename==NULL || md5_to_check==NULL){
         handle_error_with_exit("error in check md5\n");
     }
     if (!calc_file_MD5(filename, md5)) {
         handle_error_with_exit("error in calculate md5\n");
     }
-    printf("md5 del file ricevuto %s\n", md5);
-    printf("md5 ricevuto %s\n",md5_to_check);
+    //printf("md5 del file ricevuto %s\n", md5);
+    //printf("md5 ricevuto %s\n",md5_to_check);
     if (strcmp(md5_to_check, md5) != 0) {
-        printf(RED "file corrupted\n" RESET);
+        printf(RED "file %s corrupted\n"RESET,filename);
     }
     else {
-        printf(GREEN "file correctly received\n" RESET);
+        printf(GREEN "file %s correctly received\n"RESET,filename);
     }
     return;
 }
@@ -246,7 +246,7 @@ void initialize_cond(pthread_cond_t*cond){//inizializza variabile condizione
         handle_error_with_exit("error in initialize cond\n");
     }
 }
-/*void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
+void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
     if(cond==NULL){
         handle_error_with_exit("error in destroy_cond cond is NULL\n");
     }
@@ -254,7 +254,7 @@ void initialize_cond(pthread_cond_t*cond){//inizializza variabile condizione
         handle_error_with_exit("error in destroy cond\n");
     }
     return;
-}*/
+}
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){//il thread chiamante aspetta che la condizione diventi vera
     if(mtx==NULL){
         handle_error_with_exit("error in wait condition mtx is NULL\n");

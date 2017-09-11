@@ -17,7 +17,6 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler d
     (void)sig;
     (void)si;
     (void)uc;
-    printf("segnale ricevuto dal thread %lu\n",pthread_self());
     great_alarm_client=1;
     return;
 }
@@ -346,7 +345,6 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
 void client_list_job() {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando list
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
-    printf("client list job\n");
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -370,7 +368,6 @@ void client_list_job() {//inizializza socket ricevi indirizzo del processo serve
 }
 
 void client_get_job(char *filename) {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando get
-    printf("client get job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     if(filename==NULL){
@@ -400,7 +397,6 @@ void client_get_job(char *filename) {//inizializza socket ricevi indirizzo del p
 }
 
 void client_put_job(char *filename,int dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
-    printf("client put_job\n");
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     if(filename==NULL){
@@ -529,7 +525,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                         continue;
                     } else if (strncmp(conf_upload, "y", 1) == 0) {
 
-                        printf("confirm\n");
+                        //printf("confirm\n");
                         if ((pid = fork()) == -1) {
                             handle_error_with_exit("error in fork\n");
                         }
@@ -538,7 +534,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                         }
                         break;
                     } else if (strncmp(conf_upload, "n", 1) == 0) {
-                        printf("not confirm\n");
+                        //printf("not confirm\n");
                         break;//esci e riscansiona l'input
                     }
                 }

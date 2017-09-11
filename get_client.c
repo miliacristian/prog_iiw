@@ -33,7 +33,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
                         rcv_ack_in_window(temp_buff, shm);
                     }
                 } else {
-                    printf("close_connect_get ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -92,7 +92,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait for fin get ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -140,7 +140,7 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("rcv_get_file ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {
@@ -153,7 +153,6 @@ int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
                     rcv_data_send_ack_in_window(temp_buff, shm);
                     if (shm->byte_written == shm->dimension) {//dopo aver ricevuto tutto il file aspetta il fin
                         wait_for_fin_get(temp_buff, shm);
-                        printf("return rcv file 1\n");
                         return shm->byte_written;
                     }
                 } else {
@@ -238,7 +237,7 @@ int wait_for_get_dimension(struct temp_buffer temp_buff, struct shm_sel_repeat *
                     }
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait get_dim ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else {
@@ -270,7 +269,6 @@ void *get_client_job(void *arg) {
 }
 //thread ritrasmettitore
 void *get_client_rtx_job(void *arg) {
-    printf("thread rtx creato\n");
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
     struct node*node=NULL;
@@ -360,13 +358,11 @@ void get_client(struct shm_sel_repeat *shm) {//crea i 2 thread:
     if (pthread_create(&tid_rtx, NULL, get_client_rtx_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_client_rtx\n");
     }
-    printf("%lu tid_rtx\n", tid_rtx);
     shm->tid = tid_rtx;
     //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_client_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_client\n");
     }
-    printf("%lu tid_snd\n", tid_snd);
     block_signal(SIGALRM);//il thread principale non viene interrotto dal segnale di timeout
     //il thread principale aspetta che i 2 thread finiscano i compiti
     if (pthread_join(tid_snd, NULL) != 0) {

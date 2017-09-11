@@ -33,7 +33,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff, shm);
-                        printf("byte readed %d\n", shm->byte_readed);
+                        //printf("byte readed %d\n", shm->byte_readed);
                         if (shm->byte_readed == shm->dimension) {
                             //se è stato riscontrato tutto vai nello stato di chiusura connessione
                             close_get_send_file(temp_buff, shm);
@@ -50,7 +50,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                         }
                     }
                 } else {
-                    printf("send_file ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//non ack non in finestra
@@ -126,14 +126,13 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                     handle_error_with_exit("error in close file\n");
                 }
                 pthread_cancel(shm->tid);
-                printf("thread cancel wait_for_start_get \n");
                 pthread_exit(NULL);
             }
             else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     rcv_ack_in_window(temp_buff, shm);
                 } else {
-                    printf("wait_for_start_get ack duplicato\n");
+                    //ack duplicato
                 }
                 alarm(TIMEOUT);
             } else if (!seq_is_in_window(shm->window_base_rcv, shm->param.window, temp_buff.seq)) {//se è non akc e non in finestra

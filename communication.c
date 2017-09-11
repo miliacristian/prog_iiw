@@ -389,7 +389,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
                 }
                 shm->byte_written += shm->dimension - shm->byte_written;
             }
-            printf("byte written %d\n", shm->byte_written);
+            //printf("byte written %d\n", shm->byte_written);
             shm-> win_buf_rcv[shm->window_base_rcv].received = 0;//segna pacchetto come non ricevuto
             shm->window_base_rcv = ((shm->window_base_rcv) + 1) % (2 * shm->param.window);//avanza la finestra con modulo di 2W
         }
@@ -462,10 +462,10 @@ void rcv_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) 
                     if (shm->win_buf_snd[shm->window_base_snd].command == DATA) {
                         if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                             shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
-                            printf("byte readed %d\n", shm->byte_readed);
+                            //printf("byte readed %d\n", shm->byte_readed);
                         } else {
                             shm->byte_readed += shm->dimension - shm->byte_readed;
-                            printf("byte readed %d\n", shm->byte_readed);
+                            //printf("byte readed %d\n", shm->byte_readed);
                         }
                     }
                     shm->win_buf_snd[shm->window_base_snd].acked = 2;//resetta quando scorri finestra
@@ -510,10 +510,10 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     (shm->pkt_fly)--;
                     if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                         shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
-                        printf("byte readed %d\n", shm->byte_readed);
+                        //printf("byte readed %d\n", shm->byte_readed);
                     } else {
                         shm->byte_readed += shm->dimension - shm->byte_readed;
-                        printf("byte readed %d\n", shm->byte_readed);
+                        //printf("byte readed %d\n", shm->byte_readed);
                     }
                 }
             }
@@ -553,10 +553,10 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     (shm->pkt_fly)--;
                     if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                         shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
-                        printf("byte readed %d\n", shm->byte_readed);
+                        //printf("byte readed %d\n", shm->byte_readed);
                     } else {
                         shm->byte_readed += shm->dimension - shm->byte_readed;
-                        printf("byte readed %d\n", shm->byte_readed);
+                        //printf("byte readed %d\n", shm->byte_readed);
                     }
                 }
             }
