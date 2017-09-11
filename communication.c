@@ -305,7 +305,7 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
             //ignora pacchetto
-            handle_error_with_exit("pacchetto vecchia finestra\n");
+            //handle_error_with_exit("pacchetto vecchia finestra\n");
         }
     }
     ack_buff.ack = temp_buff.seq;
@@ -355,7 +355,7 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
                               (MAXPKTSIZE - OVERHEAD));
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
+            //handle_error_with_exit("pacchetto vecchia finestra ricevuto\n");
             //ignora pacchetto
         }
     }
@@ -408,7 +408,7 @@ void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repe
             better_strcpy(shm->win_buf_rcv[temp_buff.seq].payload, temp_buff.payload);
             shm->win_buf_rcv[temp_buff.seq].received = 1;
         } else {
-            handle_error_with_exit("pacchetto vecchia finestra\n");
+            //handle_error_with_exit("pacchetto vecchia finestra\n");
             //ignora pacchetto
         }
     }

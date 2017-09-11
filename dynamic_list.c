@@ -16,7 +16,7 @@ void insert_at_tail(struct node *new_node,struct node**head,struct node** tail){
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
     }
     if(tail==NULL){
-        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+        handle_error_with_exit("error in insert_at_head **tail is NULL\n");
     }
     if(*head == NULL) {
         insert_first(new_node, head, tail);
@@ -86,7 +86,7 @@ void insert_at_head(struct node* new_node,struct node** head,struct node** tail)
         handle_error_with_exit("error in insert_at_head **head is NULL\n");
     }
     if(tail==NULL){
-        handle_error_with_exit("error in insert_at_head **head is NULL\n");
+        handle_error_with_exit("error in insert_at_head **tail is NULL\n");
     }
     if(*head == NULL) {
         insert_first(new_node, head, tail);
@@ -124,7 +124,7 @@ void insert_ordered(int seq,int lap,struct timespec timespec,int timer_ms, struc
     struct node* next_node = NULL;
     struct node* new_node = get_new_node(seq,lap,timespec,timer_ms);
     if(head==NULL || tail==NULL){
-        handle_error_with_exit("error in insert_ordered head or tail are NULL\n");
+        handle_error_with_exit("error in insert_ordered,head or tail are NULL\n");
     }
     if(*head == NULL) {
         insert_first(new_node, head, tail);
