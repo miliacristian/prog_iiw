@@ -571,3 +571,87 @@ void rcv_ack_list_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
     return;
 
 }
+
+//thread ritrasmettitore
+void *rtx_job(void *arg) {
+    struct shm_sel_repeat *shm=arg;
+    struct temp_buffer temp_buff;
+    struct node*node=NULL;
+    long timer_ns_left;
+    char to_rtx;
+    struct timespec sleep_time, rtx_time;
+    block_signal(SIGALRM);//il thread rtx non viene bloccato dal segnale di timeout
+    node = alloca(sizeof(struct node));
+    for(;;) {
+        lock_mtx(&(shm->mtx));
+        while (1) {
+            if(delete_head(&shm->head,node)==-1){//rimuovi nodo dalla lista,
+                // se lista vuota aspetta sulla condizione
+                wait_on_a_condition(&(shm->list_not_empty),&shm->mtx);
+            }
+            else{
+                if(!to_resend(shm, *node)){//se non è da ritrasmettere rimuovi un altro nodo dalla lista
+                    continue;
+                }
+                else{
+                    //se è da ritrasmettere memorizza il nodo e continua dopo il while
+                    break;
+                }
+            }
+        }
+        unlock_mtx(&(shm->mtx));
+        timer_ns_left=calculate_time_left(*node);//calcola quanto tempo manca per far scadere il timeout
+        if(timer_ns_left<=0){//tempo già scaduto ,verifica ancora se è da ritrasmettere
+            lock_mtx(&(shm->mtx));
+            to_rtx = to_resend(shm, *node);
+            unlock_mtx(&(shm->mtx));
+            if(!to_rtx){
+                //se non è da ritrasmettere togli un altro nodo dalla lista
+                continue;
+            }
+            else{
+                //è da ritrasmettere immediatamente
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                temp_buff.lap=node->lap;
+                lock_mtx(&(shm->mtx));
+                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                if(clock_gettime(CLOCK_MONOTONIC, &rtx_time)!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                //dopo averlo ritrasmesso viene riaggiunto alla lista dei pacchetti inviati
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
+        }
+        else{
+            //se timer>0 dormi per tempo rimanente poi riverifica se è da mandare
+            sleep_struct(&sleep_time, timer_ns_left);
+            nanosleep(&sleep_time , NULL);
+            lock_mtx(&(shm->mtx));
+            to_rtx = to_resend(shm, *node);
+            unlock_mtx(&(shm->mtx));
+            if(!to_rtx){
+                continue;
+            }
+            else{
+                //pacchetto è da ritrasmettere,ritrasmettilo e rinseriscilo nella lista dinamica
+                temp_buff.ack = NOT_AN_ACK;
+                temp_buff.seq = node->seq;
+                temp_buff.lap=node->lap;
+                lock_mtx(&(shm->mtx));
+                copy_buf2_in_buf1(temp_buff.payload, shm->win_buf_snd[node->seq].payload, MAXPKTSIZE - OVERHEAD);
+                temp_buff.command=shm->win_buf_snd[node->seq].command;
+                resend_message(shm->addr.sockfd,&temp_buff,&shm->addr.dest_addr,shm->addr.len,shm->param.loss_prob);
+                if(clock_gettime(CLOCK_MONOTONIC, &(rtx_time))!=0){
+                    handle_error_with_exit("error in get_time\n");
+                }
+                insert_ordered(node->seq,node->lap,rtx_time,shm->param.timer_ms,&shm->head,&shm->tail);
+                unlock_mtx(&(shm->mtx));
+            }
+        }
+    }
+    return NULL;
+}
