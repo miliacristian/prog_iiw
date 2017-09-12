@@ -23,17 +23,8 @@ with any of the above operations.*/
 //for  example,  fork(2) or dup(2)) refer to the same lock, and this lock
   //      may be modified or released using any of these  descriptors.
 #include "basic.h"
-#include "io.h"
-#include "lock_fcntl.h"
-#include "parser.h"
 #include "timer.h"
-#include "Client.h"
-#include "Server.h"
-#include "list_client.h"
-#include "list_server.h"
-#include "get_client.h"
-#include "get_server.h"
-#include "communication.h"
+#include "file_lock.h"
 
 int file_lock_read(int fd){
     int file_lock;
@@ -42,7 +33,7 @@ int file_lock_read(int fd){
     }
     return file_lock;
 }
-int file_lock_unlock(int fd){
+int file_unlock(int fd){
     int file_lock;
     if((file_lock=flock(fd,LOCK_UN))==-1){
         handle_error_with_exit("error in flock_read\n");

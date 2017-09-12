@@ -12,7 +12,6 @@ int great_alarm_client = 0;//se diventa 1 è scattato il timer globale
 struct select_param param_client;
 char *dir_client;
 
-
 void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler del timer globale
     (void)sig;
     (void)si;
@@ -21,8 +20,9 @@ void timeout_handler_client(int sig, siginfo_t *si, void *uc){//signal handler d
     return;
 }
 
-int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svolgi la get con connessione già instaurata
-    int byte_written=0;
+
+long get_command(int sockfd, struct sockaddr_in serv_addr, char *filename,sem_t*mtx_file) {//svolgi la get con connessione già instaurata
+    long byte_written=0;
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));//alloca memoria condivisa thread
     if(filename==NULL){
         handle_error_with_exit("error in get_command\n");
@@ -33,6 +33,7 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     //inizializza memoria condivisa thread
     initialize_mtx(&(shm->mtx));
     initialize_cond(&(shm->list_not_empty));
+    shm->mtx_file=mtx_file;
     shm->fd=-1;
     shm->byte_written=0;
     shm->byte_sent=0;
@@ -87,12 +88,9 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
             handle_error_with_exit("error in malloc\n");
         }
         memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
+
         shm->win_buf_snd[i].lap = -1;
         shm->win_buf_snd[i].acked=2;
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
     set_max_buff_rcv_size(shm->addr.sockfd);
@@ -114,8 +112,8 @@ int get_command(int sockfd, struct sockaddr_in serv_addr, char *filename) {//svo
     return byte_written;
 }
 
-int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
-    int byte_readed=0;
+long list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con connessione già instaurata
+    long byte_readed=0;
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));//alloca memoria condivisa thread
     if(shm==NULL){
         handle_error_with_exit("error in malloc\n");
@@ -173,12 +171,9 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
             handle_error_with_exit("error in malloc\n");
         }
         memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
+
         shm->win_buf_snd[i].lap = -1;
         shm->win_buf_snd[i].acked=2;
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
     set_max_buff_rcv_size(shm->addr.sockfd);
@@ -199,9 +194,8 @@ int list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list con
     shm=NULL;
     return byte_readed;
 }
-
-int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dimension) {//svolgi la put con connessione già instaurata
-    int byte_readed=0;
+long put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,long dimension) {//svolgi la put con connessione già instaurata
+    long byte_readed=0;
     char*path;
     if(filename==NULL){
         handle_error_with_exit("error in put command\n");
@@ -276,12 +270,9 @@ int put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,int dim
             handle_error_with_exit("error in malloc\n");
         }
         memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
+
         shm->win_buf_snd[i].lap = -1;
         shm->win_buf_snd[i].acked=2;
-    }
-    for (int i = 0; i < 2 *(param_client.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
     put_client(shm);
@@ -317,19 +308,15 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         handle_error_with_exit("error in sigaction\n");
     }
     errno=0;
-    while (rtx < 5 ) {//parametro da cambiare
-        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr), 0);  //mando syn al processo server principale  //da cambiare loss prob
-        printf("mi metto in ricezione del syn_ack\n");
-        alarm(2);
+    while (rtx < 10 ) {//parametro da cambiare
+        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr),0);  //mando syn al processo server principale  //da cambiare loss prob
+        alarm(1);
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
                 alarm(0);
-                printf(GREEN"pacchetto syn_ack ricevuto,connessione instaurata\n" RESET);
+                printf(GREEN"Connection established\n"RESET);
                 great_alarm_client = 0;
                 return main_servaddr;//ritorna l'indirizzo del processo figlio del server
-            }
-            else {
-                printf("pacchetto con comando diverso da syn_ack ignorato\n");
             }
         }
         if(errno!=EINTR && errno!=0){
@@ -338,7 +325,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
         rtx++;
     }
     great_alarm_client = 0;
-    handle_error_with_exit("il server non è in ascolto\n");
+    handle_error_with_exit("Server unreachable\n");
     return main_servaddr;
 }
 
@@ -367,7 +354,7 @@ void client_list_job() {//inizializza socket ricevi indirizzo del processo serve
     exit(EXIT_SUCCESS);
 }
 
-void client_get_job(char *filename) {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando get
+void client_get_job(char *filename,sem_t*mtx_file) {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando get
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     if(filename==NULL){
@@ -391,12 +378,12 @@ void client_get_job(char *filename) {//inizializza socket ricevi indirizzo del p
     }
     set_max_buff_rcv_size(sockfd);
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
-    get_command(sockfd, serv_addr, filename);
+    get_command(sockfd, serv_addr, filename,mtx_file);
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
 
-void client_put_job(char *filename,int dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
+void client_put_job(char *filename,long dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
     if(filename==NULL){
@@ -426,12 +413,10 @@ void client_put_job(char *filename,int dimension) {//upload e filename già veri
 void *thread_job(void *arg) {//thread che esegue waitpid dei processi del client
     (void) arg;
 
-    pid_t pid;
     block_signal(SIGALRM);
     while (1) {
-        while ((pid = waitpid(-1, NULL,WNOHANG)) > 0) {
-            //printf("thread  libera risorse del processo %d\n", pid);
-        }
+        while ((waitpid(-1, NULL,WNOHANG)) > 0);
+        pause();
     }
     return NULL;
 }
@@ -446,11 +431,17 @@ void create_thread_waitpid() {//crea il thread che esegue waitpid
 int main(int argc, char *argv[]) {//funzione principale client concorrente
     char *filename, *command, conf_upload[4], *line, localname[80],*my_list;
     //non fare mai la free su filename e command(servono ad ogni richiesta)
-    int path_len, fd;
+    int path_len, fd,mtx_file_id;
+    sem_t*mtx_file;
     pid_t pid;
+    key_t key;
     if (argc != 2) {
         handle_error_with_exit("usage <directory>\n");
     }
+    key=get_key('a');
+    mtx_file_id=get_id_shared_mem_with_key(sizeof(sem_t),key);//id semaforo condiviso
+    mtx_file=(sem_t*)attach_shm(mtx_file_id);//puntatore a memoria condivisa contentente semaforo
+    initialize_sem(mtx_file);//inizializza semaforo
     srand(time(NULL));
     //verifica che il file parameter.txt esista
     check_if_dir_exist(argv[1]);
@@ -494,6 +485,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     free(command);
     line=NULL;
     create_thread_waitpid();
+    block_signal(SIGCHLD);
 
     if ((command = malloc(sizeof(char) * 8)) == NULL) {//contiene il comando digitato,8==lunghezza massima:my+" "+list\0,list\0,get\0 o put\0
         handle_error_with_exit("error in malloc buffercommand\n");
@@ -501,7 +493,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
-    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(kills all clients)\n" RESET);
+    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(interrupts all pending requests)\n" RESET);
     for (;;) {//ciclo infinito che associa ad ogni comando che digita l'utente un processo che esegue il comando
 
         check_and_parse_command(command, filename);//inizializza command,filename e size
@@ -515,7 +507,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                 printf("file %s not exist\n",path);
                 continue;
             } else {
-                printf("file %s has size %d bytes,confirm upload [y/n]\n",filename, get_file_size(path));
+                printf("file %s has size %ld bytes,confirm upload [y/n]\n",filename, get_file_size(path));
                 while (1) {
                     if (fgets(conf_upload, MAXLINE, stdin) == NULL) {
                         handle_error_with_exit("error in fgets\n");
@@ -545,7 +537,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                 handle_error_with_exit("error in fork\n");
             }
             if (pid == 0) {
-                client_get_job(filename);//i figli non ritornano mai
+                client_get_job(filename,mtx_file);//i figli non ritornano mai
             }
         } else if (strncmp(command,"list",4) == 0) {//list
             if ((pid = fork()) == -1) {

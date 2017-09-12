@@ -9,7 +9,7 @@
 #include "put_server.h"
 
 
-int main_sockfd,msgid,queue_mtx_id,mtx_prefork_id,great_alarm_serv=0;//dopo le fork tutti i figli
+int main_sockfd,msgid,queue_mtx_id,mtx_prefork_id,mtx_file_id,great_alarm_serv=0;//dopo le fork tutti i figli
 // sanno quali sono gli id
 struct select_param param_serv;
 char*dir_server;
@@ -33,7 +33,7 @@ void initialize_mtx_prefork(struct mtx_prefork*mtx_prefork){//inizializza memori
     return;
 }
 
-void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda il messaggio di syn
+void reply_to_syn_and_execute_command(struct msgbuf request,sem_t*mtx_file){//prendi dalla coda il messaggio di syn
     struct sockaddr_in serv_addr;
     struct temp_buffer temp_buff;//pacchetto da inviare
     struct shm_sel_repeat *shm=malloc(sizeof(struct shm_sel_repeat));
@@ -51,6 +51,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
     shm->byte_sent=0;
     shm->addr.dest_addr=request.addr;
     shm->pkt_fly=0;
+    shm->mtx_file=mtx_file;
     shm->window_base_rcv=0;
     shm->window_base_snd=0;
     shm->win_buf_snd=0;
@@ -91,12 +92,8 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
             handle_error_with_exit("error in malloc\n");
         }
         memset(shm->win_buf_rcv[i].payload,'\0',MAXPKTSIZE-OVERHEAD+1);
-    }
-    for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_snd[i].lap = -1;
         shm->win_buf_snd[i].acked=2;
-    }
-    for (int i = 0; i < 2 *(param_serv.window); i++) {
         shm->win_buf_rcv[i].lap = -1;
     }
     memset((void *)&serv_addr, 0, sizeof(serv_addr));//inizializzo socket del processo ad ogni nuova richiesta
@@ -116,7 +113,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request){//prendi dalla coda
         //bloccati finquando non ricevi il comando dal client
         alarm(0);
         print_rcv_message(temp_buff);
-        printf(GREEN"comando %s ricevuto connessione instaurata\n"RESET,temp_buff.payload);
+        printf(GREEN"connection established\n"RESET);
         great_alarm_serv=0;
         //in base al comando ricevuto il processo figlio server esegue uno dei 3 comandi
         if(temp_buff.command==LIST){
@@ -183,7 +180,8 @@ void child_job() {//lavoro che deve svolgere il processo.
     // alla regione di memoria condivisa dei processi
     memset(&sa_timeout,0,sizeof(struct sigaction));
     unlock_signal(SIGALRM);
-    sem_t *mtx=(sem_t*)attach_shm(queue_mtx_id);//ottieni puntatore
+    sem_t*mtx_file=(sem_t*)attach_shm(mtx_file_id);
+    sem_t *mtx_queue_child=(sem_t*)attach_shm(queue_mtx_id);//ottieni puntatore
     // alla regione di memoria condivisa dei processi
     if(close(main_sockfd)==-1){//chiudi il socket del padre
         handle_error_with_exit("error in close socket fd\n");
@@ -206,10 +204,9 @@ void child_job() {//lavoro che deve svolgere il processo.
         }
         mtx_prefork->free_process+=1;
         unlock_sem(&(mtx_prefork->sem));
-        lock_sem(mtx);
-        printf("processo %d disponibile e in attesa\n",getpid());
+        lock_sem(mtx_queue_child);
         value=(int)msgrcv(msgid,&request,sizeof(struct msgbuf)-sizeof(long),0,0);
-        unlock_sem(mtx);//non è un problema prendere il mutex e bloccarsi in coda
+        unlock_sem(mtx_queue_child);//non è un problema prendere il mutex e bloccarsi in coda
         if(value==-1){//errore msgrcv
             lock_sem(&(mtx_prefork->sem));
             mtx_prefork->free_process-=1;
@@ -217,13 +214,11 @@ void child_job() {//lavoro che deve svolgere il processo.
             handle_error_with_exit("errore in msgrcv\n");
         }
         lock_sem(&(mtx_prefork->sem));
-        printf("processo %d svolge la richiesta presa dalla coda\n",getpid());
         mtx_prefork->free_process-=1;
         unlock_sem(&(mtx_prefork->sem));
-        reply_to_syn_and_execute_command(request);//soddisfa la richiesta
+        reply_to_syn_and_execute_command(request,mtx_file);//soddisfa la richiesta
         done_jobs++;//incrementa numero di lavori svolti
         if(done_jobs>MAX_PROC_JOB){
-            printf("processo %d ha fatto molto lavoro e non svolgerà più richieste\n",getpid());
             exit(EXIT_SUCCESS);
         }
     }
@@ -249,7 +244,6 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
     printf("thread pool handler creato\n");
     struct mtx_prefork*mtx_prefork=arg;
     int left_process;
-    pid_t pid;
     block_signal(SIGALRM);
     for(;;){
         lock_sem(&(mtx_prefork->sem));
@@ -262,9 +256,7 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
         else{
             unlock_sem(&(mtx_prefork->sem));
         }
-        while((pid=waitpid(-1,NULL,WNOHANG))>0) {
-            //printf("thread libera risorse del processo %d\n", pid);
-        }
+        while((waitpid(-1,NULL,WNOHANG))>0);
     }
     return NULL;
 }
@@ -291,11 +283,11 @@ int main(int argc,char*argv[]) {//funzione principale processo server
 
     struct mtx_prefork*mtx_prefork;//mutex tra processi e thread pool handler
     sem_t*mtx_queue;//semaforo tra i processi che provano ad accedere alla coda di messaggi
-
+    sem_t*mtx_file;
     if(argc!=2){
         handle_error_with_exit("usage <directory>\n");
     }
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
     check_if_dir_exist(argv[1]);//verifica che directory passata come parametro esiste
     dir_server=add_slash_to_dir(argv[1]);
     //verifica che il file parameter.txt
@@ -342,10 +334,13 @@ int main(int argc,char*argv[]) {//funzione principale processo server
     mtx_prefork_id=get_id_shared_mem(sizeof(struct mtx_prefork));
     queue_mtx_id=get_id_shared_mem(sizeof(sem_t));
     msgid=get_id_msg_queue();//crea coda di messaggi id globale
+    mtx_file_id=get_id_shared_mem(sizeof(sem_t));
 
+    mtx_file=(sem_t*)attach_shm(mtx_file_id);
     mtx_queue=(sem_t*)attach_shm(queue_mtx_id);//mutex per accedere alla coda
     mtx_prefork=(struct mtx_prefork*)attach_shm(mtx_prefork_id);//mutex tra processi e pool handler
     initialize_sem(mtx_queue);//inizializza memoria condivisa
+    initialize_sem(mtx_file);
     initialize_mtx_prefork(mtx_prefork);//inizializza memoria condivisa
 
     memset((void *)&addr, 0, sizeof(addr));//inizializza socket processo principale
@@ -367,7 +362,6 @@ int main(int argc,char*argv[]) {//funzione principale processo server
         if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {
             handle_error_with_exit("error in recvcommand");//memorizza  l'indirizzo del client e lo scrive in coda
         }
-        printf(GREEN"è stata inviata una richiesta al processo centrale\n"RESET);
         msgbuf.addr=cliaddr;//inizializza la struct con addr
         msgbuf.mtype=1;
         if(msgsnd(msgid,&msgbuf,sizeof(struct msgbuf)-sizeof(long),0)==-1){//inserisce nella coda l'indirizzo del client

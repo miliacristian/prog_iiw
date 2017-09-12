@@ -54,7 +54,7 @@
 #define SYN 9//comando da inserire nel pacchetto
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
-#define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
+#define TIMEOUT 2//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
 #define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
 
 
@@ -72,8 +72,8 @@
 #define MD5_LEN 32//lunghezza md5
 
 
-#define NUM_FREE_PROCESS 1//numero di processi server che devono essere sempre disponibili per una richiesta
-#define MAX_PROC_JOB 4//numero di richieste che un processo server può eseguire prima di morire
+#define NUM_FREE_PROCESS 10//numero di processi server che devono essere sempre disponibili per una richiesta
+#define MAX_PROC_JOB 5//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
 #ifndef LINE_H
 #define LINE_H
@@ -121,18 +121,19 @@ struct shm_sel_repeat{//struttura condivisa tra i 2 thread necessaria sia per la
     struct addr addr;//indirizzo dell'host
     int pkt_fly;//numero pacchetti in volo (va da 0 a w-1)
     pthread_mutex_t mtx;//mutex
+    sem_t*mtx_file;
     struct window_snd_buf *win_buf_snd;//finestra trasmissione (va da 0 a 2w-1)
     struct window_rcv_buf *win_buf_rcv;//finestra ricezione (va da 0 a 2w-1)
     char md5_sent[MD5_LEN + 1];//md5
-    int dimension;//dimensione del file/lista
+    long dimension;//dimensione del file/lista
     char*filename;
     int window_base_rcv;//sequenza di inizio finestra ricezione (va da 0 a 2w-1)
     int window_base_snd;//sequenza di inizio finestra trasmissione (va da 0 a 2w-1)
     int seq_to_send;//prossimo numero di sequenza da dare al pacchetto (va da 0 a 2w-1)
     pthread_cond_t list_not_empty;//variabile condizione lista dinamica non vuota
-    int byte_readed;//byte letti e riscontrati lato sender
-    int byte_written;//byte scritti e riscontrati lato receiver
-    int byte_sent;//byte inviati con pacchetti senza contare quelli di ritrasmissione
+    long byte_readed;//byte letti e riscontrati lato sender
+    long byte_written;//byte scritti e riscontrati lato receiver
+    long byte_sent;//byte inviati con pacchetti senza contare quelli di ritrasmissione
     char*list;//puntatore alla lista dei file
     struct select_param param;//parametri
     double est_RTT_ms;//estimated RTT necessario per timer adattativo
@@ -167,7 +168,7 @@ struct node  {//struttura di un nodo della lista dinamica ordianta,la lista tien
 void handle_error_with_exit(char*errorString);
 void get_file_list(char*path);
 char check_if_file_exist(char*path);
-int get_file_size(char*path);
+long get_file_size(char*path);
 char count_words_into_line(char*line);
 void lock_sem(sem_t*sem);
 void unlock_sem(sem_t*sem);
@@ -175,12 +176,12 @@ int get_id_msg_queue();
 int get_id_shared_mem(int size);
 void*attach_shm(int shmid);
 int count_char_dir(char*path);
-char* files_in_dir(char* path,int lenght);
+char* files_in_dir(char* path,long lenght);
 char seq_is_in_window(int start_win,int window,int seq);
 char check_if_dir_exist(char*dir_path);
 char flip_coin(double loss_prob);
 char* generate_full_pathname(char* filename, char* dir_server);
-void copy_buf2_in_buf1(char*buf1,char*buf2,int dim);
+void copy_buf2_in_buf1(char*buf1,char*buf2,long dim);
 char* generate_multi_copy(char*path_to_filename,char*filename);
 int count_word_in_buf(char*buf);
 void block_signal(int signal);
@@ -208,3 +209,5 @@ void unlock_signal(int signal);
 void initialize_timeval(struct timespec *tv,int timer_ms);
 double absolute(double value);
 char* add_slash_to_dir(char*argument);
+int get_id_shared_mem_with_key(int size,key_t key);
+key_t get_key(char c);

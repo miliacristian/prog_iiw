@@ -106,9 +106,6 @@ void send_syn(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, double l
             -1) {
             handle_error_with_exit("error in syn sendto\n");
         }
-        printf("pacchetto syn mandato\n");
-    } else {
-        printf("pacchetto syn perso\n");
     }
     return;
 }
@@ -126,9 +123,6 @@ void send_syn_ack(int sockfd, struct sockaddr_in *serv_addr, socklen_t len, doub
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        printf("pacchetto syn ack mandato\n");
-    } else {
-        printf("pacchetto syn ack perso\n");
     }
     return;
 }
@@ -321,9 +315,9 @@ void rcv_list_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sent(temp_buff);
+        print_msg_sent(ack_buff);
     } else {
-        print_msg_sent_and_lost(temp_buff);
+        print_msg_sent_and_lost(ack_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
@@ -371,9 +365,9 @@ void rcv_data_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_rep
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sent(temp_buff);
+        print_msg_sent(ack_buff);
     } else {
-        print_msg_sent_and_lost(temp_buff);
+        print_msg_sent_and_lost(ack_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
@@ -423,9 +417,9 @@ void rcv_msg_send_ack_in_window(struct temp_buffer temp_buff,struct shm_sel_repe
             -1) {
             handle_error_with_exit("error in sendto\n");
         }
-        print_msg_sent(temp_buff);
+        print_msg_sent(ack_buff);
     } else {
-        print_msg_sent_and_lost(temp_buff);
+        print_msg_sent_and_lost(ack_buff);
     }
     if (temp_buff.seq == shm->window_base_rcv) {//se pacchetto riempie un buco
         // scorro la finestra fino al primo ancora non ricevuto
@@ -519,10 +513,8 @@ void rcv_ack_file_in_window(struct temp_buffer temp_buff,struct shm_sel_repeat *
                     (shm->pkt_fly)--;
                     if (shm->dimension - shm->byte_readed >= (int)(MAXPKTSIZE - OVERHEAD)) {
                         shm->byte_readed += (MAXPKTSIZE - OVERHEAD);
-                        //printf("byte readed %d\n", shm->byte_readed);
                     } else {
                         shm->byte_readed += shm->dimension - shm->byte_readed;
-                        //printf("byte readed %d\n", shm->byte_readed);
                     }
                 }
             }

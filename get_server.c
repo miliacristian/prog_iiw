@@ -4,17 +4,20 @@
 #include "get_server.h"
 #include "communication.h"
 #include "dynamic_list.h"
+#include "file_lock.h"
+
 //è stato riscontrato tutto manda il fin e termina trasmissione
-int close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
+void close_get_send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {//manda fin non in finestra senza sequenza e ack e chiudi
     alarm(0);
     //manda fin
     send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN",
                  FIN, shm->param.loss_prob);
     pthread_cancel(shm->tid);
+    printf(GREEN"File %s correctly sent\n"RESET, shm->filename);
     pthread_exit(NULL);
 }
 //dopo aver ricevuto start inizia a mandare il file
-int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+void send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     while (1) {
         if (shm->pkt_fly < shm->param.window && (shm->byte_sent) < shm->dimension) {
@@ -33,7 +36,6 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
                     if (temp_buff.command == DATA) {
                         rcv_ack_file_in_window(temp_buff, shm);
-                        //printf("byte readed %d\n", shm->byte_readed);
                         if (shm->byte_readed == shm->dimension) {
                             //se è stato riscontrato tutto vai nello stato di chiusura connessione
                             close_get_send_file(temp_buff, shm);
@@ -57,11 +59,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
                 rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             } else {
-                printf("ignorato pacchetto send_file con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                       temp_buff.seq,
-                       temp_buff.command, temp_buff.lap);
-                printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
-                handle_error_with_exit("");
+                handle_error_with_exit("Internal error\n");
             }
         }
         if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK && errno != 0) {
@@ -69,7 +67,7 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
         }
         if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_serv = 0;
-            printf("il client non è in ascolto send file\n");
+            printf(RED"Client not available,get %s\n"RESET, shm->filename);
             alarm(0);
             pthread_cancel(shm->tid);
             pthread_exit(NULL);
@@ -77,8 +75,9 @@ int send_file( struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     }
 }
 //dopo aver ricevuto il comando get manda dimensione del file e aspetta start
-int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
-    char *path, dim_string[11];
+void wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
+    char *path, dim_string[15];
+    int file_try_lock;
     path = generate_full_pathname(shm->filename, dir_server);
     if (path == NULL) {
         handle_error_with_exit("error in generate full path\n");
@@ -86,18 +85,33 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
     //ottieni la dimensione del file da inviare e inseriscila insieme all'MD5 dentro il pacchetto da inviare al client
     if (check_if_file_exist(path)) {
         shm->dimension = get_file_size(path);
-        sprintf(dim_string, "%d", shm->dimension);
+        sprintf(dim_string, "%ld", shm->dimension);
         shm->fd = open(path, O_RDONLY);
         if (shm->fd == -1) {
             handle_error_with_exit("error in open\n");
         }
-        calc_file_MD5(path, shm->md5_sent);
-        better_strcpy(temp_buff.payload, dim_string);//non dovrebbe essere strcat?
-        better_strcat(temp_buff.payload, " ");
-        better_strcat(temp_buff.payload, shm->md5_sent);
-        free(path);
-        send_message_in_window(temp_buff,shm, DIMENSION,dim_string);//manda pacchetto dimension
-    } else {
+        errno=0;
+        file_try_lock=file_try_lock_write(shm->fd);
+        if(file_try_lock==-1){
+            if(errno==EWOULDBLOCK){
+                send_message_in_window(temp_buff,shm, ERROR,"il file è occupato,riprova dopo");
+                errno=0;
+            }
+            else {
+                handle_error_with_exit("error in try_lock\n");
+            }
+        }
+        else {
+            file_unlock(shm->fd);
+            calc_file_MD5(path, shm->md5_sent);
+            better_strcpy(temp_buff.payload, dim_string);
+            better_strcat(temp_buff.payload, " ");
+            better_strcat(temp_buff.payload, shm->md5_sent);
+            free(path);
+            send_message_in_window(temp_buff, shm, DIMENSION, dim_string);//manda pacchetto dimension
+        }
+    }
+    else {
         send_message_in_window(temp_buff,shm, ERROR,"il file non esiste");//manda pacchetto errore
     }
     errno = 0;
@@ -119,7 +133,6 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 pthread_cancel(shm->tid);
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {//se ricevi start vai nello stato di send_file
-                printf("messaggio start ricevuto\n");
                 rcv_msg_send_ack_in_window(temp_buff, shm);
                 send_file(temp_buff,shm);
                 if (close(shm->fd) == -1) {
@@ -139,18 +152,14 @@ int wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm)
                 rcv_msg_re_send_ack_in_window(temp_buff, shm);
                 alarm(TIMEOUT);
             }  else {
-                printf("ignorato pacchetto wait_for_start_get con ack %d seq %d command %d lap %d\n", temp_buff.ack,
-                       temp_buff.seq,
-                       temp_buff.command, temp_buff.lap);
-                printf("winbase snd %d winbase rcv %d\n", shm->window_base_snd, shm->window_base_rcv);
-                handle_error_with_exit("");
+                handle_error_with_exit("Internal error\n");
             }
         } else if (errno != EINTR && errno != 0) {//se è scaduto il timer termina i 2 thread della trasmissione
             handle_error_with_exit("error in recvfrom\n");
         }
         if (great_alarm_serv == 1) {
             great_alarm_serv = 0;
-            printf("il client non è in ascolto wait_for_start_get\n");
+            printf(RED"Client not available,get %s\n"RESET, shm->filename);
             alarm(0);
             pthread_cancel(shm->tid);
             pthread_exit(NULL);
@@ -272,7 +281,7 @@ void get_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
     return;
 }
 //ricevuto messaggio get filename
-int execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
+void execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
     //verifica prima che il file con nome dentro temp_buffer esiste ,manda la dimensione, aspetta lo start e inizia a mandare il file,temp_buff contiene il pacchetto con comando get
     shm->filename = malloc(sizeof(char) * (MAXPKTSIZE - OVERHEAD));
     if (shm->filename == NULL) {
@@ -286,5 +295,5 @@ int execute_get(struct temp_buffer temp_buff,struct shm_sel_repeat *shm) {
             handle_error_with_exit("error in close file\n");
         }
     }
-    return shm->byte_readed;
+    return;
 }

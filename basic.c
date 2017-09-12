@@ -4,8 +4,7 @@
 char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
     if(filename==NULL || md5_sum==NULL){
         handle_error_with_exit("error in calc md5\n");
-    }
-    //printf("making md5...\n");
+    };
 #define MD5SUM_CMD_FMT "md5sum %." STR(PATH_LEN) "s 2>/dev/null"
     char cmd[PATH_LEN + sizeof (MD5SUM_CMD_FMT)];
     sprintf(cmd, MD5SUM_CMD_FMT, filename);
@@ -22,20 +21,17 @@ char calc_file_MD5(char *filename, char *md5_sum){//calcola md5 di un file
 }
 void check_md5(char*filename,char*md5_to_check) {//verifica che 2 md5 sono uguali
     char md5[MD5_LEN + 1];
-    //printf("checking md5...\n");
     if(filename==NULL || md5_to_check==NULL){
         handle_error_with_exit("error in check md5\n");
     }
     if (!calc_file_MD5(filename, md5)) {
         handle_error_with_exit("error in calculate md5\n");
     }
-    //printf("md5 del file ricevuto %s\n", md5);
-    //printf("md5 ricevuto %s\n",md5_to_check);
     if (strcmp(md5_to_check, md5) != 0) {
-        printf(RED "file %s corrupted\n"RESET,filename);
+        printf(RED "File %s corrupted\n"RESET,filename);
     }
     else {
-        printf(GREEN "file %s correctly received\n"RESET,filename);
+        printf(GREEN "File %s correctly received\n"RESET,filename);
     }
     return;
 }
@@ -85,7 +81,6 @@ void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i
     }else{
         tv->tv_nsec = temp;
     }
-    //printf("dopo imcremento timer sec %d usec %d timer %d\n",tv->tv_sec, tv->tv_usec, timer_ms);
     return;
 }
 void better_strcpy(char*buf1,char*buf2){//strcpy+controllo buffer
@@ -125,33 +120,6 @@ void set_max_buff_rcv_size(int sockfd){//imposta il buffer ricezione della socke
     }
     return;
 }
-/*void set_buff_rcv_size(int sockfd,int size){//imposta il buffer ricezione della socket al valore definito come parametro
-    int buff_size=size;
-    if(setsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&buff_size,sizeof(buff_size))!=0){
-        handle_error_with_exit("error in setsockopt\n");
-    }
-    return;
-}
-
-void print_double_buff_rcv_size(int sockfd){//stampa il doppio del valore del buffer di ricezione della socket
-    socklen_t  size_sock=sizeof(socklen_t),get_size;
-    if(getsockopt(sockfd,SOL_SOCKET,SO_RCVBUF,&get_size,&size_sock)!=0){
-        handle_error_with_exit("error in setsockopt\n");
-    }
-    printf("buffer size %d\n",get_size);
-}*/
-/*char to_resend(struct shm_sel_repeat *shm, struct node node){
-    if(shm==NULL){
-        handle_error_with_exit("error in to_resend shm is NULL\n");
-    }
-    if( shm->win_buf_snd[node.seq].time.tv_sec == node.tv.tv_sec && shm->win_buf_snd[node.seq].time.tv_nsec == node.tv.tv_nsec ){
-        if(shm->win_buf_snd[node.seq].acked==1){
-            return 0;
-        }
-        return 1;
-    }
-    return 0;
-}*/
 
 char to_resend(struct shm_sel_repeat *shm, struct node node){//verifica se un pacchetto è da ritrasmettere
     if(shm==NULL){
@@ -166,6 +134,14 @@ char to_resend(struct shm_sel_repeat *shm, struct node node){//verifica se un pa
     else{
         return 0;
     }
+}
+key_t get_key(char c){
+    key_t key;
+    key=ftok(".",c);
+    if(key==-1){
+        handle_error_with_exit("error in get_key\n");
+    }
+    return key;
 }
 void block_signal(int signal){//non fa ricevere il segnale definito al thread chiamante
     sigset_t set;
@@ -287,12 +263,12 @@ char check_if_dir_exist(char*dir_path){//verifica se una directory esiste
     closedir(dir);
     return 1;
 }
-void handle_error_with_exit(char*errorString){//uccide il processo dopo essersi accorto di un errore
-    printf(RED "%s" RESET, errorString);
+void handle_error_with_exit(char*error_string){//uccide il processo dopo essersi accorto di un errore
+    printf(RED "%s" RESET, error_string);
     perror("");
     exit(EXIT_FAILURE);
 }
-void copy_buf2_in_buf1(char*buf1,char*buf2,int dim){//copia dim byte da buf 2 a buf1
+void copy_buf2_in_buf1(char*buf1,char*buf2,long dim){//copia dim byte da buf 2 a buf1
     if(buf2==NULL){
         handle_error_with_exit("buff 2 null\n");
     }
@@ -483,7 +459,7 @@ int count_char_dir(char*path){
     return lenght;
 
 }
-char* files_in_dir(char* path,int lenght) {
+char* files_in_dir(char* path,long lenght) {
     //funzione che, dato un path, crea una stringa (file1\nfile2\nfile3\n...) contenente il nome di tutti file in quella directory
     //fare la free nel chiamante del char* ritornato
     if(path==NULL || lenght<0){
@@ -535,7 +511,7 @@ char check_if_file_exist(char*path){//verifica che il file esiste in memoria
     return 0;
 }
 
-int get_file_size(char*path){//ritorna la dimensione di un file dato un path
+long get_file_size(char*path){//ritorna la dimensione di un file dato un path
     if(path==NULL){
         handle_error_with_exit("error in get_file_size\n");
     }
@@ -543,7 +519,7 @@ int get_file_size(char*path){//ritorna la dimensione di un file dato un path
     if(stat(path,&st)==-1){
         handle_error_with_exit("error get file_status\n");
     }
-    return (int)st.st_size;
+    return st.st_size;
 }
 
 void lock_sem(sem_t*sem){//lock semaforo
@@ -570,6 +546,14 @@ int get_id_msg_queue(){//funzione che crea la coda di messaggi
         handle_error_with_exit("error in msgget\n");
     }
     return msgid;
+}
+
+int get_id_shared_mem_with_key(int size,key_t key){//funzione che crea la memoria condivisa tra processi
+    int shmid;
+    if((shmid=shmget(key,(size_t)size,IPC_CREAT | 0666))==-1){
+        handle_error_with_exit("error in get_id_shm\n");
+    }
+    return shmid;
 }
 int get_id_shared_mem(int size){//funzione che crea la memoria condivisa tra processi
     int shmid;
