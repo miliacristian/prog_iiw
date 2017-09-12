@@ -62,6 +62,7 @@ double calculate_dev_RTT(double est_RTT, double sample_RTT, double dev_RTT){//ca
     dev_RTT = dev_RTT-(dev_RTT/4)+((diff_positive)/4);
     return dev_RTT;
 }
+
 int calculate_timeout(double est_RTT, double dev_RTT){//calcola il timeout finale
     if(est_RTT<0 || dev_RTT<0){
         handle_error_with_exit("error calculate timeout\n");
@@ -88,10 +89,12 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){//dopo aver ricevuto l'
     sample= calculate_sample_RTT((shm->win_buf_snd[seq].time));
     printf("sample %d\n", sample);
     shm->est_RTT_ms = calculate_est_RTT(shm->est_RTT_ms, sample);
-    shm->dev_RTT_ms=calculate_dev_RTT(shm->est_RTT_ms,sample,shm->dev_RTT_ms);
-    timeout = calculate_timeout(shm->est_RTT_ms,shm->dev_RTT_ms);
-    printf("timeout %d\n", timeout);
-    shm->param.timer_ms = timeout;
+    //shm->dev_RTT_ms=calculate_dev_RTT(shm->est_RTT_ms,sample,shm->dev_RTT_ms);
+    //timeout = calculate_timeout(shm->est_RTT_ms,shm->dev_RTT_ms);
+    shm->param.timer_ms = (int)(shm->est_RTT_ms);
+    shm->param.timer_ms<<1;
+    shm->param.timer_ms=shm->param.timer_ms<<1;
+    printf("timeout %d\n",shm->param.timer_ms);
     return;
 }
 
