@@ -70,12 +70,10 @@ void adaptive_timer(struct shm_sel_repeat* shm, int seq){//dopo aver ricevuto l'
         handle_error_with_exit("error in adaptive_timer\n");
     }
     sample= calculate_sample_RTT((shm->win_buf_snd[seq].time));
-    printf("sample %d\n", sample);
     shm->est_RTT_ms = calculate_est_RTT(shm->est_RTT_ms, sample);
     shm->param.timer_ms = (int)(shm->est_RTT_ms)<<1;
     if(shm->param.timer_ms>1000){
         shm->param.timer_ms=1000;
     }
-    printf("timeout %d\n",shm->param.timer_ms);
     return;
 }

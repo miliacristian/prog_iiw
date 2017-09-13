@@ -10,7 +10,6 @@ set(SOURCE_FILES
         basic.c
         basic.h
         Client.c
-        CMakeLists.tx
         file_lock.c
         file_lock.h
         io.c

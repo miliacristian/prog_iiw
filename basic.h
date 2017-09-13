@@ -71,7 +71,7 @@
 
 #define MD5_LEN 32//lunghezza md5
 #define MAX_MD5_SIZE (140*1024*1024) //140MB dimensione massimo oltre il quale il calcolo md5 potrebbe sforare il timeout
-#define NUM_FREE_PROCESS 10//numero di processi server che devono essere sempre disponibili per una richiesta
+#define NUM_FREE_PROCESS 4//numero di processi server che devono essere sempre disponibili per una richiesta
 #define MAX_PROC_JOB 5//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
 #ifndef LINE_H

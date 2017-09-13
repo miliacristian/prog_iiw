@@ -433,31 +433,6 @@ void client_put_job(char *filename,long dimension) {//upload e filename già ver
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
-void create_pool_put(int num_child,char* filename,long dimension){//crea il pool di processi.
-// Ogni processo ha il compito di gestire le richieste
-    int pid;
-    if(num_child<0){
-        handle_error_with_exit("num_child must be greater than 0\n");
-    }
-    for(int i=0;i<num_child;i++) {
-        if ((pid = fork()) == -1) {
-            handle_error_with_exit("error in fork\n");
-        }
-        if (pid == 0) {
-            client_put_job(filename,dimension);//i figli non ritorna mai
-        }
-    }
-    return;//il padre ritorna dopo aver creato i processi
-}
-void client_concurrent_put(char *filename,long dimension){
-    for(int i = 0 ;i<200;i++){    
-        create_pool_put(2,filename,dimension);
-	sleep(1);
-    }
-    while(1){}
-}
-
-
 void *thread_job(void *arg) {//thread che esegue waitpid dei processi del client
     (void) arg;
 
@@ -570,8 +545,8 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                             handle_error_with_exit("error in fork\n");
                         }
                         if (pid == 0) {
-                            //client_put_job(filename,get_file_size(path));//i figli non ritornano mai
-                            client_concurrent_put(filename,get_file_size(path));
+                            client_put_job(filename,get_file_size(path));//i figli non ritornano mai
+                            //client_concurrent_put(filename,get_file_size(path));
                         }
                         break;
                     } else if (strncmp(conf_upload, "n", 1) == 0) {
