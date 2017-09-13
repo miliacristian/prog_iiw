@@ -103,7 +103,7 @@ void wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm
         }
         else {
             file_unlock(shm->fd);
-            calc_file_MD5(path, shm->md5_sent);
+            calc_file_MD5(path, shm->md5_sent, shm->dimension);
             better_strcpy(temp_buff.payload, dim_string);
             better_strcat(temp_buff.payload, " ");
             better_strcat(temp_buff.payload, shm->md5_sent);

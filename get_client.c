@@ -77,7 +77,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
             }
             if (temp_buff.command == FIN) {//se ricevi fin termina i 2 thread
                 alarm(0);
-                check_md5(path, shm->md5_sent);
+                check_md5(path, shm->md5_sent, shm->dimension);
                 pthread_cancel(shm->tid);
                 file_unlock(shm->fd);
                 pthread_exit(NULL);
@@ -104,7 +104,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
         if (great_alarm_client == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_client = 0;
             alarm(0);
-            check_md5(path, shm->md5_sent);
+            check_md5(path, shm->md5_sent,shm->dimension);
             pthread_cancel(shm->tid);
             file_unlock(shm->fd);
             pthread_exit(NULL);

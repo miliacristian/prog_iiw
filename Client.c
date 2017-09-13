@@ -244,7 +244,7 @@ long put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,long d
         handle_error_with_exit("error in malloc\n");
     }
     better_strcpy(shm->filename,filename);
-    if(!calc_file_MD5(path,shm->md5_sent)){
+    if(!calc_file_MD5(path,shm->md5_sent, shm->dimension)){
         handle_error_with_exit("error in calculate md5\n");
     }
     free(path);

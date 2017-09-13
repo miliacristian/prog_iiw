@@ -30,10 +30,10 @@
 
 #define MAXCOMMANDLINE 320//lunghezza massima comando che  inserisce il client
 #define MAXFILENAME 255//lunghezza massima filename
-#define MAXPKTSIZE 1468//1468==no packet fragmentation
+#define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
+#define MAXPKTSIZE (2048 + OVERHEAD)//1468==no packet fragmentation
 #define MAXLINE 1024
 #define BUFF_RCV_SIZE (208*1024)//buffer ricezione socket 208*1024 max buff_size_without root
-#define OVERHEAD (sizeof(int)*3+sizeof(char))//payload-byte informativi
 #define PATH_LEN 256//massima lunghezza del path
 
 #define SERVER_PORT 5195//porta del server
@@ -55,7 +55,7 @@
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
 #define TIMEOUT 2//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
-#define TIMER_BASE_ADAPTIVE 10 //timer di partenza caso adattativo (in millisecondi)
+#define TIMER_BASE_ADAPTIVE 100 //timer di partenza caso adattativo (in millisecondi)
 
 
 #define RED     "\x1b[31m"
@@ -70,8 +70,7 @@
 #define STR(name) STR_VALUE(name)
 
 #define MD5_LEN 32//lunghezza md5
-
-
+#define MAX_MD5_SIZE (140*1024*1024) //140MB dimensione massimo oltre il quale il calcolo md5 potrebbe sforare il timeout
 #define NUM_FREE_PROCESS 10//numero di processi server che devono essere sempre disponibili per una richiesta
 #define MAX_PROC_JOB 5//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
@@ -196,8 +195,8 @@ void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
 //char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
-char calc_file_MD5(char *file_name, char *md5_sum);
-void check_md5(char*filename,char*md5_to_check);
+char calc_file_MD5(char *file_name, char *md5_sum, long dimension);
+void check_md5(char*filename,char*md5_to_check, long dimension);
 void print_double_buff_rcv_size(int sockfd);
 void set_buff_rcv_size(int sockfd,int size);
 void set_max_buff_rcv_size(int sockfd);

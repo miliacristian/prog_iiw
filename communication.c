@@ -579,7 +579,7 @@ void *rtx_job(void *arg) {
     struct node*node=NULL;
     long timer_ns_left;
     char to_rtx;
-    struct timespec sleep_time, rtx_time;
+    struct timespec sleep_time;
     block_signal(SIGALRM);//il thread rtx non viene bloccato dal segnale di timeout
     node = alloca(sizeof(struct node));
     for(;;) {

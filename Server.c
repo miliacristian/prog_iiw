@@ -147,7 +147,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request,sem_t*mtx_file){//pr
     }
     if(great_alarm_serv==1){
         great_alarm_serv=0;
-        printf("il client non è in ascolto\n");
+        printf(RED"Client not available\n"RESET);
         return ;
     }
     //libera la memoria della shared memory a fine lavoro

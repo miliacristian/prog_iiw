@@ -25,7 +25,7 @@ void wait_for_fin_put(struct shm_sel_repeat *shm) {
                 alarm(0);
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff, "FIN_ACK", FIN_ACK,
                              shm->param.loss_prob);
-                check_md5(shm->filename, shm->md5_sent);
+                check_md5(shm->filename, shm->md5_sent, shm->dimension);
                 pthread_cancel(shm->tid);
                 file_unlock(shm->fd);
                 pthread_exit(NULL);
@@ -52,7 +52,7 @@ void wait_for_fin_put(struct shm_sel_repeat *shm) {
         if (great_alarm_serv == 1) {//se è scaduto il timer termina i 2 thread della trasmissione
             great_alarm_serv = 0;
             alarm(0);
-            check_md5(shm->filename, shm->md5_sent);
+            check_md5(shm->filename, shm->md5_sent, shm->dimension);
             pthread_cancel(shm->tid);
             file_unlock(shm->fd);
             pthread_exit(NULL);
