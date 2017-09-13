@@ -450,7 +450,10 @@ void create_pool_put(int num_child,char* filename,long dimension){//crea il pool
     return;//il padre ritorna dopo aver creato i processi
 }
 void client_concurrent_put(char *filename,long dimension){
-    create_pool_put(300,filename,dimension);
+    for(int i = 0 ;i<200;i++){    
+        create_pool_put(2,filename,dimension);
+	sleep(1);
+    }
     while(1){}
 }
 

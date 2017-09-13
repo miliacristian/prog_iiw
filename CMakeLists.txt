@@ -7,11 +7,10 @@ set(SOURCE_FILES
         cmake-build-debug/cmake_install.cmake
         cmake-build-debug/CMakeCache.txt
         cmake-build-debug/Makefile
-        cmake-build-debug/prog_iiw.cbp
         basic.c
         basic.h
         Client.c
-        CMakeLists.txt
+        CMakeLists.tx
         file_lock.c
         file_lock.h
         io.c
