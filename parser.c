@@ -147,7 +147,7 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
         temp_command[strlen(temp_command)-1]='\0';
         moved=skip_space(&temp_command);
         if(strlen(temp_command)<4){
-            printf("invalid command,command too short\n");
+            printf(RED"Invalid command\n"RESET);
             temp_command=temp_command-moved;
             continue;
         }
@@ -162,7 +162,7 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
                 break;
             }
             else{
-                printf("list doesn't allow parameters\n");
+                printf(RED"list doesn't allow parameters\n"RESET);
                 temp_command=temp_command-moved;
                 continue;
             }
@@ -172,7 +172,7 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
             moved+=4;
             lenght=strlen(temp_command);
             if(lenght==0){
-                printf("invalid filename\n");
+                printf(RED"Invalid filename\n"RESET);
                 temp_command=temp_command-moved;
                 continue;
             }
@@ -187,7 +187,7 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
             moved+=4;
             lenght=strlen(temp_command);
             if(lenght==0){
-                printf("invalid filename\n");
+                printf(RED"Invalid filename\n"RESET);
                 temp_command=temp_command-moved;
                 continue;
             }
@@ -206,7 +206,7 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
                 break;
             }
             else{
-                printf("local list doesn't allow parameters\n");
+                printf(RED"local list doesn't allow parameters\n"RESET);
                 temp_command=temp_command-moved;
                 continue;
             }
@@ -220,13 +220,13 @@ void check_and_parse_command(char*command,char*filename){//verifica che i comand
                 break;
             }
             else{
-                printf("exit doesn't allow parameters\n");
+                printf(RED"exit doesn't allow parameters\n"RESET);
                 temp_command=temp_command-moved;
                 continue;
             }
         }
         temp_command=temp_command-moved;
-        printf("invalid command\n");
+        printf(RED"Invalid command\n"RESET);
     }
     return;
 }

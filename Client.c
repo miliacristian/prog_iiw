@@ -384,7 +384,6 @@ void client_get_job(char *filename,sem_t*mtx_file) {//inizializza socket ricevi 
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
-
 void client_put_job(char *filename,long dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
     struct sockaddr_in serv_addr, cliaddr;
     char*path;
@@ -434,6 +433,27 @@ void client_put_job(char *filename,long dimension) {//upload e filename già ver
     close(sockfd);
     exit(EXIT_SUCCESS);
 }
+void create_pool_put(int num_child,char* filename,long dimension){//crea il pool di processi.
+// Ogni processo ha il compito di gestire le richieste
+    int pid;
+    if(num_child<0){
+        handle_error_with_exit("num_child must be greater than 0\n");
+    }
+    for(int i=0;i<num_child;i++) {
+        if ((pid = fork()) == -1) {
+            handle_error_with_exit("error in fork\n");
+        }
+        if (pid == 0) {
+            client_put_job(filename,dimension);//i figli non ritorna mai
+        }
+    }
+    return;//il padre ritorna dopo aver creato i processi
+}
+void client_concurrent_put(char *filename,long dimension){
+    create_pool_put(300,filename,dimension);
+    while(1){}
+}
+
 
 void *thread_job(void *arg) {//thread che esegue waitpid dei processi del client
     (void) arg;
@@ -518,7 +538,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
     if ((filename = malloc(sizeof(char) * (MAXFILENAME))) == NULL) {//contiene il filename del comando digitato
         handle_error_with_exit("error in malloc filename\n");
     }
-    printf(YELLOW "Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(interrupts all pending requests)\n" RESET);
+    printf("Choose one command:\n1)list\n2)get <filename>\n3)put <filename>\n4)local list\n5)exit(interrupts all pending requests)\n");
     for (;;) {//ciclo infinito che associa ad ogni comando che digita l'utente un processo che esegue il comando
 
         check_and_parse_command(command, filename);//inizializza command,filename e size
@@ -529,16 +549,16 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
             better_strcpy(path, filename);
             path = path - path_len;
             if (!check_if_file_exist(path)) {
-                printf("file %s not exist\n",path);
+                printf(RED"File %s not exist\n"RESET,path);
                 continue;
             } else {
-                printf("file %s has size %ld bytes,confirm upload [y/n]\n",filename, get_file_size(path));
+                printf("File %s has size %ld bytes,confirm upload? [y/n]\n",filename, get_file_size(path));
                 while (1) {
                     if (fgets(conf_upload, MAXLINE, stdin) == NULL) {
                         handle_error_with_exit("error in fgets\n");
                     }
                     if (strlen(conf_upload) != 2) {
-                        printf("type y or n\n");
+                        printf("Type y or n\n");
                         continue;
                     } else if (strncmp(conf_upload, "y", 1) == 0) {
 
@@ -547,7 +567,8 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                             handle_error_with_exit("error in fork\n");
                         }
                         if (pid == 0) {
-                            client_put_job(filename,get_file_size(path));//i figli non ritornano mai
+                            //client_put_job(filename,get_file_size(path));//i figli non ritornano mai
+                            client_concurrent_put(filename,get_file_size(path));
                         }
                         break;
                     } else if (strncmp(conf_upload, "n", 1) == 0) {
@@ -574,7 +595,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
         }
         else if(strncmp(command,"local list",10) == 0){//comando local_list
             my_list=make_list(dir_client);
-            printf(GREEN "%s" RESET,my_list);
+            printf(GREEN "Local list:\n%s" RESET,my_list);
             free(my_list);
         }
         else if(strncmp(command,"exit",4) == 0){
@@ -583,7 +604,7 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
             }
         }
         else{
-            handle_error_with_exit("comando errato\n");
+            handle_error_with_exit("Wrong command\n");
         }
     }
     return EXIT_SUCCESS;

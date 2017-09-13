@@ -324,23 +324,23 @@ int count_word_in_buf(char*buf){//conta le parole dentro una stringa
     return word;
 }
 
-void generate_branches_and_number(char*temp,char copy_number){//fa diventare temp una stringa con underscore e numero dentro
-    char num_format_string[4];//3 per le cifre +1 terminatore
+void generate_underscore_and_number(char*temp,unsigned int copy_number){//fa diventare temp una stringa con underscore e numero dentro
+    char num_format_string[11];//10 per le cifre +1 terminatore
     if(temp==NULL){
         handle_error_with_exit("error in generate branches temp is NULL\n");
     }
-    memset(num_format_string,'\0',4);
+    memset(num_format_string,'\0',11);
     better_strcpy(temp,"_");
-    sprintf(num_format_string, "%d",copy_number);
+    sprintf(num_format_string, "%u",copy_number);
     better_strcat(temp,num_format_string);
     return;
 }
 
 char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path assoluti tutti diversi tra loro partendo da un file che esiste,o ritorna null se ci sono troppe copie del file(255)
 // fare la free di absolut path nella funzione chiamante dopo aver creato il file
-    unsigned char copy_number=1;
-    char temp[5],*occurence,*absolute_path,*first_of_the_dot;//temp=="_number"
-    memset(temp,'\0',5);
+    unsigned int copy_number=1;
+    char temp[11],*occurence,*absolute_path,*first_of_the_dot;//temp=="_number"
+    memset(temp,'\0',11);
     if(path_to_filename==NULL){
         handle_error_with_exit("error generate multi copy path_to_filename is NULL\n");
     }
@@ -354,12 +354,12 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     if(!check_if_file_exist(absolute_path)){
         return absolute_path;
     }
-    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+5));;//5==terminatore+ "_" + +3 cifre per il numero
+    first_of_the_dot=malloc(sizeof(char)*(strlen(filename)+12));;//5==terminatore+ "_" + +10 cifre per il numero
     if(first_of_the_dot==NULL){
         handle_error_with_exit("error in malloc\n");
     }
-    memset(first_of_the_dot,'\0',strlen(filename)+5);
-    generate_branches_and_number(temp,copy_number);//scrive dentro temp la stringa da concatenare
+    memset(first_of_the_dot,'\0',strlen(filename)+12);
+    generate_underscore_and_number(temp,copy_number);//scrive dentro temp la stringa da concatenare
     occurence=strchr(filename,'.');
     if(occurence==NULL){//non esiste un punto nel filename
         better_strcpy(first_of_the_dot,filename);
@@ -376,11 +376,11 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
     }
     while(check_if_file_exist(absolute_path)){
         copy_number+=1;
-        if(copy_number>=255){
+        if(copy_number>=UINT32_MAX){
             return NULL;
         }
         if(occurence==NULL) {//aggiungi alla fine del filename le parentesi e il numero
-            generate_branches_and_number(temp, copy_number);
+            generate_underscore_and_number(temp, copy_number);
             better_strcpy(first_of_the_dot,filename);
             better_strcat(first_of_the_dot,temp);
             absolute_path=generate_full_pathname(first_of_the_dot,path_to_filename);
@@ -389,8 +389,8 @@ char* generate_multi_copy(char*path_to_filename,char*filename){//ritorna path as
             }
         }
         else{//esiste un punto nel filename
-            generate_branches_and_number(temp, copy_number);
-            memset(first_of_the_dot,'\0',strlen(filename)+5);
+            generate_underscore_and_number(temp, copy_number);
+            memset(first_of_the_dot,'\0',strlen(filename)+12);
             better_strncpy(first_of_the_dot,filename,strlen(filename)-strlen(occurence));
             better_strcat(first_of_the_dot,temp);
             better_strcat(first_of_the_dot,occurence);
