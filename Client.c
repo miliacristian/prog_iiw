@@ -7,6 +7,7 @@
 #include "get_client.h"
 #include "communication.h"
 #include "put_client.h"
+#include "file_lock.h"
 
 int great_alarm_client = 0;//se diventa 1 è scattato il timer globale
 struct select_param param_client;
@@ -194,7 +195,7 @@ long list_command(int sockfd, struct sockaddr_in serv_addr) {//svolgi la list co
     shm=NULL;
     return byte_readed;
 }
-long put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,long dimension) {//svolgi la put con connessione già instaurata
+long put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,long dimension,int fd) {//svolgi la put con connessione già instaurata
     long byte_readed=0;
     char*path;
     if(filename==NULL){
@@ -211,7 +212,7 @@ long put_command(int sockfd, struct sockaddr_in serv_addr, char *filename,long d
     //inizializza memoria condivisa thread
     initialize_mtx(&(shm->mtx));
     initialize_cond(&(shm->list_not_empty));
-    shm->fd=-1;
+    shm->fd=fd;
     shm->byte_written=0;
     shm->byte_sent=0;
     shm->list=NULL;
@@ -386,10 +387,32 @@ void client_get_job(char *filename,sem_t*mtx_file) {//inizializza socket ricevi 
 
 void client_put_job(char *filename,long dimension) {//upload e filename già verificato,inizializza socket ricevi indirizzo del processo server figlio e inizia comando put
     struct sockaddr_in serv_addr, cliaddr;
-    int sockfd;
+    char*path;
+    int sockfd,fd,file_try_lock;
     if(filename==NULL){
         handle_error_with_exit("error in client_put_job\n");
     }
+    path = generate_full_pathname(filename, dir_client);
+    if(path==NULL){
+        handle_error_with_exit("error in generate full path\n");
+    }
+    fd= open(path, O_RDONLY);
+    if (fd == -1) {
+        handle_error_with_exit("error in open file\n");
+    }//
+    free(path);
+    file_try_lock=file_try_lock_write(fd);
+    if(file_try_lock==-1){
+        if(errno==EWOULDBLOCK){
+            errno=0;
+            printf(RED"File %s not available at the moment\n"RESET,filename);
+            exit(EXIT_FAILURE);
+        }
+        else {
+            handle_error_with_exit("error in try_lock\n");
+        }
+    }
+    file_unlock(fd);
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
@@ -405,8 +428,9 @@ void client_put_job(char *filename,long dimension) {//upload e filename già ver
     if (bind(sockfd, (struct sockaddr *) &cliaddr, sizeof(cliaddr)) < 0) {
         handle_error_with_exit("error in bind\n");
     }
+
     serv_addr = send_syn_recv_ack(sockfd, serv_addr);//ottieni l'indirizzo per contattare un child_process_server
-    put_command(sockfd, serv_addr, filename,dimension);
+    put_command(sockfd, serv_addr, filename,dimension,fd);
     close(sockfd);
     exit(EXIT_SUCCESS);
 }

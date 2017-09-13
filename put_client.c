@@ -175,38 +175,15 @@ int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selec
 void *put_client_job(void*arg){
     struct shm_sel_repeat *shm=arg;
     struct temp_buffer temp_buff;
-    char *path,dim_string[15];
-    int file_try_lock;
+    char dim_string[15];
     sprintf(dim_string, "%ld", shm->dimension);
-    better_strcpy(temp_buff.payload,dim_string);//non dovrebbe essere strcat?
+    better_strcpy(temp_buff.payload,dim_string);
     better_strcat(temp_buff.payload," ");
     better_strcat(temp_buff.payload,shm->md5_sent);
     better_strcat(temp_buff.payload," ");
     better_strcat(temp_buff.payload,shm->filename);
     //invia messaggio put
-    path = generate_full_pathname(shm->filename, dir_client);
-    if(path==NULL){
-        handle_error_with_exit("error in generate full path\n");
-    }
-    shm->fd= open(path, O_RDONLY);
-    if (shm->fd == -1) {
-        handle_error_with_exit("error in open file\n");
-    }//
-    free(path);
-    file_try_lock=file_try_lock_write(shm->fd);
-    if(file_try_lock==-1){
-        if(errno==EWOULDBLOCK){
-            errno=0;
-            printf(RED"file occupato\n"RESET);
-            pthread_cancel(shm->tid);
-            pthread_exit(NULL);
 
-        }
-        else {
-            handle_error_with_exit("error in try_lock\n");
-        }
-    }
-    file_unlock(shm->fd);
     send_message_in_window(temp_buff, shm,PUT,temp_buff.payload);
     alarm(TIMEOUT);
     while (1) {

@@ -8,6 +8,11 @@
 #include "file_lock.h"
 //dopo aver ricevuto messaggio di errore aspetta messaggio di fin_ack
 int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
+    char*error_message=malloc(sizeof(char)*(MAXPKTSIZE-OVERHEAD));
+    if(error_message==NULL){
+        handle_error_with_exit("error in malloc\n");
+    }
+    better_strcpy(error_message,temp_buff.payload);
     send_message_in_window(temp_buff, shm, FIN, "FIN");//manda messaggio di fin
     alarm(TIMEOUT);
     errno = 0;
@@ -24,7 +29,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
             if (temp_buff.command == FIN_ACK) {//se ricevi fin_ack termina i 2 thread
                 alarm(0);
                 pthread_cancel(shm->tid);
-                printf(RED "File %s not available\n"RESET,shm->filename);
+                printf(RED "File %s %s\n"RESET,shm->filename,error_message);
                 pthread_exit(NULL);
             } else if (temp_buff.seq == NOT_A_PKT && temp_buff.ack != NOT_AN_ACK) {//se è un ack
                 if (seq_is_in_window(shm->window_base_snd, shm->param.window, temp_buff.ack)) {//se è in finestra
@@ -51,7 +56,7 @@ int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *sh
             great_alarm_client = 0;
             alarm(0);
             pthread_cancel(shm->tid);
-            printf(RED "File %s not available\n"RESET,shm->filename);
+            printf(RED "File %s %s\n"RESET,shm->filename,error_message);
             pthread_exit(NULL);
         }
     }

@@ -85,6 +85,7 @@ void rcv_put_file(struct shm_sel_repeat *shm) {
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
+                printf(GREEN "Request completed\n"RESET);
                 pthread_cancel(shm->tid);
                 file_unlock(shm->fd);
                 pthread_exit(NULL);

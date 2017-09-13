@@ -94,7 +94,7 @@ void wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm
         file_try_lock=file_try_lock_write(shm->fd);
         if(file_try_lock==-1){
             if(errno==EWOULDBLOCK){
-                send_message_in_window(temp_buff,shm, ERROR,"il file è occupato,riprova dopo");
+                send_message_in_window(temp_buff,shm, ERROR,"not available at the moment");
                 errno=0;
             }
             else {
@@ -112,7 +112,7 @@ void wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm
         }
     }
     else {
-        send_message_in_window(temp_buff,shm, ERROR,"il file non esiste");//manda pacchetto errore
+        send_message_in_window(temp_buff,shm, ERROR,"doesn't exist");//manda pacchetto errore
     }
     errno = 0;
     alarm(TIMEOUT);
@@ -130,6 +130,7 @@ void wait_for_start_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm
                 send_message(shm->addr.sockfd, &shm->addr.dest_addr, shm->addr.len, temp_buff,
                              "FIN_ACK", FIN_ACK, shm->param.loss_prob);
                 alarm(0);
+                printf(GREEN "Request completed\n"RESET);
                 pthread_cancel(shm->tid);
                 pthread_exit(NULL);
             } else if (temp_buff.command == START) {//se ricevi start vai nello stato di send_file
