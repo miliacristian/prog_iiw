@@ -37,7 +37,7 @@
 #define PATH_LEN 256//massima lunghezza del path
 
 #define SERVER_PORT 5195//porta del server
-#define IP "127.0.0.1"
+#define IP "192.168.43.18"
 
 #define NOT_AN_ACK (-5)//pacchetto non è un ack
 #define NOT_A_PKT (-5) //pacchetto non è un pacchetto ma è un ack
@@ -54,8 +54,8 @@
 #define SYN 9//comando da inserire nel pacchetto
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
-#define TIMEOUT 2//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
-#define TIMER_BASE_ADAPTIVE 100 //timer di partenza caso adattativo (in millisecondi)
+#define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
+#define TIMER_BASE_ADAPTIVE 200 //timer di partenza caso adattativo (in millisecondi)
 
 
 #define RED     "\x1b[31m"

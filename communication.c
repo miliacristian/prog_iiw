@@ -10,7 +10,7 @@
 // in modo tale da avere o non avere le stampe relative all'invio o alla ricezione dei pacchetti
 
 
-void print_rcv_message(struct temp_buffer temp_buff){
+/*void print_rcv_message(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
 }
@@ -29,9 +29,9 @@ void print_msg_sent_and_lost(struct temp_buffer temp_buff){
 void print_msg_resent_and_lost(struct temp_buffer temp_buff){
     (void)temp_buff;
     return;
-}
+}*/
 
-/*void print_rcv_message(struct temp_buffer temp_buff){
+void print_rcv_message(struct temp_buffer temp_buff){
     printf("pacchetto ricevuto con ack %d seq %d command %d lap %d\n", temp_buff.ack,
            temp_buff.seq,
            temp_buff.command, temp_buff.lap);
@@ -56,7 +56,7 @@ void print_msg_resent_and_lost(struct temp_buffer temp_buff){
     printf(YELLOW"pacchetto ritrasmesso con ack %d, seq %d command %d lap %d perso\n" RESET, temp_buff.ack,
            temp_buff.seq, temp_buff.command, temp_buff.lap);
     return;
-}*/
+}
 
 //funzioni per la comunicazione tra 2 host senza protocollo selective repeat
 

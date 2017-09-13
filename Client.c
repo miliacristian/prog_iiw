@@ -332,6 +332,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
 void client_list_job() {//inizializza socket ricevi indirizzo del processo server figlio e inizia comando list
     struct sockaddr_in serv_addr, cliaddr;
     int sockfd;
+
     memset((void *) &serv_addr, 0, sizeof(serv_addr));//inizializza struct per contattare il server principale
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
