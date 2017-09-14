@@ -4,7 +4,6 @@
 #include "Client.h"
 #include "get_client.h"
 #include "communication.h"
-#include "dynamic_list.h"
 #include "file_lock.h"
 //dopo aver ricevuto messaggio di errore aspetta messaggio di fin_ack
 int close_connection_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
@@ -117,7 +116,7 @@ int wait_for_fin_get(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     }
 }
 //ricevuta dimensione del file,manda messaggio di start per far capire al sender che è pronto a ricevere i dati
-int rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
+long rcv_get_file(struct temp_buffer temp_buff, struct shm_sel_repeat *shm) {
     alarm(TIMEOUT);
     send_message_in_window(temp_buff, shm, START, "START");
     errno = 0;
@@ -269,7 +268,6 @@ void get_client(struct shm_sel_repeat *shm) {//crea i 2 thread:
         handle_error_with_exit("error in create thread get_client_rtx\n");
     }
     shm->tid = tid_rtx;
-    //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_client_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_client\n");
     }

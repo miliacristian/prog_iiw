@@ -1,8 +1,6 @@
 #include "dynamic_list.h"
 
-
 void insert_first(struct node *new_node, struct node **head, struct node **tail){//inserisce il primo nodo
-    //printf("lista vuota\n");
     if(new_node==NULL || head==NULL || tail==NULL){
         handle_error_with_exit("error in insert_first\n");
     }
@@ -56,7 +54,6 @@ int delete_head(struct node** head, struct node* old_head){
         handle_error_with_exit("error in delete head\n");
     }
     if(*head == NULL){
-        //printf("empty list\n");
         return -1;
     }
     if (old_head == NULL) {
@@ -77,7 +74,6 @@ int delete_head(struct node** head, struct node* old_head){
         *head = old_head->next;
         (*head)-> prev = NULL;
     }
-    //printf("nodo eliminato seq %d, lap %d\n", old_head->seq, old_head->lap);
     return 0;
 }
 

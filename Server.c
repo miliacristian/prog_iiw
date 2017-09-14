@@ -107,7 +107,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request,sem_t*mtx_file){//pr
         handle_error_with_exit("error in bind\n");
     }
     //manda syn ack dopo aver ricevuto il syn e aspetta il comando del client
-    send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),0 ); //ultimo parametro è param_serv.loss_prob!!!!
+    send_syn_ack(shm->addr.sockfd, &request.addr, sizeof(request.addr),param_serv.loss_prob ); //ultimo parametro è param_serv.loss_prob!!!!
     alarm(TIMEOUT);
     if(recvfrom(shm->addr.sockfd,&temp_buff,MAXPKTSIZE,0,(struct sockaddr *)&(shm->addr.dest_addr),&(shm->addr.len))!=-1){//ricevi il comando del client in finestra
         //bloccati finquando non ricevi il comando dal client
@@ -166,7 +166,7 @@ void reply_to_syn_and_execute_command(struct msgbuf request,sem_t*mtx_file){//pr
     return;
 }
 
-void child_job() {//lavoro che deve svolgere il processo.
+void child_job() {//lavoro che svolge il processo.
     //for(;;){
     //prende la richiesta dalla coda;
     // risponde al client;
@@ -198,7 +198,6 @@ void child_job() {//lavoro che deve svolgere il processo.
     for(;;){
         lock_sem(&(mtx_prefork->sem));//semaforo numero processi
         if(mtx_prefork->free_process>=NUM_FREE_PROCESS){
-            //printf("troppi processi liberi,suicidio del processo %d\n",getpid());
             unlock_sem(&(mtx_prefork->sem));
             exit(EXIT_SUCCESS);
         }
@@ -241,7 +240,6 @@ void create_pool(int num_child){//crea il pool di processi.
     return;//il padre ritorna dopo aver creato i processi
 }
 void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del client
-    printf("thread pool handler creato\n");
     struct mtx_prefork*mtx_prefork=arg;
     int left_process;
     block_signal(SIGALRM);
@@ -249,7 +247,6 @@ void*pool_handler_job(void*arg){//thread che gestisce il pool dei processi del c
         lock_sem(&(mtx_prefork->sem));
         if(mtx_prefork->free_process<NUM_FREE_PROCESS){
             left_process=NUM_FREE_PROCESS-mtx_prefork->free_process;
-            //printf("thread crea %d processi\n",left_process);
             unlock_sem(&(mtx_prefork->sem));
             create_pool(left_process);//crea i processi rimanenti per arrivare a NUM_FREE_PROCESS
         }
@@ -357,6 +354,7 @@ int main(int argc,char*argv[]) {//funzione principale processo server
 
     create_pool(NUM_FREE_PROCESS);//crea il pool di NUM_FREE_PROCESS processi
     create_thread_pool_handler(mtx_prefork);//crea il thread che gestisce la riserva di processi
+    printf(GREEN"Bootstrap completed\n"RESET);
     while(1) {
         len=sizeof(cliaddr);
         if ((recvfrom(main_sockfd, commandBuffer, MAXCOMMANDLINE, 0, (struct sockaddr *) &cliaddr, &len)) < 0) {

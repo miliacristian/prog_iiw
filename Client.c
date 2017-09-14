@@ -310,7 +310,7 @@ struct sockaddr_in send_syn_recv_ack(int sockfd, struct sockaddr_in main_servadd
     }
     errno=0;
     while (rtx < 10 ) {//parametro da cambiare
-        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr),0);  //mando syn al processo server principale  //da cambiare loss prob
+        send_syn(sockfd, &main_servaddr, sizeof(main_servaddr),param_client.loss_prob);  //mando syn al processo server principale  //da cambiare loss prob
         alarm(1);
         if (recvfrom(sockfd,&temp_buff,MAXPKTSIZE, 0, (struct sockaddr *) &main_servaddr, &len) !=-1) {//ricevo il syn_ack del server,solo qui sovrascrivo la struct
             if (temp_buff.command == SYN_ACK) {
@@ -539,18 +539,14 @@ int main(int argc, char *argv[]) {//funzione principale client concorrente
                         printf("Type y or n\n");
                         continue;
                     } else if (strncmp(conf_upload, "y", 1) == 0) {
-
-                        //printf("confirm\n");
                         if ((pid = fork()) == -1) {
                             handle_error_with_exit("error in fork\n");
                         }
                         if (pid == 0) {
                             client_put_job(filename,get_file_size(path));//i figli non ritornano mai
-                            //client_concurrent_put(filename,get_file_size(path));
                         }
                         break;
                     } else if (strncmp(conf_upload, "n", 1) == 0) {
-                        //printf("not confirm\n");
                         break;//esci e riscansiona l'input
                     }
                 }

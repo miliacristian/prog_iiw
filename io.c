@@ -1,6 +1,4 @@
-
 #include "basic.h"
-#include "io.h"
 
 ssize_t writen(int fd, void *buf, size_t n){//scrive n byte su un file
     size_t nleft;

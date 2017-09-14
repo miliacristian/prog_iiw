@@ -1,11 +1,9 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <dirent.h>
-#include <netinet/in.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdbool.h>
 #include <sys/msg.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
@@ -15,18 +13,9 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <semaphore.h>
 #include <unistd.h>
-#include <zconf.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <wait.h>
-#include <zconf.h>
-#include <wchar.h>
-#include <signal.h>
-#include <sys/time.h>
 
 #define MAXCOMMANDLINE 320//lunghezza massima comando che  inserisce il client
 #define MAXFILENAME 255//lunghezza massima filename
@@ -55,7 +44,7 @@
 #define SYN_ACK 10//comando da inserire nel pacchetto
 
 #define TIMEOUT 5//timeout,se non si riceve nulla per timeout secondi l'altro host non è in ascolto
-#define TIMER_BASE_ADAPTIVE 100 //timer di partenza caso adattativo (in millisecondi)
+#define TIMER_BASE_ADAPTIVE 1000 //timer di partenza caso adattativo (in millisecondi)
 
 
 #define RED     "\x1b[31m"
@@ -72,7 +61,7 @@
 #define MD5_LEN 32//lunghezza md5
 #define MAX_MD5_SIZE (140*1024*1024) //140MB dimensione massimo oltre il quale il calcolo md5 potrebbe sforare il timeout
 #define NUM_FREE_PROCESS 4//numero di processi server che devono essere sempre disponibili per una richiesta
-#define MAX_PROC_JOB 5//numero di richieste che un processo server può eseguire prima di morire
+#define MAX_PROC_JOB 10//numero di richieste che un processo server può eseguire prima di morire
 #define NO_LAP (-1)
 #ifndef LINE_H
 #define LINE_H
@@ -165,7 +154,6 @@ struct node  {//struttura di un nodo della lista dinamica ordianta,la lista tien
 #endif
 
 void handle_error_with_exit(char*errorString);
-void get_file_list(char*path);
 char check_if_file_exist(char*path);
 long get_file_size(char*path);
 char count_words_into_line(char*line);
@@ -186,19 +174,14 @@ int count_word_in_buf(char*buf);
 void block_signal(int signal);
 void initialize_sem(sem_t*mtx);
 void initialize_mtx(pthread_mutex_t *mtx);
-void destroy_mtx(pthread_mutex_t *mtx);
 void lock_mtx(pthread_mutex_t *mtx);
 void unlock_mtx(pthread_mutex_t *mtx);
 void initialize_cond(pthread_cond_t*cond);
-void destroy_cond(pthread_cond_t*cond);
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx);
 void unlock_thread_on_a_condition(pthread_cond_t*cond);
-//char to_resend(struct shm_sel_repeat *shm, struct node node);
 char to_resend(struct shm_sel_repeat *shm, struct node node);
 char calc_file_MD5(char *file_name, char *md5_sum, long dimension);
 void check_md5(char*filename,char*md5_to_check, long dimension);
-void print_double_buff_rcv_size(int sockfd);
-void set_buff_rcv_size(int sockfd,int size);
 void set_max_buff_rcv_size(int sockfd);
 char*make_list(char*path);
 void better_strcpy(char*buf1,char*buf2);
@@ -206,7 +189,6 @@ void better_strcat(char*str1,char*str2);
 void better_strncpy(char*buf1,char*buf2,int lenght);
 void unlock_signal(int signal);
 void initialize_timeval(struct timespec *tv,int timer_ms);
-double absolute(double value);
 char* add_slash_to_dir(char*argument);
 int get_id_shared_mem_with_key(int size,key_t key);
 key_t get_key(char c);

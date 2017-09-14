@@ -3,7 +3,7 @@ CFLAGS =-Wall -Wextra -Wpedantic -o2
 CFILES=$(shell ls *.c)
 PROGS=$(CFILES:%.c=%)
 
-all:server client
+install:server client
 	
 server:Server.c Server.h basic.c file_lock.c file_lock.h basic.h io.c io.h dynamic_list.c dynamic_list.h parser.c parser.h timer.c timer.h get_server.c get_server.h communication.h communication.c list_server.c list_server.h put_server.h put_server.c
 	$(CC) $(CFLAGS) -pthread -o  $@ $^ -lrt

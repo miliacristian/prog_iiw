@@ -111,7 +111,7 @@ int close_put_send_file(struct shm_sel_repeat *shm){
         }
     }
 }
-int send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selective repeat,
+long send_put_file(struct shm_sel_repeat *shm) {//invia file con protocollo selective repeat,
 // quando riesce a riscontrare tutto va nello stato di chiusura
     struct temp_buffer temp_buff;
     alarm(TIMEOUT);

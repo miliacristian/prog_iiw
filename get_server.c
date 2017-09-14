@@ -3,7 +3,6 @@
 #include "Server.h"
 #include "get_server.h"
 #include "communication.h"
-#include "dynamic_list.h"
 #include "file_lock.h"
 
 //è stato riscontrato tutto manda il fin e termina trasmissione
@@ -184,7 +183,6 @@ void get_server(struct shm_sel_repeat *shm) {//crea i 2 thread:
         handle_error_with_exit("error in create thread get_server_rtx\n");
     }
     shm->tid = tid_rtx;
-    //shm_snd.shm=shm;
     if (pthread_create(&tid_snd, NULL, get_server_job, shm) != 0) {
         handle_error_with_exit("error in create thread get_server_\n");
     }

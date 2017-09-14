@@ -59,7 +59,7 @@ char* add_slash_to_dir(char*argument){
         dir[strlen(argument)+1]='\0';
     }
     else {
-        dir=malloc(strlen(argument)+1);//1 per "/" uno per terminatore
+        dir=malloc(strlen(argument)+1);//1 uno per terminatore
         if(dir==NULL){
             handle_error_with_exit("error in malloc\n");
         }
@@ -68,12 +68,6 @@ char* add_slash_to_dir(char*argument){
         dir[strlen(argument)]='\0';
     }
     return dir;
-}
-double absolute(double value){
-    if (value<0){
-        return ((value)*(-1));
-    }
-    return value;
 }
 
 void initialize_timeval(struct timespec *tv,int timer_ms){//funzione che somma i tempi di una struct e di un timer
@@ -195,15 +189,6 @@ void initialize_mtx(pthread_mutex_t *mtx){//inizializza mutex
     }
     return;
 }
-void destroy_mtx(pthread_mutex_t *mtx){//distrugge mutex
-    if(mtx==NULL){
-        handle_error_with_exit("error in destroy_mtx mtx is NULL\n");
-    }
-    if(pthread_mutex_destroy(mtx)!=0){
-        handle_error_with_exit("error in destroy mtx\n");
-    }
-    return;
-}
 void lock_mtx(pthread_mutex_t *mtx){//lock mutex
     if(mtx==NULL){
         handle_error_with_exit("error in lock_mtx mtx is NULL\n");
@@ -230,15 +215,7 @@ void initialize_cond(pthread_cond_t*cond){//inizializza variabile condizione
         handle_error_with_exit("error in initialize cond\n");
     }
 }
-void destroy_cond(pthread_cond_t*cond){//distrugge variabile condizione
-    if(cond==NULL){
-        handle_error_with_exit("error in destroy_cond cond is NULL\n");
-    }
-    if(pthread_cond_destroy(cond)!=0){
-        handle_error_with_exit("error in destroy cond\n");
-    }
-    return;
-}
+
 void wait_on_a_condition(pthread_cond_t*cond,pthread_mutex_t *mtx){//il thread chiamante aspetta che la condizione diventi vera
     if(mtx==NULL){
         handle_error_with_exit("error in wait condition mtx is NULL\n");
